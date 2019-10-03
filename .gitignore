@@ -1,0 +1,11 @@
+build/
+dist/
+nbproject/
+data/
+build.xml
+[Cc]onfig.json
+manifest.mf
+
+*.dll
+**/test.html*
+**/!README.TXT

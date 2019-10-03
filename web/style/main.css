@@ -1,0 +1,493 @@
+/**************************************************************************/
+/** Header
+/**************************************************************************/
+
+@import url(https://fonts.googleapis.com/css?family=Montserrat);
+
+.header{
+    height: 68px;
+    background-color: #0d4262;
+}
+
+.header-logo{
+    height: 40px;
+    width: 160px;
+}
+
+
+
+.header-nav {
+  margin: 0px;
+  padding: 0px;
+  list-style: none;
+}
+
+.header-link {
+  position: relative;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 20px;
+  display: inline-block;
+  padding: 0;
+  margin: 0 20px;
+  color: #fff;
+  opacity: 0.7;
+
+
+  cursor: pointer;
+
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none;   /* Chrome/Safari/Opera */
+  -khtml-user-select: none;    /* Konqueror */
+  -moz-user-select: none;      /* Firefox */
+  -ms-user-select: none;       /* Internet Explorer/Edge */
+  user-select: none;           /* Non-prefixed version, currently
+                                  not supported by any browser */
+}
+
+
+.header-link:after{
+  content: '';
+  position: absolute;
+  width: 0; height: 2px;
+  display: block;
+  margin-top: 5px;
+  right: 0;
+  background: #fff;
+  transition: width .15s ease;
+  -webkit-transition: width .15s ease;
+}
+
+
+
+.header-link:hover, .header-link:active, .header-link:focus, .header-link-selected{
+    opacity: 1.0;
+    transition: all .4s ease;
+    -webkit-transition: all .4s ease;
+    outline: 0 none;
+}
+
+.header-link:hover:after{
+  width: 100%;
+  left: 0;
+  background: #fff;
+  opacity: 0.6;
+}
+
+
+/**************************************************************************/
+/** Button Div
+/**************************************************************************/
+/** The following class is used in the import wizard
+ */
+.button-div {
+    padding: 0 12px 12px 12px;
+    text-align: right;
+    position: relative;
+}
+
+
+/**************************************************************************/
+/** Error Callout
+/**************************************************************************/
+/** The following classes are used to define the style form validation
+ *  messages.
+ */
+
+.error-callout-panel, .error-callout-arrow {
+    border: 1px solid #adadad;
+    background: #d86161;
+    background: #c12f2f;
+    color: #fff;
+    cursor: pointer;
+}
+
+.error-callout-panel {
+    border-radius: 3px;
+    padding: 5px !important;
+    box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
+}
+
+.error-callout-arrow {
+    width: 7px;
+    height: 7px;
+    padding: 12px;
+}
+
+
+/**************************************************************************/
+/** Transaction Grid
+/**************************************************************************/
+/** The following classes are used to define the style for the transaction
+ *  grid in the Transactions panel
+ */
+
+.transaction-grid-debit {
+    padding-right: 8px;
+}
+
+.transaction-grid-credit {
+    color: #d8d8d8;
+    background-color: green;
+    padding: 3px 5px;
+    border-radius: 5px;
+    margin-right: 4px;
+}
+
+
+/**************************************************************************/
+/** Facets
+/**************************************************************************/
+
+ .facet-panel {
+    margin-bottom: 20px;
+    background-color: #fff;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    box-shadow: 3px 6px 8px -5px rgba(0, 0, 0, 0.24)
+}
+
+
+.facet-header {
+    color: #333;
+    background-color: #f5f5f5;
+    border-color: #ddd;
+    padding: 10px 15px;
+    position: relative;
+    border-radius: 5px 5px 0 0;
+    border-bottom: 1px solid #bbbaba;
+    background: #eaeaea;
+    background-image: linear-gradient(to bottom, #f9f9f9, #e4e5e7);
+}
+
+.facet-body {
+    padding: 4px 8px;
+    /*
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+    padding: 10px 5px 0px 10px;
+    */
+}
+
+.facet-label {
+    font-size: 12px;
+    color: #3e3e3e;
+    white-space: nowrap;
+    cursor: pointer;
+    padding: 1px 0 0 5px;
+}
+
+
+
+/**************************************************************************/
+/** 16x16 Icons
+/**************************************************************************/
+
+.copyIcon, .deleteIcon, .downIcon, .editIcon, .newIcon, .openIcon,
+.redoIcon, .refreshIcon, .rightIcon, .runIcon, .saveIcon, .undoIcon {
+    background: transparent url('../images/icons.png');
+    background-repeat: no-repeat;
+    width: 16px;
+    height: 16px;
+}
+.copyIcon {
+    background-position: -2px -2px;
+}
+.deleteIcon {
+    background-position: -22px -2px;
+}
+.downIcon {
+    background-position: -42px -2px;
+}
+.editIcon {
+    background-position: -2px -22px;
+}
+.newIcon {
+    background-position: -22px -22px;
+}
+.openIcon {
+    background-position: -42px -22px;
+}
+.redoIcon {
+    background-position: -2px -42px;
+}
+.refreshIcon {
+    background-position: -22px -42px;
+}
+.rightIcon {
+    background-position: -42px -42px;
+}
+.runIcon {
+    background-position: -2px -62px;
+}
+.saveIcon {
+    background-position: -22px -62px;
+}
+.undoIcon {
+    background-position: -42px -62px;
+}
+
+
+
+
+
+/**************************************************************************/
+/** 16x16 Icons for Comboboxes
+/**************************************************************************/
+.downButtonIcon {
+    background-image: url('../images/icons.png');
+    background-repeat: no-repeat;
+    background-color: #e4e4e4;
+    background-position: -38px 4px;
+}
+
+.editButtonIcon {
+    background-image: url('../images/icons.png');
+    background-repeat: no-repeat;
+    background-color: #e4e4e4;
+    background-position: 3px -18px;
+}
+
+.rightButtonIcon {
+    background-image: url('../images/icons.png');
+    background-repeat: no-repeat;
+    background-color: #e4e4e4;
+    background-position: -37px -37px;
+}
+
+
+/**************************************************************************/
+/** menu-item-checkmark - unused!
+/**************************************************************************/
+.menu-item-checkmark {
+    display:inline-block;
+    width: 22px;
+    height:22px;
+    -ms-transform: rotate(45deg); /* IE 9 */
+    -webkit-transform: rotate(45deg); /* Chrome, Safari, Opera */
+    transform: rotate(45deg);
+    margin:5px 5px 0 0;
+    float:right;
+    transition: 0.4s;
+}
+
+.menu-item-checkmark:before{
+    content:"";
+    position: absolute;
+    width:2px;
+    height:12px;
+    background-color:#008000;
+    left:11px;
+    top:6px;
+    box-shadow:2px 1px 0px 0px rgba(0, 0, 0, 0.1);
+}
+
+.menu-item-checkmark:after{
+    content:"";
+    position: absolute;
+    width:4px;
+    height:2px;
+    background-color:#008000;
+    left:7px;
+    top:16px;
+}
+
+
+/**************************************************************************/
+/** Orange Panel
+/**************************************************************************/
+
+.orange-table {
+    background-color: #fffdec;
+    border-left: 1px solid #bbb062;
+    border-right: 1px solid #bbb062;
+}
+
+.orange-table-header {
+    border-bottom: 1px solid #bbb062;
+    background: #d8d4b9;
+    background-image: linear-gradient(to bottom, #f8f8f8, #d8d4b9);
+}
+
+.orange-table-header-col {
+    font-family: helvetica,arial,verdana,sans-serif;
+    font-size: 14px;
+    white-space: nowrap;
+
+
+    height: 35px;
+    line-height: 35px;
+    padding: 0 5px;
+
+
+    color: #5a521a;
+    text-shadow: 0px 2px 1px #efefef;
+    text-align: center;
+    font-weight: bold;
+
+
+    border-left: 1px solid #cccccc;
+    border-right: 1px solid #cccccc;
+    cursor: default;
+}
+
+.orange-table-header-col:first-child{
+    border: 0 none;
+}
+.orange-table-header-col:last-child{
+    border: 0 none;
+}
+
+
+.orange-table-row {
+    background: #fffdec;
+    border-bottom: 1px solid #dedbbf;
+    cursor: pointer;
+}
+
+/*
+.orange-table-row:nth-child(odd) {
+    background: #fbf8dd;
+}
+*/
+
+.orange-table-row:hover{
+    background-color:#EDF3FE;
+}
+
+.orange-table-row-selected {
+    background:#FFFFB1;
+    border-bottom: 1px solid #cccccc;
+}
+
+.bbar-orange {
+    background-color: #bbb062;
+}
+
+/**************************************************************************/
+/** Blue Panel
+/**************************************************************************/
+
+.blue-table {
+    background-color: #f0f8ff;
+}
+
+.blue-table-header {
+    border-bottom: 1px solid #5a88a5;
+    background: #bed1dc;
+    background-image: linear-gradient(to bottom, #d6e9f5, #9abdd2);
+}
+
+.blue-table-header-col {
+    font-family: helvetica,arial,verdana,sans-serif;
+    font-size: 14px;
+    white-space: nowrap;
+
+
+    height: 35px;
+    line-height: 35px;
+    padding: 0 5px;
+
+    color: #416073;
+    text-shadow: 0px 2px 1px #bad9ec;
+    text-align: center;
+    font-weight: bold;
+
+    border-left: 1px solid #cccccc;
+    border-right: 1px solid #cccccc;
+    cursor: default;
+}
+
+.blue-table-row, .blue-table-row-selected {
+    background: #f0f8ff;
+    border-bottom: 1px solid #c3d5e4;
+    cursor: pointer;
+}
+
+/*
+.blue-table-row:nth-child(odd) {
+    background: #deebf7;
+}
+*/
+
+.blue-table-row:hover{
+    background-color:#daf1ff;
+}
+
+.blue-table-row-selected {
+    background:#FFFFB1;
+    border-bottom: 1px solid #cccccc;
+}
+
+
+.bbar-blue {
+    background-color: #5a88a5;
+}
+
+
+/**************************************************************************/
+/** Bottom Toolbar
+/**************************************************************************/
+
+.bbar {
+    height: 28px;
+}
+
+.bbar-button, .bbar-button-hover, .bbar-button-selected {
+    height: 25px;
+    cursor: pointer;
+    color: #272727;
+    border: 1px solid rgba(0, 0, 0, 0);
+    opacity: 0.8;
+    transition: 0.2s;
+    width: 25px;
+}
+
+.bbar-button-hover {
+    background: #0d4262;
+    opacity: 1.0;
+}
+
+.bbar-button-selected {
+    background: #d2e3ed;
+    border: 1px solid #adadad;
+}
+
+.bbar-button-icon-create, .bbar-button-icon-edit, .bbar-button-icon-delete {
+    background: transparent url(../images/tools.png);
+    background-repeat: no-repeat;
+    width: 22px;
+    height: 22px;
+}
+
+.bbar-button-icon-create {
+    background-position: 0px -2px;
+}
+
+.bbar-button-icon-edit {
+    background-position: -25px -2px;
+}
+
+.bbar-button-icon-delete {
+    background-position: -53px -2px;
+}
+
+
+
+/**************************************************************************/
+/** Misc
+/**************************************************************************/
+
+
+
+
+/** Used in conjunction with table-header-col and table-col to make
+ *  grids/tables a little more compact
+ */
+.compact-table {
+    height: 28px;
+    line-height: 28px;
+    border-left: none;
+}
+
+
