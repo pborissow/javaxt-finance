@@ -46,6 +46,7 @@ CREATE TABLE TRANSACTION (
     DESCRIPTION text,
     NOTES text,
     AMOUNT numeric NOT NULL,
+    RAW_DATA text UNIQUE,
     SOURCE_ID bigint NOT NULL,
     VENDOR_ID bigint,
     CATEGORY_ID bigint,

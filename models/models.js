@@ -97,6 +97,7 @@ var models = {
             {name: 'description',   type: 'string'},
             {name: 'notes',         type: 'string'},
             {name: 'amount',        type: 'decimal'},
+            {name: 'rawData',       type: 'string'},
             {name: 'source',        type: 'Source'},
             {name: 'vendor',        type: 'Vendor'},
             {name: 'category',      type: 'Category'},
@@ -105,6 +106,7 @@ var models = {
         constraints: [
             {name: 'date',          required: true},
             {name: 'amount',        required: true},
+            {name: 'rawData',       unique: true},
             {name: 'source',        required: true},
             {name: 'category',      onDelete: 'set null'}
         ]

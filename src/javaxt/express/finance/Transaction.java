@@ -18,6 +18,7 @@ public class Transaction extends javaxt.sql.Model {
     private String description;
     private String notes;
     private BigDecimal amount;
+    private String rawData;
     private Source source;
     private Vendor vendor;
     private Category category;
@@ -34,6 +35,7 @@ public class Transaction extends javaxt.sql.Model {
             put("description", "description");
             put("notes", "notes");
             put("amount", "amount");
+            put("rawData", "raw_data");
             put("source", "source_id");
             put("vendor", "vendor_id");
             put("category", "category_id");
@@ -80,6 +82,7 @@ public class Transaction extends javaxt.sql.Model {
             this.description = getValue(rs, "description").toString();
             this.notes = getValue(rs, "notes").toString();
             this.amount = getValue(rs, "amount").toBigDecimal();
+            this.rawData = getValue(rs, "raw_data").toString();
             Long sourceID = getValue(rs, "source_id").toLong();
             Long vendorID = getValue(rs, "vendor_id").toLong();
             Long categoryID = getValue(rs, "category_id").toLong();
@@ -119,6 +122,7 @@ public class Transaction extends javaxt.sql.Model {
         this.description = json.get("description").toString();
         this.notes = json.get("notes").toString();
         this.amount = json.get("amount").toBigDecimal();
+        this.rawData = json.get("rawData").toString();
         if (json.has("source")){
             source = new Source(json.get("source").toJSONObject());
         }
@@ -180,6 +184,14 @@ public class Transaction extends javaxt.sql.Model {
 
     public void setAmount(BigDecimal amount){
         this.amount = amount;
+    }
+
+    public String getRawData(){
+        return rawData;
+    }
+
+    public void setRawData(String rawData){
+        this.rawData = rawData;
     }
 
     public Source getSource(){
