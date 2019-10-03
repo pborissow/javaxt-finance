@@ -11,6 +11,7 @@ import javaxt.http.servlet.*;
 
 import java.util.*;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.math.BigDecimal;
 import javaxt.express.utils.CSV;
 
@@ -232,7 +233,7 @@ public class WebServices extends WebService {
                 parser = (ScriptObjectMirror) bindings.get("parseColumns");
             }
 
-
+            JSONArray errors = new JSONArray();
 
             String[] data = json.get("data").toString().split("\n");
             for (int i=offset; i<data.length; i++){
@@ -300,15 +301,31 @@ public class WebServices extends WebService {
                     }
                 }
 
-                Transaction tx = new Transaction();
-                tx.setSource(source);
-                tx.setDate(date);
-                tx.setDescription(desc);
-                tx.setAmount(amount);
-                tx.save();
+                try{
+                    Transaction tx = new Transaction();
+                    tx.setSource(source);
+                    tx.setDate(date);
+                    tx.setDescription(desc);
+                    tx.setAmount(amount);
+                    tx.setRawData(row);
+                    tx.save();
+                }
+                catch(SQLException e){
+                    String msg = e.getMessage();
+                    if (msg.length()>100) msg = msg.substring(0, 100);
+                    JSONObject err = new JSONObject();
+                    err.set("msg", msg);
+                    err.set("idx", i);
+                    errors.add(err);
+                }
             }
 
-            return new ServiceResponse(200);
+            if (errors.isEmpty()){
+                return new ServiceResponse(200);
+            }
+            else{
+                return new ServiceResponse(errors);
+            }
         }
         catch(Exception e){
             return new ServiceResponse(e);
