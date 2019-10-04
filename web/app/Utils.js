@@ -335,8 +335,8 @@ javaxt.express.finance.utils = {
         }
         return rows;
     },
-    
-    
+
+
   //**************************************************************************
   //** createButton
   //**************************************************************************
@@ -365,6 +365,21 @@ javaxt.express.finance.utils = {
         var spacer = document.createElement('div');
         spacer.className = "toolbar-spacer";
         toolbar.appendChild(spacer);
+    },
+
+
+  //**************************************************************************
+  //** createCell
+  //**************************************************************************
+    createCell: function(type, val){
+        var me = javaxt.express.finance.utils;
+        if (type==="currency"){
+            var amount = me.formatCurrency(val);
+            var span = document.createElement("span");
+            span.innerHTML = amount;
+            span.className = "transaction-grid-" + ((amount.indexOf("-")===0) ? "debit" : "credit");
+            return span;
+        }
     }
 };
 
