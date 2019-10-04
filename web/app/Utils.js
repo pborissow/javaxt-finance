@@ -334,6 +334,37 @@ javaxt.express.finance.utils = {
             rows[i] = obj;
         }
         return rows;
+    },
+    
+    
+  //**************************************************************************
+  //** createButton
+  //**************************************************************************
+    createButton: function(toolbar, btn){
+
+        if (btn.icon){
+            btn.style.icon = "toolbar-button-icon " + btn.icon;
+            delete btn.icon;
+        }
+
+
+        if (btn.menu===true){
+            btn.style.arrow = "toolbar-button-menu-icon";
+            btn.style.menu = "menu-panel";
+            btn.style.select = "panel-toolbar-menubutton-selected";
+        }
+
+        return new javaxt.dhtml.Button(toolbar, btn);
+    },
+
+
+  //**************************************************************************
+  //** createSpacer
+  //**************************************************************************
+    createSpacer: function(toolbar){
+        var spacer = document.createElement('div');
+        spacer.className = "toolbar-spacer";
+        toolbar.appendChild(spacer);
     }
 };
 
