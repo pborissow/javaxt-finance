@@ -24,7 +24,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var transactionGrid, transactionEditor,
         accountGrid, accountEditor,
         categoryGrid, categoryEditor,
-        importWizard;
+        importWizard, rules;
 
     var dateDisplayFormat;
     var fx = new javaxt.dhtml.Effects();
@@ -189,7 +189,23 @@ javaxt.express.finance.Transactions = function(parent, config) {
         };
 
 
-        if (!isMobile) createSpacer(toolbar);
+        createSpacer(toolbar);
+
+
+
+      //Add button
+        var runButton = createButton(toolbar, {
+            label: "Rules",
+            icon: "runIcon",
+            disabled: false
+        });
+        runButton.onClick = function(){
+            if (!rules) rules = new javaxt.express.finance.Rules();
+            console.log(rules);
+            rules.show();
+        };
+        
+        createSpacer(toolbar);
 
 
       //Refresh button
@@ -965,42 +981,17 @@ javaxt.express.finance.Transactions = function(parent, config) {
             reader.readAsText(file);
         }
     };
-
-
-
-
+    
+    
   //**************************************************************************
   //** createButton
   //**************************************************************************
     var createButton = function(toolbar, btn){
-
-        btn.style = JSON.parse(JSON.stringify(config.style.toolbarButton)); //<-- clone the style config!
-        if (btn.icon){
-            btn.style.icon = "toolbar-button-icon " + btn.icon;
-            delete btn.icon;
-        }
-
-
-        if (btn.menu===true){
-            btn.style.arrow = "toolbar-button-menu-icon";
-            btn.style.menu = "menu-panel";
-            btn.style.select = "panel-toolbar-menubutton-selected";
-        }
-
-        return new javaxt.dhtml.Button(toolbar, btn);
+        btn.style = JSON.parse(JSON.stringify(config.style.toolbarButton));
+        return javaxt.express.finance.utils.createButton(toolbar, btn);
     };
-
-
-  //**************************************************************************
-  //** createSpacer
-  //**************************************************************************
-    var createSpacer = function(toolbar){
-        var spacer = document.createElement('div');
-        spacer.className = "toolbar-spacer";
-        toolbar.appendChild(spacer);
-    };
-
-
+    
+    
   //**************************************************************************
   //** Utils
   //**************************************************************************
@@ -1009,8 +1000,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var del = javaxt.dhtml.utils.delete;
     var merge = javaxt.dhtml.utils.merge;
     var createTable = javaxt.dhtml.utils.createTable;
-
-
+    var createSpacer = javaxt.express.finance.utils.createSpacer;
+    
     var isNumber = javaxt.express.finance.utils.isNumber;
     var formatCurrency = javaxt.express.finance.utils.formatCurrency;
     var getMomentFormat = javaxt.express.finance.utils.getMomentFormat;
