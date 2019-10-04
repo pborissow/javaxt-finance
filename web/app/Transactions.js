@@ -204,7 +204,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
             console.log(rules);
             rules.show();
         };
-        
+
         createSpacer(toolbar);
 
 
@@ -251,12 +251,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
             ],
             update: function(row, transaction){
                 row.set('id', transaction.id);
-
-                var amount = formatCurrency(transaction.amount);
-                var span = document.createElement("span");
-                span.innerHTML = amount;
-                span.className = "transaction-grid-" + ((amount.indexOf("-")===0) ? "debit" : "credit");
-                row.set('Amount', span);
+                row.set('Amount', createCell("currency", transaction.amount));
 
 
                 var m = moment(transaction.date);
@@ -981,8 +976,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
             reader.readAsText(file);
         }
     };
-    
-    
+
+
   //**************************************************************************
   //** createButton
   //**************************************************************************
@@ -990,8 +985,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
         btn.style = JSON.parse(JSON.stringify(config.style.toolbarButton));
         return javaxt.express.finance.utils.createButton(toolbar, btn);
     };
-    
-    
+
+
   //**************************************************************************
   //** Utils
   //**************************************************************************
@@ -1000,10 +995,10 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var del = javaxt.dhtml.utils.delete;
     var merge = javaxt.dhtml.utils.merge;
     var createTable = javaxt.dhtml.utils.createTable;
+    var createCell = javaxt.express.finance.utils.createCell;
     var createSpacer = javaxt.express.finance.utils.createSpacer;
-    
+
     var isNumber = javaxt.express.finance.utils.isNumber;
-    var formatCurrency = javaxt.express.finance.utils.formatCurrency;
     var getMomentFormat = javaxt.express.finance.utils.getMomentFormat;
 
     var parseResponse = javaxt.express.finance.utils.normalizeResponse;

@@ -423,10 +423,7 @@ javaxt.express.finance.ImportWizard = function(config) {
                         }
 
                     }
-                    amount = formatCurrency(amount);
-                    if (amount.indexOf("-")===0){
-                        amount = "<span style=\"color:#ca0000;\">" + amount + "</span>";
-                    }
+                    amount = createCell("currency", amount);
 
 
                     if (date!=null){
@@ -1526,6 +1523,7 @@ javaxt.express.finance.ImportWizard = function(config) {
     var formatCurrency = javaxt.express.finance.utils.formatCurrency;
     var parseCSV = javaxt.express.finance.utils.parseCSV;
     var getMomentFormat = javaxt.express.finance.utils.getMomentFormat;
+    var createCell = javaxt.express.finance.utils.createCell;
 
     init();
 };
