@@ -42,6 +42,7 @@ public class Config extends javaxt.express.Config {
         JSONObject webConfig = config.get("webserver").toJSONObject();
         updateDir("webDir", webConfig, configFile);
         updateDir("logDir", webConfig, configFile);
+        updateDir("jobDir", webConfig, configFile);
         updateFile("keystore", webConfig, configFile);
 
         JSONObject downloadConfig = config.get("downloads").toJSONObject();
