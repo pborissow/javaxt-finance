@@ -28,7 +28,6 @@ public class Main {
    */
     public static void main(String[] arr) throws Exception {
         HashMap<String, String> args = Console.parseArgs(arr);
-        //boolean killLogger = true;
 
 
       //Get jar file and schema
@@ -67,26 +66,18 @@ public class Main {
             }
         }
         else{
-
-
             try{
                 if (!Config.has("webserver")){
                     throw new Exception("Config file is missing \"webserver\" config information");
                 }
                 else{
                     JSONObject webConfig = Config.get("webserver").toJSONObject();
-
-                    new WebApp(webConfig, database);
+                    new WebApp(webConfig, database).start();
                 }
-                //killLogger = false;
             }
             catch(Exception e){
-                System.out.println(e.getMessage());
+                e.printStackTrace();
             }
         }
-
-
-
-        //if (killLogger) System.exit(0);
     }
 }
