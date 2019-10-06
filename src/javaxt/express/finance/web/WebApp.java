@@ -12,6 +12,8 @@ import javaxt.utils.Console;
 public class WebApp extends HttpServlet {
 
     private javaxt.io.Directory web;
+    private javaxt.io.Directory logDir;
+    private ArrayList<InetSocketAddress> addresses;
     private FileManager fileManager;
     private WebServices ws;
     private Console console = new Console();
@@ -58,25 +60,17 @@ public class WebApp extends HttpServlet {
 
 
       //Instantiate web services
-        String downloadDir = config.get("downloadDir").toString();
-        if (downloadDir!=null){
-            if (downloadDir.length()>0){
-                javaxt.io.Directory dir = new javaxt.io.Directory(downloadDir);
-                ws = new WebServices(database, dir);
-            }
-        }
-        if (ws==null) throw new IllegalArgumentException(
-            "Failed to instantiate webservices. Check if \"downloads\" is defined in config file");
+        ws = new WebServices(database, config);
 
 
 
       //Instantiate authenticator
-        //setAuthenticator(new Authenticator());
+        setAuthenticator(new Authenticator());
 
 
 
       //Generate list of socket addresses to bind to
-        ArrayList<InetSocketAddress> addresses = new ArrayList<>();
+        addresses = new ArrayList<>();
         addresses.add(new InetSocketAddress("0.0.0.0", 80));
         if (keystore!=null){
             try{
@@ -90,15 +84,27 @@ public class WebApp extends HttpServlet {
         }
 
 
-      //Start web logger
+      //Get log directory
         if (config.has("logDir")){
             String path = config.get("logDir").toString();
             if (path.length()>0){
-                javaxt.io.Directory logDir = new javaxt.io.Directory(path);
+                logDir = new javaxt.io.Directory(path);
                 console.log("logDir: " + logDir);
-                logger = new Logger(logDir.toFile());
-                new Thread(logger).start();
             }
+        }
+    }
+
+
+  //**************************************************************************
+  //** start
+  //**************************************************************************
+  /** Used to start the HTTP server and logger
+   */
+    public void start(){
+      //Start web logger
+        if (logDir!=null){
+            logger = new Logger(logDir.toFile());
+            new Thread(logger).start();
         }
 
 
