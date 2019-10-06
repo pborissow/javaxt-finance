@@ -1,37 +1,44 @@
 package javaxt.express.finance.web;
 import javaxt.express.finance.*;
+import javaxt.express.utils.CSV;
+import javaxt.express.ws.*;
 
 import javaxt.io.Jar;
 import javaxt.io.Directory;
 import javaxt.sql.*;
 import javaxt.json.*;
-
-import javaxt.express.ws.*;
 import javaxt.http.servlet.*;
 
 import java.util.*;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.math.BigDecimal;
-import javaxt.express.utils.CSV;
-
-
 
 import javax.script.*;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 
 
+//******************************************************************************
+//**  WebServices
+//******************************************************************************
+/**
+ *   Used to handle calls to service endpoints
+ *
+ ******************************************************************************/
+
 public class WebServices extends WebService {
 
     private Database database;
     private Directory downloadDir;
+    private ReportService reportService;
+    private QueryService queryService;
 
   //**************************************************************************
   //** Constructor
   //**************************************************************************
-    public WebServices(Database database, Directory downloadDir) throws Exception {
+    public WebServices(Database database, JSONObject config) throws Exception {
         this.database = database;
-        this.downloadDir = downloadDir;
+
 
       //Register classes that this service will support
         Jar jar = new Jar(this);
@@ -47,6 +54,20 @@ public class WebServices extends WebService {
             }
         }
 
+
+      //Instantiate additional services
+        reportService = new ReportService();
+        queryService = new QueryService(database, config);
+
+
+
+      //Set path to the download dir (demo only?)
+        String downloadDir = config.get("downloadDir").toString();
+        if (downloadDir!=null){
+            if (downloadDir.length()>0){
+                this.downloadDir = new javaxt.io.Directory(downloadDir);
+            }
+        }
     }
 
 
@@ -80,7 +101,6 @@ public class WebServices extends WebService {
             String authMessage = rsp.getAuthMessage();
             String authType = request.getAuthType();
             if (authMessage!=null && authType!=null){
-                //"WWW-Authenticate", "Basic realm=\"Access Denied\""
                 if (authType.equalsIgnoreCase("BASIC")){
                     response.setHeader("WWW-Authenticate", "Basic realm=\"" + authMessage + "\"");
                 }
@@ -106,8 +126,6 @@ public class WebServices extends WebService {
             else{
                 response.write((byte[]) obj, true);
             }
-
-
         }
     }
 
@@ -122,20 +140,27 @@ public class WebServices extends WebService {
         throws ServletException {
 
 
-//      //Authenticate request
-//        try{
-//            request.authenticate();
-//        }
-//        catch(Exception e){
-//            return new ServiceResponse(403, "Not Authorized");
-//        }
+      //Authenticate request
+        try{
+            request.authenticate();
+        }
+        catch(Exception e){
+            return new ServiceResponse(403, "Not Authorized");
+        }
 
 
+
+      //Process service request
         String service = request.getPath(0).toString();
-        if (service.equalsIgnoreCase("transactions")){
-
-          //Normally, post requests are mapped to a "save" action but in
-          //this case we want to upload data instead
+        if (service.equals("report")){
+            request = new ServiceRequest(service, request.getRequest());
+            return reportService.getServiceResponse(request, database);
+        }
+        else if (service.equals("sql")){
+            request = new ServiceRequest(service, request.getRequest());
+            return queryService.getServiceResponse(request, database);
+        }
+        else if (service.equalsIgnoreCase("transactions")){
             if (request.getRequest().getMethod().equals("POST")){
                 return upload(request);
             }
@@ -146,9 +171,7 @@ public class WebServices extends WebService {
         else if (service.equalsIgnoreCase("linkTransaction")){
             return linkTransaction(request);
         }
-        else if (service.equalsIgnoreCase("download")){
-
-          //demo only?
+        else if (service.equalsIgnoreCase("download")){ //demo only?
             String relPath = request.getPath().substring("/download".length());
             if (relPath.startsWith("/")) relPath = relPath.substring(1);
             if (!relPath.contains("./")){
@@ -158,9 +181,6 @@ public class WebServices extends WebService {
                 }
             }
             return new ServiceResponse(404);
-        }
-        else if (service.equals("reports")){
-            return new ServiceResponse(501, "Not Implemented");
         }
         else{
             return getServiceResponse(request, database);
