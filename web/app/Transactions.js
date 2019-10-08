@@ -201,7 +201,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
         });
         runButton.onClick = function(){
             if (!rules) rules = new javaxt.express.finance.Rules();
-            console.log(rules);
             rules.show();
         };
 
@@ -234,14 +233,10 @@ javaxt.express.finance.Transactions = function(parent, config) {
         transactionGrid = new javaxt.dhtml.DataGrid(parent, {
             style: config.style.table,
             url: "transactions",
+            fields: "id,date,description,amount,categoryID",
             filter: filter,
             parseResponse: parseResponse,
             columns: [
-              //Hidden fields
-                {header: 'id', field: 'id', hidden:true},
-                {header: 'categoryID', field: 'categoryID', hidden:true},
-
-              //Visible fields
                 {header: 'Date', field: 'date', width:'90', align: 'right'},
                 {header: 'Day', width:'90', align: 'left'},
                 {header: 'Description', field: 'description', width:'100%'},
@@ -250,15 +245,13 @@ javaxt.express.finance.Transactions = function(parent, config) {
                 {header: 'Amount', field: 'amount', width:'90', align: 'right'}
             ],
             update: function(row, transaction){
-                row.set('id', transaction.id);
-                row.set('Amount', createCell("currency", transaction.amount));
-
 
                 var m = moment(transaction.date);
                 var date = m.format(dateDisplayFormat);
                 row.set('Date', date);
                 row.set('Day', m.format('dddd'));
                 row.set('Description', transaction.description);
+                row.set('Amount', createCell("currency", transaction.amount));
 
 
                 var categoryID = transaction.categoryID;
@@ -439,9 +432,11 @@ javaxt.express.finance.Transactions = function(parent, config) {
             style: style,
             url: "accounts",
             columns: [
-                {header: 'id', field: 'id', hidden:true},
                 {header: 'Accounts', field: 'name', width:'100%'}
-            ]
+            ],
+            update: function(row, account){
+                row.set(0, account.name);
+            }
         });
 
 
@@ -452,18 +447,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
         accountGrid.onSelectionChange = function(){
             currSelection = null;
-            accountGrid.forEachRow(function (row, content) {
-                if (row.selected){
-                    var id = parseInt(content[0]);
-                    for (var i=0; i<accounts.length; i++){
-                        var account = accounts[i];
-                        if (account.id===id){
-                            currSelection = account;
-                        }
-                    }
-                    return true;
-                }
-            });
+            var arr = accountGrid.getSelectedRecords();
+            if (arr.length>0) currSelection = arr[0];
 
 
             if (currSelection!=null){
@@ -483,8 +468,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
             accountGrid.clear();
             var rows = [];
             for (var i=0; i<accounts.length; i++){
-                var account = accounts[i];
-                rows.push([account.id, account.name]);
+                rows.push(accounts[i]);
             }
             accountGrid.load(rows);
         };
@@ -529,39 +513,40 @@ javaxt.express.finance.Transactions = function(parent, config) {
         categoryGrid = new javaxt.dhtml.DataGrid(panel.body, {
             style: style,
             columns: [
-                {header: 'id', hidden:true},
                 {header: 'Categories', width:'100%'}
-            ]
+            ],
+            update: function(row, account){
+                row.set(0, account.name);
+            }
         });
 
 
         categoryGrid.onSelectionChange = function(){
             currSelection = null;
+            var arr = categoryGrid.getSelectedRecords();
+            if (arr.length>0){
+                var category = arr[0];
+                currSelection = category;
 
-            categoryGrid.forEachRow(function (row, content) {
-                if (row.selected){
-                    var categoryID = parseInt(content[0]);
-                    var account;
-                    for (var i=0; i<accounts.length; i++){
-                        var categories = accounts[i].categories;
-                        if (categories){
-                            for (var j=0; j<categories.length; j++){
-                                if (categories[j].id===categoryID){
-                                    currSelection = categories[j];
-                                    account = accounts[i];
-                                    break;
-                                }
+              //Find account
+                var categoryID = category.id;
+                var account;
+                for (var i=0; i<accounts.length; i++){
+                    var categories = accounts[i].categories;
+                    if (categories){
+                        for (var j=0; j<categories.length; j++){
+                            if (categories[j].id===categoryID){
+                                account = accounts[i];
+                                break;
                             }
                         }
                     }
-
-
-                    var arr = transactionGrid.getSelectedRecords();
-                    if (arr.length>0) linkTransaction(parseInt(arr[0]), currSelection, account);
-
-                    return true;
                 }
-            });
+
+              //Link transaction
+                var arr = transactionGrid.getSelectedRecords();
+                if (arr.length>0) linkTransaction(arr[0], category, account);
+            }
 
 
             if (currSelection!=null){
@@ -585,15 +570,14 @@ javaxt.express.finance.Transactions = function(parent, config) {
                 if (categories){
                     var rows = [];
                     for (var i=0; i<categories.length; i++){
-                        var category = categories[i];
-                        rows.push([category.id, category.name]);
+                        rows.push(categories[i]);
                     }
                     categoryGrid.load(rows);
                 }
 
                 var arr = accountGrid.getSelectedRecords();
                 if (arr.length>0) {
-                    var accountID = parseInt(arr[0]);
+                    var accountID = arr[0].id;
                     if (accountID===account.id){
                         panel.createButton.enable();
                     }
@@ -607,15 +591,16 @@ javaxt.express.finance.Transactions = function(parent, config) {
   //**************************************************************************
   //** linkTransaction
   //**************************************************************************
-    var linkTransaction = function(transactionID, category, account){
-        get("linkTransaction/" + transactionID + "?categoryID="+ category.id,  {
+    var linkTransaction = function(transaction, category, account){
+        if (transaction.categoryID===category.id) return;
+        get("linkTransaction/" + transaction.id + "?categoryID="+ category.id,  {
             success: function(){
-
-                transactionGrid.forEachRow(function (row, content) {
-                    var id = parseInt(content[0]);
-                    if (id===transactionID){
+                transactionGrid.forEachRow(function (row) {
+                    var id = row.record.id;
+                    if (id===transaction.id){
                         row.set("Account", account.name);
                         row.set("Category", category.name);
+                        row.record.categoryID = category.id;
                         return true;
                     }
                 });
@@ -635,13 +620,15 @@ javaxt.express.finance.Transactions = function(parent, config) {
             accountEditor = new javaxt.express.finance.AccountEditor();
             accountEditor.onSubmit = function(){
                 var account = accountEditor.getValues();
-                var isNew = !isNumber(account.id)
+                var isNew = !isNumber(account.id);
                 save("account", JSON.stringify(account), {
                     success: function(id){
                         accountEditor.close();
                         get("account/" + id, {
                             success: function(text){
                                 var account = JSON.parse(text);
+
+                              //Update accounts array
                                 var addAccount = true;
                                 for (var i=0; i<accounts.length; i++){
                                     if (accounts[i].id===account.id){
@@ -651,13 +638,30 @@ javaxt.express.finance.Transactions = function(parent, config) {
                                         break;
                                     }
                                 }
-                                if (addAccount){
-                                    accounts.push(account);
-                                }
+                                if (addAccount) accounts.push(account);
+
+
+
+                              //Update account grid
                                 accountGrid.update();
                                 accountGrid.select(account);
-                                if (isNew){
-                                    transactionGrid.deselectAll();
+
+
+                              //Update transaction grid
+                                if (isNew) transactionGrid.deselectAll();
+                                if (account.categories){
+                                    transactionGrid.forEachRow(function (row) {
+                                        var categoryID = row.record.categoryID;
+                                        if (categoryID){
+                                            for (var i=0; i<account.categories.length; i++){
+                                                if (account.categories[i].id===categoryID){
+                                                    row.set("Account", account.name);
+                                                    row.update();
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    });
                                 }
                             },
                             failure: function(request){
@@ -701,14 +705,42 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var deleteAccount = function(account){
         del("account/" + account.id, {
             success: function(){
+
+              //Update accounts array
+                var categoryIDs = [];
                 for (var i=0; i<accounts.length; i++){
                     if (accounts[i].id===account.id){
+                        var categories = accounts[i].categories;
+                        if (categories){
+                            for (var j=0; j<categories.length; j++){
+                                categoryIDs.push(categories[j].id);
+                            }
+                        }
                         accounts.splice(i, 1);
                         accountGrid.update();
                         categoryGrid.update();
                         break;
                     }
                 }
+
+              //Update transaction grid
+                if (categoryIDs.length>0){
+                    transactionGrid.forEachRow(function (row) {
+                        var categoryID = row.record.categoryID;
+                        if (categoryID){
+                            for (var i=0; i<categoryIDs.length; i++){
+                                if (categoryIDs[i]===categoryID){
+                                    delete row.record.categoryID;
+                                    row.set("Category", null);
+                                    row.set("Account", null);
+                                    row.update();
+                                    break;
+                                }
+                            }
+                        }
+                    });
+                }
+
             },
             failure: function(request){
                 alert(request);
@@ -731,6 +763,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
                         get("category/" + id, {
                             success: function(text){
                                 var category = JSON.parse(text);
+
+                              //Update accounts array
                                 var accountID = category.account.id;
                                 delete category.account;
                                 var addCategory = true;
@@ -738,7 +772,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
                                 for (var i=0; i<accounts.length; i++){
                                     if (accounts[i].id===accountID){
                                         account = accounts[i];
-                                        var categories = accounts[i].categories;
+                                        var categories = account.categories;
                                         if (categories){
                                             for (var j=0; j<categories.length; j++){
                                                 if (categories[j].id===category.id){
@@ -755,8 +789,19 @@ javaxt.express.finance.Transactions = function(parent, config) {
                                     if (!account.categories) account.categories = [];
                                     account.categories.push(category);
                                 }
+
+
+                              //Update category grid
                                 categoryGrid.update(account);
-                                //categoryGrid.select(category);
+
+
+                              //Update transaction grid
+                                transactionGrid.forEachRow(function (row) {
+                                    if (row.record.categoryID===category.id){
+                                        row.set("Category", category.name);
+                                        row.update();
+                                    }
+                                });
                             },
                             failure: function(request){
                                 alert(request);
@@ -786,13 +831,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
         }
         else{
             categoryEditor.setTitle("New Category");
-            accountGrid.forEachRow(function (row, content) {
-                if (row.selected){
-                    var id = parseInt(content[0]);
-                    categoryEditor.setValue("accountID", id);
-                    return true;
-                }
-            });
+            var account = accountGrid.getSelectedRecords()[0];
+            categoryEditor.setValue("accountID", account.id);
         }
 
         categoryEditor.show();
@@ -807,16 +847,27 @@ javaxt.express.finance.Transactions = function(parent, config) {
             success: function(){
                 for (var i=0; i<accounts.length; i++){
                     if (accounts[i].categories){
+                        var account;
                         var categories = accounts[i].categories;
                         for (var j=0; j<categories.length; j++){
-                            if (categories[j]===category.id){
+                            if (categories[j].id===category.id){
+                                account = accounts[i];
                                 categories.splice(j, 1);
-                                categoryGrid.update();
+                                categoryGrid.update(account);
                                 break;
                             }
                         }
                     }
+                    if (account) break;
                 }
+
+                transactionGrid.forEachRow(function (row) {
+                    if (row.record.categoryID===category.id){
+                        delete row.record.categoryID;
+                        row.set("Category", null);
+                        row.update();
+                    }
+                });
             },
             failure: function(request){
                 alert(request);
