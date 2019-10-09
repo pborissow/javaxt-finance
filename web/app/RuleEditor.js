@@ -126,12 +126,12 @@ javaxt.express.finance.RuleEditor = function(config) {
                     group: "Assign To",
                     items: [
                         {
-                            name: "account",
+                            name: "accountID",
                             label: "Account",
                             type: account
                         },
                         {
-                            name: "category",
+                            name: "categoryID",
                             label: "Category",
                             type: category,
                             required: true
@@ -194,7 +194,7 @@ javaxt.express.finance.RuleEditor = function(config) {
 
       //Watch for onchange events
         form.onChange = function(formInput, value){
-            if (formInput.name==="account"){
+            if (formInput.name==="accountID"){
                 category.clear();
                 var accountID = parseInt(formInput.getValue());
                 if (isNumber(accountID)){
@@ -239,6 +239,7 @@ javaxt.express.finance.RuleEditor = function(config) {
         delete data.name;
         delete data.description;
         delete data.active;
+        delete data.accountID;
         rule.info = data;
 
         return rule;
@@ -249,7 +250,26 @@ javaxt.express.finance.RuleEditor = function(config) {
   //** setValue
   //**************************************************************************
     this.setValue = function(name, value){
-        form.setValue(name, value);
+        if (name==="categoryID"){
+            var categoryID = value;
+            for (var i=0; i<config.accounts.length; i++){
+                var account = config.accounts[i];
+                if (account.categories){
+                    for (var j=0; j<account.categories.length; j++){
+                        var category = account.categories[j];
+                        if (category.id===categoryID){
+                            form.setValue("accountID", account.id);
+                            form.setValue("categoryID", categoryID);
+                            i = config.accounts.length;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        else{
+            form.setValue(name, value);
+        }
     };
 
 
@@ -265,7 +285,7 @@ javaxt.express.finance.RuleEditor = function(config) {
     this.clear = function(){
         form.reset();
 
-
+      //Update the "account" and "category" combo boxes
         account.clear();
         category.clear();
         for (var i=0; i<config.accounts.length; i++){
