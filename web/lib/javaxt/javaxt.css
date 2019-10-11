@@ -134,9 +134,13 @@ input, select, textarea { /* Allows overriding native style of form elements on 
     margin: 0 3px 0 0px;
 }
 
-/* Menu pulldown icon */
+/* Menu pulldown icon (triangle) */
 .toolbar-button-menu-icon {
-
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #525252;
     margin-left: 10px;
 }
 
@@ -414,6 +418,47 @@ select:focus, textarea:focus, input:focus{
 
 
 /**************************************************************************/
+/** Menu Buttons
+/**************************************************************************/
+/** The following classes are used to define the style for buttons found in
+ *  a button menu.
+ */
+
+.menu-panel {
+    border: 1px solid #adadad;
+    /*border-top: 0px;*/
+    background: #f0f0f0;
+    cursor: pointer;
+    padding: 3px 3px;
+    z-index: 1;
+    box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
+    border-radius: 0 0 3px 3px;
+    margin-top: -1px;
+    width: 150px;
+}
+
+.menu-button {
+    height: 28px;
+    border: 1px solid rgba(0,0,0,0);
+    border-radius: 3px;
+    /*background: #F6F6F6;*/
+    cursor: pointer;
+    padding: 0px 6px;
+    margin: 0px;
+    color: #2b2b2b;
+}
+
+.menu-button-hover {
+    border-color: #cccccc;
+    background: #f0f8ff;
+}
+
+.menu-button-icon {
+    margin: 0 6px 0 0;
+}
+
+
+/**************************************************************************/
 /** Window
 /**************************************************************************/
 /** The following classes are used to define the style for windows and
@@ -554,7 +599,6 @@ select:focus, textarea:focus, input:focus{
 }
 
 
-
 .table-checkbox {
     width: 13px;
     height: 13px;
@@ -566,8 +610,27 @@ select:focus, textarea:focus, input:focus{
     color: #2b2b2b
 }
 
-
 .table-checkbox {
     border: 1px solid #9c9c9c;
     background: #fff;
+}
+
+/* Up/down triangles that appear in the header */
+.table-icon-sort-asc, .table-icon-sort-desc {
+    width: 0;
+    height: 0;
+    position: absolute;
+    margin: -8px 0 0 5px;
+}
+
+.table-icon-sort-asc {
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid #525252;
+}
+
+.table-icon-sort-desc {
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #525252;
 }

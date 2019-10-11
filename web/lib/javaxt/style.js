@@ -11,7 +11,7 @@ if(!javaxt.dhtml.style) javaxt.dhtml.style={};
  ******************************************************************************/
 
 javaxt.dhtml.style.default = {
-    
+
     window : {
         panel: "window",
         header: "panel-header window-header",
@@ -23,8 +23,8 @@ javaxt.dhtml.style.default = {
         },
         mask: "window-mask"
     },
-    
-    
+
+
     form : {
         label: "form-label",
         input: "form-input",
@@ -34,16 +34,16 @@ javaxt.dhtml.style.default = {
         button: "form-button",
         radio: "form-radio"
     },
-    
-    
+
+
     combobox : { //style is also used by URLField
         input: "form-input form-input-with-button",
         button: "form-button form-input-button pulldown-button-icon",
         menu: "form-input-menu",
         option: "form-input-menu-item"
     },
-    
-    
+
+
     /*
     checkbox : {
         box:   "facet-checkbox",
@@ -69,26 +69,28 @@ javaxt.dhtml.style.default = {
 
     },
     */
-   
+
     toolbarButton : {
         button: "toolbar-button",
         select: "toolbar-button-selected",
         hover:  "toolbar-button-hover",
         label: "toolbar-button-label"
     },
-    
-    
+
+
     table: {
         headerRow: "table-header",
         headerColumn : "table-header-col",
         row: "table-row",
         column: "table-col",
         selectedRow: "table-row-selected",
-        resizeHandle: "table-resizeHandle"
+        resizeHandle: "table-resizeHandle",
+        ascendingSortIcon: "table-icon-sort-asc",
+        descendingSortIcon: "table-icon-sort-desc"
     },
     
     tabPanel: {
-        
+
     },
 
     merge : function(settings, defaults) {
