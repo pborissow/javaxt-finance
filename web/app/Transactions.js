@@ -24,7 +24,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var transactionGrid, transactionEditor,
         accountGrid, accountEditor,
         categoryGrid, categoryEditor,
-        importWizard, rules;
+        importWizard, rules,
+        notificationWindow, hints;
 
     var dateDisplayFormat;
     var fx = new javaxt.dhtml.Effects();
@@ -150,9 +151,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
       //Add button
         var addButton = createButton(toolbar, {
             label: "Add",
-            menu: true,
             icon: "newIcon",
-            disabled: false,
             hidden: isMobile
         });
         addButton.onClick = function(){
@@ -193,14 +192,40 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
 
 
-      //Add button
-        var runButton = createButton(toolbar, {
+      //Add "Rules" menu button
+        var rulesButton = createButton(toolbar, {
             label: "Rules",
+            disabled: false,
+            menu: true
+        });
+        var rulesMenu = rulesButton.getMenuPanel();
+
+        var runButton = createButton(rulesMenu, {
+            label: "Run...",
             icon: "runIcon",
-            disabled: false
+            display: "inherit",
+            style: {
+                button: "menu-button",
+                hover:  "menu-button-hover"
+            }
         });
         runButton.onClick = function(){
-            if (!rules) rules = new javaxt.express.finance.Rules();
+            runRules();
+        };
+
+        var viewButton = createButton(rulesMenu, {
+            label: "Edit...",
+            icon: "checklistIcon",
+            display: "inherit",
+            style: {
+                button: "menu-button",
+                hover:  "menu-button-hover"
+            }
+        });
+        viewButton.onClick = function(){
+            if (!rules) rules = new javaxt.express.finance.Rules(null, {
+                accounts: accounts
+            });
             rules.show();
         };
 
@@ -253,25 +278,13 @@ javaxt.express.finance.Transactions = function(parent, config) {
                 row.set('Description', transaction.description);
                 row.set('Amount', createCell("currency", transaction.amount));
 
-
-                var categoryID = transaction.categoryID;
-                if (isNumber(categoryID)){
-                    for (var i=0; i<accounts.length; i++){
-                        var categories = accounts[i].categories;
-                        if (categories){
-                            for (var j=0; j<categories.length; j++){
-                                if (categories[j].id===categoryID){
-                                    row.set("Account", accounts[i].name);
-                                    row.set("Category", categories[j].name);
-                                    break;
-                                }
-                            }
-                        }
-                    }
+                var category = findCategory(transaction.categoryID);
+                if (category){
+                    row.set("Category", category.name);
+                    row.set("Account", category.account.name);
                 }
             }
         });
-
 
 
 
@@ -282,6 +295,28 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
     };
 
+
+  //**************************************************************************
+  //** findCategory
+  //**************************************************************************
+    var findCategory = function(categoryID){
+        if (!isNumber(categoryID)) return null;
+        for (var i=0; i<accounts.length; i++){
+            var account = accounts[i];
+            var categories = account.categories;
+            if (categories){
+                for (var j=0; j<categories.length; j++){
+                    if (categories[j].id===categoryID){
+                        return {
+                            account: account,
+                            name: categories[j].name
+                        };
+                    }
+                }
+            }
+        }
+        return null;
+    };
 
 
   //**************************************************************************
@@ -877,6 +912,80 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
 
   //**************************************************************************
+  //** runRules
+  //**************************************************************************
+    var runRules = function(){
+        get("runRules",  {
+            success: function(text){
+                var arr = JSON.parse(text);
+                var numUpdates = arr.length;
+                if (numUpdates===0){
+                    notify("Successfully ran rules. No transactions were updated.");
+                }
+                else{
+                    transactionGrid.forEachRow(function (row) {
+                        var transaction = row.record;
+                        for (var i=0; i<arr.length; i++){
+                            var transactionID = arr[i][0];
+                            var categoryID = arr[i][1];
+                            if (transactionID===transaction.id){
+                                transaction.categoryID = categoryID;
+                                var category = findCategory(categoryID);
+                                if (category){
+                                    row.set("Category", category.name);
+                                    row.set("Account", category.account.name);
+                                }
+                                arr.splice(i, 1);
+                                break;
+                            }
+                        }
+                        if (arr.length===0) return true;
+                    });
+                    notify("Successfully updated " + numUpdates + " transactions.");
+                }
+            },
+            failure: function(request){
+                alert(request);
+            }
+        });
+    };
+
+
+  //**************************************************************************
+  //** notify
+  //**************************************************************************
+    var notify = function(msg){
+        if (!notificationWindow){
+            var body = document.getElementsByTagName("body")[0];
+            var contentDiv = document.createElement("div");
+            var buttonDiv = document.createElement("div");
+            buttonDiv.className = "button-div";
+            notificationWindow = new javaxt.dhtml.Window(body, {
+                width: 450,
+                valign: "top",
+                modal: false,
+                body: contentDiv,
+                footer: buttonDiv,
+                style: config.style.window
+            });
+
+            var button = document.createElement("input");
+            button.type = "button";
+            button.name = button.value = "OK";
+            button.className = "form-button";
+            button.onclick = notificationWindow.hide;
+            buttonDiv.appendChild(button);
+
+            notificationWindow.setMessage = function(str){
+                contentDiv.innerHTML = str;
+            };
+        }
+        notificationWindow.setMessage(msg);
+        notificationWindow.show();
+    };
+
+
+  //**************************************************************************
   //** createPanel
   //**************************************************************************
     var createPanel = function(parent, centerAlign){
@@ -1032,9 +1141,11 @@ javaxt.express.finance.Transactions = function(parent, config) {
   //**************************************************************************
   //** createButton
   //**************************************************************************
-    var createButton = function(toolbar, btn){
-        btn.style = JSON.parse(JSON.stringify(config.style.toolbarButton));
-        return javaxt.express.finance.utils.createButton(toolbar, btn);
+    var createButton = function(parent, btn){
+        var defaultStyle = JSON.parse(JSON.stringify(config.style.toolbarButton));
+        if (btn.style) btn.style = merge(btn.style, defaultStyle);
+        else btn.style = defaultStyle;
+        return javaxt.express.finance.utils.createButton(parent, btn);
     };
 
 
