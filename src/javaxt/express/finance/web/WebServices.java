@@ -162,7 +162,7 @@ public class WebServices extends WebService {
         }
         else if (service.equalsIgnoreCase("transactions")){
             if (request.getRequest().getMethod().equals("POST")){
-                return upload(request);
+                return addTransactions(request);
             }
             else{
                 return getServiceResponse(request, database);
@@ -170,6 +170,9 @@ public class WebServices extends WebService {
         }
         else if (service.equalsIgnoreCase("linkTransaction")){
             return linkTransaction(request);
+        }
+        else if (service.equalsIgnoreCase("runRules")){
+            return runRules(request);
         }
         else if (service.equalsIgnoreCase("download")){ //demo only?
             String relPath = request.getPath().substring("/download".length());
@@ -198,6 +201,10 @@ public class WebServices extends WebService {
 
         Long id = request.getID();
         Long categoryID = request.getParameter("categoryID").toLong();
+
+        if (id==null) new ServiceResponse(400, "Missing id. Transaction ID is required");
+        if (categoryID==null) new ServiceResponse(400, "Missing categoryID. Category ID is required");
+
         Connection conn = null;
         try{
             conn = database.getConnection();
@@ -213,11 +220,11 @@ public class WebServices extends WebService {
 
 
   //**************************************************************************
-  //** upload
+  //** addTransactions
   //**************************************************************************
-  /** Used to import transactions uploaded via the "transactions" endpoint
+  /** Used to import transactions uploaded by the client
    */
-    private ServiceResponse upload(ServiceRequest request)
+    private ServiceResponse addTransactions(ServiceRequest request)
         throws ServletException {
 
         try{
@@ -355,6 +362,119 @@ public class WebServices extends WebService {
     }
 
 
+  //**************************************************************************
+  //** runRules
+  //**************************************************************************
+    public ServiceResponse runRules(ServiceRequest request)
+        throws ServletException {
 
+        Connection conn = null;
+        try{
+            conn = database.getConnection();
+
+
+          //Fetch valid category IDs
+            HashSet<Long> categoryIDs = new HashSet<>();
+            for (Recordset rs : conn.getRecordset("select id from category")){
+                categoryIDs.add(rs.getValue(0).toLong());
+            }
+
+
+          //Fetch active rules
+            ArrayList<JSONObject> rules = new ArrayList<>();
+            for (Recordset rs : conn.getRecordset("select info from rule where active=true order by name desc")){
+                JSONObject rule = new JSONObject(rs.getValue(0).toString());
+                Long categoryID = rule.get("categoryID").toLong();
+                if (categoryID!=null){
+                    if (categoryIDs.contains(categoryID)) rules.add(rule);
+                }
+            }
+
+
+          //Match rules to transactions
+            HashMap<Long, Long> updates = new HashMap<>();
+            Recordset rs = new Recordset();
+            rs.setFetchSize(1000);
+            rs.open("select id, description from transaction where category_id is null", conn);
+            while (rs.hasNext()){
+                long id = rs.getValue("id").toLong();
+                String description = rs.getValue("description").toString();
+                for (JSONObject rule : rules){
+                    Long categoryID = getCategoryID(description, rule);
+                    if (categoryID!=null){
+                        updates.put(id, categoryID);
+                        break;
+                    }
+                }
+                rs.moveNext();
+            }
+            rs.close();
+
+
+          //Execute updates and generate response
+            StringBuilder str = new StringBuilder("[");
+            Iterator<Long> it = updates.keySet().iterator();
+            while (it.hasNext()){
+                long transactionID = it.next();
+                long categoryID = updates.get(transactionID);
+
+              //Execute update
+                conn.execute("update transaction set category_id=" + categoryID + " where id=" + transactionID);
+
+              //Update response
+                str.append("[");
+                str.append(transactionID);
+                str.append(",");
+                str.append(categoryID);
+                str.append("]");
+                if (it.hasNext()) str.append(",");
+            }
+            str.append("]");
+
+
+          //Close connection and return response
+            conn.close();
+            ServiceResponse response = new ServiceResponse(str.toString());
+            response.setContentType("application/json");
+            return response;
+        }
+        catch(Exception e){
+            if (conn!=null) conn.close();
+            return new ServiceResponse(e);
+        }
+    }
+
+
+  //**************************************************************************
+  //** getCategoryID
+  //**************************************************************************
+    private Long getCategoryID(String description, JSONObject rule){
+        String filter = rule.get("filter").toString();
+        String keyword = rule.get("keyword").toString();
+        Long categoryID = rule.get("categoryID").toLong();
+        if (filter==null || keyword==null || categoryID==null) return null;
+
+        filter = filter.toLowerCase();
+        keyword = keyword.toLowerCase();
+        description = description.toLowerCase();
+        while (description.contains("  ")){
+            description = description.replace("  ", " ").trim();
+        }
+
+
+        if (filter.equals("equals")){
+            if (description.equals(keyword)) return categoryID;
+        }
+        else if (filter.equals("contains")){
+            if (description.contains(keyword)) return categoryID;
+        }
+        else if (filter.equals("starts with")){
+            if (description.startsWith(keyword)) return categoryID;
+        }
+        else if (filter.equals("ends with")){
+            if (description.endsWith(keyword)) return categoryID;
+        }
+        return null;
+    }
 
 }
