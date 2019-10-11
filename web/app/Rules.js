@@ -16,10 +16,12 @@ javaxt.express.finance.Rules = function(parent, config) {
     var defaultConfig = {
         style: javaxt.express.finance.style
     };
-    
-    var win;
-    
-    
+
+    var win, grid, ruleEditor;
+    var addButton, editButton, deleteButton;
+    var filter = {};
+
+
   //**************************************************************************
   //** Constructor
   //**************************************************************************
@@ -59,7 +61,7 @@ javaxt.express.finance.Rules = function(parent, config) {
         tr.appendChild(td);
         createBody(td);
 
-        
+
 
       //Append table to parent
         if (parent){
@@ -69,9 +71,10 @@ javaxt.express.finance.Rules = function(parent, config) {
             parent.appendChild(table);
         }
         else{
-            
+
           //Create window
             var body = document.getElementsByTagName("body")[0];
+            var buttonDiv = document.createElement("div");
             win = new javaxt.dhtml.Window(body, {
                 title: "Rules",
                 width: 800,
@@ -79,6 +82,7 @@ javaxt.express.finance.Rules = function(parent, config) {
                 valign: "middle",
                 modal: true,
                 body: table,
+                footer: buttonDiv,
                 style: merge({
                     body: {
                         padding: "0px",
@@ -87,7 +91,17 @@ javaxt.express.finance.Rules = function(parent, config) {
                     }
                 }, javaxt.express.finance.style.window)
             });
-        }        
+
+            buttonDiv.className = "button-div";
+            buttonDiv.style.borderTop = "1px solid #dcdcdc";
+            buttonDiv.style.paddingTop = "10px";
+            var button = document.createElement("input");
+            button.type = "button";
+            button.name = button.value = "Close";
+            button.className = "form-button";
+            button.onclick = win.hide;
+            buttonDiv.appendChild(button);
+        }
     };
 
 
@@ -95,23 +109,23 @@ javaxt.express.finance.Rules = function(parent, config) {
   //** show
   //**************************************************************************
     this.show = function(){
-       if (win) win.show(); 
+       if (win) win.show();
        else{
-           
+
        }
     };
-    
-    
+
+
   //**************************************************************************
   //** hide
   //**************************************************************************
     this.hide = function(){
-       if (win) win.hide(); 
+       if (win) win.hide();
        else{
-           
+
        }
     };
-    
+
   //**************************************************************************
   //** createToolbar
   //**************************************************************************
@@ -120,63 +134,42 @@ javaxt.express.finance.Rules = function(parent, config) {
 
 
       //Add button
-        var addButton = createButton(toolbar, {
+        addButton = createButton(toolbar, {
             label: "Add",
-            menu: true,
-            icon: "newIcon",
-            disabled: false
+            icon: "newIcon"
         });
         addButton.onClick = function(){
-
+            editRule();
         };
 
 
       //Edit button
-        var editButton = createButton(toolbar, {
+        editButton = createButton(toolbar, {
             label: "Edit",
             icon: "editIcon",
-            toggle: true,
-            disabled: false
+            disabled: true
         });
         editButton.onClick = function(){
-            if (this.isSelected()){
-                transactionEditor.show();
-            }
-            else{
-                transactionEditor.hide();
-            }
+            var records = grid.getSelectedRecords();
+            if (records.length>0) editRule(records[0]);
         };
 
 
 
       //Delete button
-        var deleteButton = createButton(toolbar, {
+        deleteButton = createButton(toolbar, {
             label: "Delete",
             icon: "deleteIcon",
             disabled: true
         });
         deleteButton.onClick = function(){
-
+            var records = grid.getSelectedRecords();
+            if (records.length>0) deleteRule(records[0]);
         };
 
 
         createSpacer(toolbar);
 
-
-
-      //Add button
-        var runButton = createButton(toolbar, {
-            label: "Rules",
-            icon: "runIcon",
-            disabled: false
-        });
-        runButton.onClick = function(){
-            if (!rules) rules = new javaxt.express.finance.Rules();
-            console.log(rules);
-            rules.show();
-        };
-        
-        createSpacer(toolbar);
 
 
       //Refresh button
@@ -187,31 +180,164 @@ javaxt.express.finance.Rules = function(parent, config) {
             hidden: false
         });
         refreshButton.onClick = function(){
-            transactionGrid.refresh();
+            grid.refresh();
         };
 
 
         parent.appendChild(toolbar);
     };
-    
-    
+
+
   //**************************************************************************
   //** createBody
   //**************************************************************************
     var createBody = function(parent){
-        
+
+
+        filter.orderby = "name desc";
+
+        grid = new javaxt.dhtml.DataGrid(parent, {
+            style: config.style.table,
+            url: "rules",
+            filter: filter,
+            parseResponse: parseResponse,
+            columns: [
+                {header: 'Name', width:'90'},
+                {header: 'Trigger', width:'100%'},
+                {header: 'Assign To', width:'240'}
+            ],
+            update: function(row, rule){
+                row.set('Name', rule.name);
+                var info = rule.info;
+                if (info){
+                    var trigger = "If \"" + info.field + "\" " + info.filter.toLowerCase() + " \"" + info.keyword + "\"";
+                    row.set('Trigger', trigger);
+
+                    var categoryID = info.categoryID;
+                    for (var i=0; i<config.accounts.length; i++){
+                        var account = config.accounts[i];
+                        if (account.categories){
+                            for (var j=0; j<account.categories.length; j++){
+                                var category = account.categories[j];
+                                if (category.id===categoryID){
+                                    row.set('Assign To', account.name + "/" + category.name);
+                                    i = config.accounts.length;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+
+        grid.onSelectionChange = function(){
+             var records = grid.getSelectedRecords();
+             if (records.length>0){
+                 editButton.enable();
+                 deleteButton.enable();
+             }
+             else{
+                 editButton.disable();
+                 deleteButton.disable();
+             }
+        };
+
+
+        grid.update = function(){
+            grid.clear();
+            grid.load();
+        };
+
+
+        grid.update();
     };
-    
-    
+
+
+  //**************************************************************************
+  //** editRule
+  //**************************************************************************
+    var editRule = function(rule){
+
+
+      //Instantiate rule editor as needed
+        if (!ruleEditor){
+            ruleEditor = new javaxt.express.finance.RuleEditor({
+                accounts: config.accounts,
+                style: javaxt.express.finance.style
+            });
+            ruleEditor.onSubmit = function(){
+                var rule = ruleEditor.getValues();
+                save("rule", JSON.stringify(rule), {
+                    success: function(id){
+                        ruleEditor.close();
+                        grid.update();
+                    },
+                    failure: function(request){
+                        alert(request);
+                    }
+                });
+            };
+        }
+
+
+      //Clear/reset the form
+        ruleEditor.clear();
+
+
+      //Updated values
+        if (rule){
+            ruleEditor.setTitle("Edit Rule");
+            ruleEditor.setValue("id", rule.id);
+            ruleEditor.setValue("name", rule.name);
+            ruleEditor.setValue("description", rule.description);
+            ruleEditor.setValue("active", rule.active);
+            var info = rule.info;
+            for (var key in info) {
+                if (info.hasOwnProperty(key)){
+                    var value = info[key];
+                    ruleEditor.setValue(key, value);
+                }
+            }
+        }
+        else{
+            ruleEditor.setTitle("New Rule");
+            ruleEditor.setValue("active", true);
+        }
+
+
+      //Show the form
+        ruleEditor.show();
+    };
+
+
+  //**************************************************************************
+  //** deleteRule
+  //**************************************************************************
+    var deleteRule = function(rule){
+        del("rule/" + rule.id, {
+            success: function(){
+                grid.update();
+            },
+            failure: function(request){
+                alert(request);
+            }
+        });
+    };
+
+
   //**************************************************************************
   //** createButton
   //**************************************************************************
-    var createButton = function(toolbar, btn){
-        btn.style = JSON.parse(JSON.stringify(config.style.toolbarButton));
-        return javaxt.express.finance.utils.createButton(toolbar, btn);
+    var createButton = function(parent, btn){
+        var defaultStyle = JSON.parse(JSON.stringify(config.style.toolbarButton));
+        if (btn.style) btn.style = merge(btn.style, defaultStyle);
+        else btn.style = defaultStyle;
+        return javaxt.express.finance.utils.createButton(parent, btn);
     };
-    
-    
+
+
   //**************************************************************************
   //** Utils
   //**************************************************************************
@@ -221,12 +347,6 @@ javaxt.express.finance.Rules = function(parent, config) {
     var merge = javaxt.dhtml.utils.merge;
     var createTable = javaxt.dhtml.utils.createTable;
     var createSpacer = javaxt.express.finance.utils.createSpacer;
-
-
-    var isNumber = javaxt.express.finance.utils.isNumber;
-    var formatCurrency = javaxt.express.finance.utils.formatCurrency;
-    var getMomentFormat = javaxt.express.finance.utils.getMomentFormat;
-
     var parseResponse = javaxt.express.finance.utils.normalizeResponse;
 
 
