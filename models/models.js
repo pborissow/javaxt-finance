@@ -56,12 +56,14 @@ var models = {
         fields: [
             {name: 'name',          type: 'string'},
             {name: 'description',   type: 'string'},
+            {name: 'isExpense',     type: 'boolean'},
             {name: 'account',       type: 'Account'},
             {name: 'info',          type: 'json'}
         ],
         constraints: [
-            {name: 'name',    required: true,  length: 75},
-            {name: 'account', onDelete: 'cascade'}
+            {name: 'name',      required: true,  length: 75},
+            {name: 'isExpense', required: true},
+            {name: 'account',   required: true, onDelete: 'cascade'}
         ]
     },
 

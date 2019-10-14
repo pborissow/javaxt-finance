@@ -45,6 +45,22 @@ javaxt.express.finance.CategoryEditor = function() {
                     type: "textarea"
                 },
                 {
+                    name: "isExpense",
+                    label: "Type",
+                    type: "radio",
+                    alignment: "vertical",
+                    options: [
+                        {
+                            label: "Expense",
+                            value: true
+                        },
+                        {
+                            label: "Revenue",
+                            value: false
+                        }
+                    ]
+                },
+                {
                     name: "id",
                     type: "hidden"
                 },
@@ -168,6 +184,6 @@ javaxt.express.finance.CategoryEditor = function() {
     };
 
     var isNumber = javaxt.express.finance.utils.isNumber;
-    
+
     init();
 };

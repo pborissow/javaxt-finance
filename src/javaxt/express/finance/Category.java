@@ -15,6 +15,7 @@ public class Category extends javaxt.sql.Model {
 
     private String name;
     private String description;
+    private Boolean isExpense;
     private Account account;
     private JSONObject info;
 
@@ -27,6 +28,7 @@ public class Category extends javaxt.sql.Model {
             
             put("name", "name");
             put("description", "description");
+            put("isExpense", "is_expense");
             put("account", "account_id");
             put("info", "info");
 
@@ -69,6 +71,7 @@ public class Category extends javaxt.sql.Model {
             this.id = getValue(rs, "id").toLong();
             this.name = getValue(rs, "name").toString();
             this.description = getValue(rs, "description").toString();
+            this.isExpense = getValue(rs, "is_expense").toBoolean();
             Long accountID = getValue(rs, "account_id").toLong();
             this.info = new JSONObject(getValue(rs, "info").toString());
 
@@ -96,6 +99,7 @@ public class Category extends javaxt.sql.Model {
         if (id!=null && id>0) this.id = id;
         this.name = json.get("name").toString();
         this.description = json.get("description").toString();
+        this.isExpense = json.get("isExpense").toBoolean();
         if (json.has("account")){
             account = new Account(json.get("account").toJSONObject());
         }
@@ -123,6 +127,14 @@ public class Category extends javaxt.sql.Model {
 
     public void setDescription(String description){
         this.description = description;
+    }
+
+    public Boolean getIsExpense(){
+        return isExpense;
+    }
+
+    public void setIsExpense(Boolean isExpense){
+        this.isExpense = isExpense;
     }
 
     public Account getAccount(){
