@@ -13,12 +13,14 @@ if(!javaxt.express.finance) javaxt.express.finance={};
 javaxt.express.finance.RuleEditor = function(config) {
 
     var me = this;
+    var orgConfig = config;
     var defaultConfig = {
 
     };
 
     var form, win;
     var account, category;
+    var accounts;
 
 
   //**************************************************************************
@@ -39,6 +41,9 @@ javaxt.express.finance.RuleEditor = function(config) {
         config = clone;
 
 
+        accounts = orgConfig.accounts;
+
+
       //Create config for comboboxes
         var comboboxConfig = {
             style: config.style.combobox,
@@ -46,7 +51,7 @@ javaxt.express.finance.RuleEditor = function(config) {
         };
 
 
-      //Create "field" combobox
+      //Create "active" combobox
         var active = createComboBox(comboboxConfig);
         active.add("True", true);
         active.add("False", false);
@@ -198,11 +203,11 @@ javaxt.express.finance.RuleEditor = function(config) {
                 category.clear();
                 var accountID = parseInt(formInput.getValue());
                 if (isNumber(accountID)){
-                    for (var i=0; i<config.accounts.length; i++){
-                        var a = config.accounts[i];
+                    for (var i=0; i<accounts.length; i++){
+                        var a = accounts.get(i);
                         if (a.id===accountID){
                             for (var j=0; j<a.categories.length; j++){
-                                var c = a.categories[j];
+                                var c = a.categories.get(j);
                                 category.add(c.name, c.id);
                             }
                             break;
@@ -252,15 +257,15 @@ javaxt.express.finance.RuleEditor = function(config) {
     this.setValue = function(name, value){
         if (name==="categoryID"){
             var categoryID = value;
-            for (var i=0; i<config.accounts.length; i++){
-                var account = config.accounts[i];
+            for (var i=0; i<accounts.length; i++){
+                var account = accounts.get(i);
                 if (account.categories){
                     for (var j=0; j<account.categories.length; j++){
-                        var category = account.categories[j];
+                        var category = account.categories.get(j);
                         if (category.id===categoryID){
                             form.setValue("accountID", account.id);
                             form.setValue("categoryID", categoryID);
-                            i = config.accounts.length;
+                            i = accounts.length;
                             break;
                         }
                     }
@@ -288,8 +293,8 @@ javaxt.express.finance.RuleEditor = function(config) {
       //Update the "account" and "category" combo boxes
         account.clear();
         category.clear();
-        for (var i=0; i<config.accounts.length; i++){
-            var a = config.accounts[i];
+        for (var i=0; i<accounts.length; i++){
+            var a = accounts.get(i);
             account.add(a.name, a.id);
         }
     };

@@ -13,12 +13,14 @@ if(!javaxt.express.finance) javaxt.express.finance={};
 javaxt.express.finance.Rules = function(parent, config) {
 
     var me = this;
+    var orgConfig = config;
     var defaultConfig = {
         style: javaxt.express.finance.style
     };
 
     var win, grid, ruleEditor;
     var addButton, editButton, deleteButton;
+    var accounts;
     var filter = {};
 
 
@@ -36,6 +38,9 @@ javaxt.express.finance.Rules = function(parent, config) {
       //Merge clone with default config
         merge(clone, defaultConfig);
         config = clone;
+
+
+        accounts = orgConfig.accounts;
 
 
       //Create main table
@@ -214,14 +219,14 @@ javaxt.express.finance.Rules = function(parent, config) {
                     row.set('Trigger', trigger);
 
                     var categoryID = info.categoryID;
-                    for (var i=0; i<config.accounts.length; i++){
-                        var account = config.accounts[i];
+                    for (var i=0; i<accounts.length; i++){
+                        var account = accounts.get(i);
                         if (account.categories){
                             for (var j=0; j<account.categories.length; j++){
-                                var category = account.categories[j];
+                                var category = account.categories.get(j);
                                 if (category.id===categoryID){
                                     row.set('Assign To', account.name + "/" + category.name);
-                                    i = config.accounts.length;
+                                    i = accounts.length;
                                     break;
                                 }
                             }
@@ -264,7 +269,7 @@ javaxt.express.finance.Rules = function(parent, config) {
       //Instantiate rule editor as needed
         if (!ruleEditor){
             ruleEditor = new javaxt.express.finance.RuleEditor({
-                accounts: config.accounts,
+                accounts: accounts,
                 style: javaxt.express.finance.style
             });
             ruleEditor.onSubmit = function(){
