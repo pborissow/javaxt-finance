@@ -30,7 +30,6 @@ public class Config extends javaxt.express.Config {
 
 
 
-
       //Update relative paths in the schema config
         JSONObject schemaConfig = config.get("schema").toJSONObject();
         updateFile("path", schemaConfig, configFile);
@@ -70,7 +69,7 @@ public class Config extends javaxt.express.Config {
             }
         }
         String tableSpace = get("schema").get("tablespace").toString();
-        DbUtils.initSchema(database, sql, tableSpace);
+        boolean newDB = DbUtils.initSchema(database, sql, tableSpace);
 
 
 
@@ -80,6 +79,52 @@ public class Config extends javaxt.express.Config {
 
       //Initialize models
         Model.init(jar, database.getConnectionPool());
+
+
+
+
+      //Add default accounts and categories from the template
+        if (newDB){
+            JSONObject template = config.get("template").toJSONObject();
+            if (template!=null){
+                JSONArray accounts = template.get("accounts").toJSONArray();
+                if (accounts!=null){
+                    try{
+                        for (int i=0; i<accounts.length(); i++){
+                            String accountName = accounts.get(i).get("name").toString();
+                            Account account = new Account();
+                            account.setName(accountName);
+                            account.setActive(true);
+                            account.save();
+
+
+                            JSONObject categories = accounts.get(i).get("categories").toJSONObject();
+                            JSONArray income = categories.get("income").toJSONArray();
+                            for (int j=0; j<income.length(); j++){
+                                String categoryName = income.get(j).toString();
+                                Category category = new Category();
+                                category.setName(categoryName);
+                                category.setAccount(account);
+                                category.setIsExpense(false);
+                                category.save();
+                            }
+                            JSONArray expenses = categories.get("expenses").toJSONArray();
+                            for (int j=0; j<expenses.length(); j++){
+                                String categoryName = expenses.get(j).toString();
+                                Category category = new Category();
+                                category.setName(categoryName);
+                                category.setAccount(account);
+                                category.setIsExpense(true);
+                                category.save();
+                            }
+                        }
+                    }
+                    catch(Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
     }
 
 
