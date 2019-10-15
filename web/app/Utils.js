@@ -305,7 +305,7 @@ javaxt.express.finance.utils = {
   //**************************************************************************
   //** normalizeResponse
   //**************************************************************************
-  /** Used to conflate response from the server
+  /** Used to conflate response from the server for use in a data grid
    */
     normalizeResponse: function(request){
 
@@ -334,6 +334,209 @@ javaxt.express.finance.utils = {
             rows[i] = obj;
         }
         return rows;
+    },
+
+
+  //**************************************************************************
+  //** getAccounts
+  //**************************************************************************
+  /** Used to get or create a DataStore with accounts and categories. The
+   *  DataStore is assigned to the config objects (e.g. config.accounts). A
+   *  callback is called when the DataStore is available.
+   */
+    getAccounts: function(config, callback){
+        if (config.accounts){
+            if (config.accounts instanceof javaxt.dhtml.DataStore) {
+                if (callback) callback.call();
+            }
+            else{
+                var timer;
+                var interval = 100;
+                var checkAccounts = function(){
+                    if (config.accounts instanceof javaxt.dhtml.DataStore) {
+                        clearTimeout(timer);
+                        if (callback) callback.call();
+                    }
+                    else{
+                        timer = setTimeout(checkAccounts, interval);
+                    }
+                };
+                timer = setTimeout(checkAccounts, interval);
+            }
+        }
+        else{
+            config.accounts = "Loading...";
+            var get = javaxt.dhtml.utils.get;
+            get("accounts", {
+                success: function(text){
+                    var parseResponse = javaxt.express.finance.utils.normalizeResponse;
+                    var accounts = new javaxt.dhtml.DataStore(parseResponse(text));
+                    get("categories", {
+                        success: function(text){
+                            var categories = parseResponse(text);
+                            for (var i=0; i<categories.length; i++){
+                                var category = categories[i];
+                                for (var j=0; j<accounts.length; j++){
+                                    var account = accounts.get(j);
+                                    if (account.id===category.accountID){
+                                        delete category.accountID;
+                                        if (!account.categories){
+                                            account.categories = new javaxt.dhtml.DataStore();
+                                        }
+                                        account.categories.push(category);
+                                        break;
+                                    }
+                                }
+                            }
+
+                            config.accounts = accounts;
+                            if (callback) callback.call();
+                        },
+                        failure: function(request){
+                            alert(request);
+                        }
+                    });
+                },
+                failure: function(request){
+                    alert(request);
+                }
+            });
+        }
+    },
+
+
+  //**************************************************************************
+  //** getTransactionsPerAccount
+  //**************************************************************************
+    getTransactionsPerAccount: function(config, callback){
+        if (!config.stats) config.stats = {};
+        if (config.stats.accounts){
+            if (config.stats.accounts instanceof javaxt.dhtml.DataStore) {
+                if (callback) callback.call();
+            }
+            else{
+                var timer;
+                var interval = 100;
+                var checkAccounts = function(){
+                    if (config.stats.accounts instanceof javaxt.dhtml.DataStore) {
+                        clearTimeout(timer);
+                        if (callback) callback.call();
+                    }
+                    else{
+                        timer = setTimeout(checkAccounts, interval);
+                    }
+                };
+                timer = setTimeout(checkAccounts, interval);
+            }
+        }
+        else{
+            config.stats.accounts = "Loading...";
+            var get = javaxt.dhtml.utils.get;
+            var isNumber = javaxt.express.finance.utils.isNumber;
+            var store = new javaxt.dhtml.DataStore();
+
+            get("report/TransactionsPerAccount", {
+                success: function(text){
+                    var data = JSON.parse(text);
+
+
+                    for (var key in data) {
+                       if (data.hasOwnProperty(key)){
+                           store.add({
+                               name: key,
+                               count: data[key]
+                           });
+                       }
+                    }
+
+                    if (store.length===0){
+                        store.add({
+                           name: "N/A",
+                           count: 0
+                       });
+                    }
+
+
+
+
+                    var _get = store.get;
+                    store.get = function(key){
+                        if (typeof parent === "string"){
+                            for (var i=0; i<store.length; i++){
+                                var record = _get(i);
+                                if (record.name===key) return record.count;
+                            }
+                            return null;
+                        }
+                        else{
+                            return _get(key);
+                        }
+                    };
+
+
+                    var _set = store.set;
+                    store.set = function(accountName, count){
+                        for (var i=0; i<store.length; i++){
+                            if (_get(i).name===accountName){
+                                _set(i, {
+                                    name: accountName,
+                                    count: count
+                                });
+                                return;
+                            }
+                        }
+                    };
+
+
+                    var _add = store.add;
+                    store.add = function(accountName){
+                        _add({
+                            name: accountName,
+                            count: 0
+                        });
+                    };
+
+
+                    store.remove = function(accountName){
+                        for (var i=0; i<store.length; i++){
+                            if (_get(i).name===accountName){
+
+                                var currCount = _get(i).count;
+                                var unlinkedCount = store.get("N/A");
+                                if (!isNumber(unlinkedCount)) unlinkedCount = 0;
+                                store.set("N/A", unlinkedCount+currCount);
+
+
+                                store.removeAt(i);
+                                return;
+                            }
+                        }
+                    };
+
+
+                    store.rename = function(orgName, newName){
+                        for (var i=0; i<store.length; i++){
+                            var record = _get(i);
+                            if (record.name===orgName){
+                                _set(i, {
+                                    name: newName,
+                                    count: record.count
+                                });
+                                break;
+                            }
+                        }
+                    };
+
+
+                    config.stats.accounts = store;
+                    if (callback) callback.call();
+                },
+                failure: function(request){
+                    config.stats.accounts = store; //prevent infinite loop
+                    alert(request);
+                }
+            });
+        }
     },
 
 
