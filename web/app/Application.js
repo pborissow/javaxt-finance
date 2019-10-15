@@ -25,6 +25,11 @@ javaxt.express.finance.Application = function(parent, config) {
   //**************************************************************************
     var init = function(){
 
+      //Set global configuration variables
+        if (!config) config = {};
+        if (!config.fx) config.fx = fx;
+
+
       //Create main table
         var table = createTable();
         var tbody = table.firstChild;
@@ -95,7 +100,7 @@ javaxt.express.finance.Application = function(parent, config) {
 
 
       //Select dashboard app as default view
-        var dashboard = apps[1];
+        var dashboard = apps[0];
         dashboard.li.select();
 
 
@@ -375,7 +380,7 @@ javaxt.express.finance.Application = function(parent, config) {
     var initApp = function(app, panel){
         if (!app.instance){
             var div = panel.firstChild;
-            app.instance = new app.cls(div, {});
+            app.instance = new app.cls(div, config);
         }
     };
 
