@@ -96,10 +96,9 @@ javaxt.express.finance.ColumnEditor = function() {
                     verticalAlign: "top",
                     color: "#484848"
                 }
-            }, javaxt.express.finance.style.window)
+            }, config.style.window)
         });
     };
-
 
 
   //**************************************************************************
@@ -115,23 +114,7 @@ javaxt.express.finance.ColumnEditor = function() {
             icon: "runIcon",
             disabled: false
         });
-        runButton.onClick = function(){
-            (function (script) {
-                try{
-                    eval(script);
-                    var rows = [];
-                    for (var i=0; i<sampleData.length; i++){
-                        var cols = parseColumns(sampleData[i]);
-                        rows.push(cols);
-                        if (i>=100) break;
-                    }
-                    updateGrid(rows);
-                }
-                catch(e){
-                    alert(e);
-                }
-            })(editor.getValue());
-        };
+        runButton.onClick = runScript;
 
 
         var saveButton = createButton(toolbar, {
@@ -252,12 +235,46 @@ javaxt.express.finance.ColumnEditor = function() {
 
 
   //**************************************************************************
+  //** setValue
+  //**************************************************************************
+    this.setValue = function(script){
+        if (editor){
+            editor.setValue(script);
+            runScript();
+        }
+    };
+
+
+  //**************************************************************************
   //** loadData
   //**************************************************************************
     this.loadData = function(data){
         sampleData = data;
-        if (sampleData.length>50) sampleData = sampleData.slice(0,50);
+        var limit = 50;
+        if (sampleData.length>limit) sampleData = sampleData.slice(0,limit);
         updateGrid(sampleData);
+    };
+
+
+  //**************************************************************************
+  //** runScript
+  //**************************************************************************
+    var runScript = function(){
+        (function (script) {
+            try{
+                eval(script);
+                var rows = [];
+                for (var i=0; i<sampleData.length; i++){
+                    var cols = parseColumns(sampleData[i]);
+                    rows.push(cols);
+                    if (i>=100) break;
+                }
+                updateGrid(rows);
+            }
+            catch(e){
+                alert(e);
+            }
+        })(editor.getValue());
     };
 
 
@@ -335,15 +352,11 @@ javaxt.express.finance.ColumnEditor = function() {
   //**************************************************************************
   //** createButton
   //**************************************************************************
-    var createButton = function(toolbar, btn){
-
-        btn.style = JSON.parse(JSON.stringify(config.style.toolbarButton)); //<-- clone the style config!
-        if (btn.icon){
-            btn.style.icon = "toolbar-button-icon " + btn.icon;
-            delete btn.icon;
-        }
-
-        return new javaxt.dhtml.Button(toolbar, btn);
+    var createButton = function(parent, btn){
+        var defaultStyle = JSON.parse(JSON.stringify(config.style.toolbarButton));
+        if (btn.style) btn.style = merge(btn.style, defaultStyle);
+        else btn.style = defaultStyle;
+        return javaxt.express.finance.utils.createButton(parent, btn);
     };
 
 
