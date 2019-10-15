@@ -319,6 +319,9 @@ public class WebServices extends WebService {
                     if (debit==null) debit = ""; else debit = debit.trim();
                     if (credit==null) credit = ""; else credit = credit.trim();
 
+                    if (debit.equalsIgnoreCase("undefined")) debit = "";
+                    if (credit.equalsIgnoreCase("undefined")) credit = "";
+
                     if (debit.length()>0){
                         amount = new BigDecimal(debit);
                         if (amount.compareTo(BigDecimal.ZERO) > 0) amount = amount.negate();
@@ -357,8 +360,6 @@ public class WebServices extends WebService {
         catch(Exception e){
             return new ServiceResponse(e);
         }
-
-
     }
 
 
