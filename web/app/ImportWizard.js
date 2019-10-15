@@ -173,6 +173,7 @@ javaxt.express.finance.ImportWizard = function(config) {
         firstPanel.init();
         win.setTitle(firstPanel.title);
         history = [firstPanel];
+        nextButton.value = "Next";
         backButton.hide();
 
         win.show();
@@ -398,8 +399,31 @@ javaxt.express.finance.ImportWizard = function(config) {
 
 
 
-                for (var i=offset; i<data.length; i++){
-                    var row = data[i];
+                var len = data.length;
+                var endAt = offset+50;
+                if (endAt>len) endAt=len;
+                var sampleData = data.slice(offset, len>endAt ? endAt : len);
+
+                if (template.columnParser){
+                    (function (script) {
+                        try{
+                            eval(script);
+                            for (var i=0; i<sampleData.length; i++){
+                                sampleData[i] = parseColumns(sampleData[i]);
+                            }
+                        }
+                        catch(e){
+                            alert(e);
+                            console.log(e);
+                        }
+                    })(template.columnParser);
+                }
+
+
+
+
+                for (var i=0; i<sampleData.length; i++){
+                    var row = sampleData[i];
                     var cols = row.slice(0, row.length);
                     var date = cols[template.dateColumn];
                     var desc = cols[template.descColumn];
@@ -437,12 +461,7 @@ javaxt.express.finance.ImportWizard = function(config) {
                         desc,
                         amount
                     ]);
-
-
-                    if (arr.length>100) break;
                 }
-
-
 
 
                 grid.load(arr);
@@ -602,6 +621,7 @@ javaxt.express.finance.ImportWizard = function(config) {
 
         var values;
         var columns = [];
+        var ignoreEvents = false;
 
         var getValues = function(){
             var vals = {};
@@ -617,6 +637,24 @@ javaxt.express.finance.ImportWizard = function(config) {
             return vals;
         };
 
+
+        var getColumns = function(rowID){
+            var cols = data[rowID];
+            if (values.columnParser){
+                (function (script) {
+                    try{
+                        eval(script);
+                        cols = parseColumns(cols);
+                    }
+                    catch(e){
+                        alert(e);
+                        console.log(e);
+                    }
+                })(values.columnParser);
+            }
+            return cols;
+        };
+
         var updateColumns = function(){
 
             columns.length = 0;
@@ -627,21 +665,7 @@ javaxt.express.finance.ImportWizard = function(config) {
             else offset = offset-1;
 
           //Get first row
-            var firstRow = data[offset];
-            if (values.columnParser){
-                (function (script) {
-                    try{
-                        eval(script);
-                        firstRow = parseColumns(firstRow);
-                    }
-                    catch(e){
-                        alert(e);
-                        console.log(e);
-                    }
-                })(values.columnParser);
-            }
-
-
+            var firstRow = getColumns(offset);
             var numColumns = firstRow.length;
 
             var header;
@@ -661,6 +685,7 @@ javaxt.express.finance.ImportWizard = function(config) {
 
 
         var updateComboboxes = function(){
+            ignoreEvents = true;
             for (var i=0; i<comboboxes.length; i++){
                 var combobox = comboboxes[i];
                 combobox.clear();
@@ -675,7 +700,9 @@ javaxt.express.finance.ImportWizard = function(config) {
             if (colTypes.desc!=null) descColumn.setValue(columns[colTypes.desc]);
             if (colTypes.debit!=null) debitColumn.setValue(columns[colTypes.debit]);
             if (colTypes.credit!=null) creditColumn.setValue(columns[colTypes.credit]);
+
             values = getValues();
+            ignoreEvents = false;
         };
 
 
@@ -767,9 +794,6 @@ javaxt.express.finance.ImportWizard = function(config) {
 
 
 
-
-
-
           //Create grid and load data
             new javaxt.dhtml.DataGrid(innerDiv, {
                 style: config.style.grid,
@@ -779,17 +803,20 @@ javaxt.express.finance.ImportWizard = function(config) {
         };
 
 
+
+
+
         var getColumnTypes = function(){
 
             var offset = parseInt(values.startRow);
             if (isNaN(offset) || offset<1) offset = 0;
             else offset = offset-1;
             if (values.containsHeader==true) offset++;
-            var row = data[offset];
+            var cols = getColumns(offset);
 
             var colTypes = {};
-            for (var i=0; i<row.length; i++){
-                var col = row[i];
+            for (var i=0; i<cols.length; i++){
+                var col = cols[i];
                 if (col!=null && col.length>0){
                     if (isDate(col)){
                         if (colTypes.date==null){
@@ -797,7 +824,7 @@ javaxt.express.finance.ImportWizard = function(config) {
                         }
                     }
                     else if (isNumber(col)){
-                        if (colTypes.credit){
+                        if (colTypes.credit!=null){
                             colTypes.debit = i;
                         }
                         else{
@@ -828,6 +855,7 @@ javaxt.express.finance.ImportWizard = function(config) {
 
       //Watch for changes
         form.onChange = function(field, value){
+            if (ignoreEvents) return;
 
           //Get old/new values
             var orgValue = values[field.name];
@@ -858,7 +886,8 @@ javaxt.express.finance.ImportWizard = function(config) {
                 else offset = offset-1;
                 if (values.containsHeader==true) offset++;
 
-                var val = data[offset][colID];
+                var cols = getColumns(offset);
+                var val = cols[colID];
 
                 if (field.name == "dateColumn"){
 
@@ -975,8 +1004,11 @@ javaxt.express.finance.ImportWizard = function(config) {
             setValue: function(name, value){
                 form.setValue(name, value);
             },
+            getValues: function(){
+                return getValues();
+            },
             reset: function(){
-                form.clear();
+                form.reset();
             }
         };
     };
@@ -997,8 +1029,11 @@ javaxt.express.finance.ImportWizard = function(config) {
             };
         }
 
+
         columnEditor.reset();
         columnEditor.loadData(data);
+        var script = getPanel("New Template").getValues().columnParser;
+        if (script) columnEditor.setValue(script);
         columnEditor.show();
     };
 
@@ -1168,7 +1203,7 @@ javaxt.express.finance.ImportWizard = function(config) {
   //**************************************************************************
     var next = function(){
 
-        var currPanel = panels[idx];
+        var currPanel = history[idx];
         var nextPanel = currPanel.getNextPanel();
         if (nextPanel){
 
