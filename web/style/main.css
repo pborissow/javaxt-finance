@@ -428,7 +428,9 @@
 /**************************************************************************/
 /** Bottom Toolbar
 /**************************************************************************/
-
+/** Appears in the Transaction panel, specifically in the transaction
+ *  editor below the "Account" and "Category" lists
+ */
 .bbar {
     height: 28px;
 }
@@ -473,12 +475,61 @@
 }
 
 
+/**************************************************************************/
+/** Reports Panel
+/**************************************************************************/
+.report-preview {
+    width:150px;
+    height:150px;
+    border:1px solid #dcdcdc;
+    background-color:#fff;
+    display:inline-block;
+    margin:50px;
+    padding: 5px;
+    font-size: 18px;
+    box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
+}
+
+.report-panel {
+    border:1px solid #dcdcdc;
+    background-color:#fff;
+    display:inline-block;
+    margin:50px;
+    padding: 5px;
+    font-size: 18px;
+    box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
+}
+
+.report-header {
+    font-size: 18px;
+    padding: 10px 0 5px;
+}
+
+
+.report-row, .report-cell {
+    height: 22px;
+    line-height: 22px;
+}
+
+.report-row {
+    cursor: pointer;
+
+}
+
+.report-row:hover{
+    background-color:#EDF3FE;
+}
+
+.report-cell{
+    border-right: 1px solid rgb(204, 204, 204);
+    padding: 0px 5px;
+    white-space: nowrap;
+    user-select: none;
+}
 
 /**************************************************************************/
 /** Misc
 /**************************************************************************/
-
-
 
 
 /** Used in conjunction with table-header-col and table-col to make
