@@ -24,6 +24,9 @@ javaxt.express.finance.utils = {
    */
     formatCurrency: function(n){
         n = parseFloat(n);
+        if (!javaxt.express.finance.utils.isNumber(n)){
+            return "";
+        }
 
         var x = (n).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
         if (x.substring(0,1)=="-"){
