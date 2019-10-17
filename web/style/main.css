@@ -503,10 +503,12 @@
 .report-header {
     font-size: 18px;
     padding: 10px 0 5px;
+    border-bottom: 1px solid #5f5f5f;
 }
 
 
-.report-row, .report-cell {
+.report-row, .report-cell,
+.report-row-footer, .report-cell-footer{
     height: 22px;
     line-height: 22px;
 }
@@ -520,12 +522,23 @@
     background-color:#EDF3FE;
 }
 
-.report-cell{
-    border-right: 1px solid rgb(204, 204, 204);
+.report-cell, .report-cell-footer {
+    border-left: 1px solid #dcdcdc;
+    border-right: 1px solid #dcdcdc;
     padding: 0px 5px;
     white-space: nowrap;
     user-select: none;
 }
+
+.report-row-footer {
+    border: 0 none;
+    border-top: 2px solid #000;
+}
+
+.report-cell-footer {
+    border: 0 none;
+}
+
 
 /**************************************************************************/
 /** Misc
