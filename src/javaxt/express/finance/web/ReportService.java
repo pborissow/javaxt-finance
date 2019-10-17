@@ -222,15 +222,12 @@ public class ReportService extends WebService {
             conn = database.getConnection();
             for (Recordset rs : conn.getRecordset(sql)){
                 if (x>0) str.append(",");
-                str.append("[");
-                str.append(rs.getValue("id").toLong());
-                str.append(",\"");
-                str.append(rs.getValue("date").toDate().toISOString());
-                str.append("\",\"");
-                str.append(rs.getValue("description").toString());
-                str.append("\",");
-                str.append(rs.getValue("amount").toBigDecimal());
-                str.append("]");
+                JSONArray arr = new JSONArray();
+                arr.add(rs.getValue("id").toLong());
+                arr.add(rs.getValue("date").toDate());
+                arr.add(rs.getValue("description").toString());
+                arr.add(rs.getValue("amount").toBigDecimal());
+                str.append(arr.toString());
                 x++;
             }
             conn.close();
