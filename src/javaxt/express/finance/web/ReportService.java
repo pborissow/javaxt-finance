@@ -1,8 +1,10 @@
 package javaxt.express.finance.web;
 import javaxt.express.finance.*;
 
+import javaxt.express.WebService;
+import javaxt.express.ServiceResponse;
+import javaxt.express.ServiceRequest;
 import javaxt.http.servlet.ServletException;
-import javaxt.express.ws.*;
 
 import javaxt.sql.*;
 import javaxt.json.*;
