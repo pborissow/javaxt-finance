@@ -346,6 +346,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
                 {header: 'Date', field: 'date', width:'90', align: 'right'},
                 {header: 'Day', width:'90', align: 'left'},
                 {header: 'Description', field: 'description', width:'100%'},
+                {header: 'Source', field: 'sourceID', width:'60'},
                 {header: 'Account', width:'120'},
                 {header: 'Category', width:'120'},
                 {header: 'Amount', field: 'amount', width:'90', align: 'right'}
@@ -357,6 +358,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
                 row.set('Date', date);
                 row.set('Day', m.format('dddd'));
                 row.set('Description', transaction.description);
+                row.set('Source', transaction.sourceID);
                 row.set('Amount', createCell("currency", transaction.amount));
 
                 var category = findCategory(transaction.categoryID);
