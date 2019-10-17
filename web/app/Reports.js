@@ -228,18 +228,17 @@ javaxt.express.finance.Reports = function(parent, config) {
                 var tr, td;
 
 
+
                 tr = document.createElement("tr");
                 tr.style.height = "1px";
                 tbody.appendChild(tr);
-                td = document.createElement("td");
-                td.style.width = "100%";
-                tr.appendChild(td);
-                td = document.createElement("td");
-                td.style.width = "125px";
-                tr.appendChild(td);
-                td = document.createElement("td");
-                td.style.width = "125px";
-                tr.appendChild(td);
+                var numColumns = 3;
+                for (var i=0; i<numColumns; i++){
+                    td = document.createElement("td");
+                    td.style.width = "125px";
+                    tr.appendChild(td);
+                }
+                tr.childNodes[0].style.width = "100%";
 
 
                 var addHeader = function(title){
@@ -247,33 +246,36 @@ javaxt.express.finance.Reports = function(parent, config) {
                     tbody.appendChild(tr);
                     td = document.createElement("td");
                     td.className = "report-header";
-                    td.colSpan = 3;
+                    td.colSpan = numColumns;
                     td.innerHTML = title;
                     tr.appendChild(td);
                 };
 
                 var addRow = function(category){
+                    var isFooter = false;
+                    if (!category.name) isFooter = true;
                     tr = document.createElement("tr");
-                    tr.className = "report-row";
+                    tr.className = "report-row" + (isFooter? "-footer" : "");
                     tr.category = category;
                     tr.onclick = function(){
                         showDetails(this.category);
                     };
                     tbody.appendChild(tr);
 
+                    var cls = "report-cell" + (isFooter? "-footer" : "");
                     td = document.createElement("td");
-                    td.className = "report-cell";
-                    td.innerHTML = category.name;
+                    td.className = cls;
+                    if (!isFooter) td.innerHTML = category.name;
                     tr.appendChild(td);
 
                     td = document.createElement("td");
-                    td.className = "report-cell";
+                    td.className = cls;
                     td.style.textAlign = "right";
                     td.innerHTML = formatCurrency(category.total/12);
                     tr.appendChild(td);
 
                     td = document.createElement("td");
-                    td.className = "report-cell";
+                    td.className = cls;
                     td.style.textAlign = "right";
                     td.innerHTML = formatCurrency(category.total);
                     tr.appendChild(td);
@@ -282,23 +284,29 @@ javaxt.express.finance.Reports = function(parent, config) {
 
                 addHeader("Income");
                 var totalIncome = 0;
+                income.sort(function(a, b){return b.total - a.total;});
                 for (var i=0; i<income.length; i++){
                     var category = income[i];
                     totalIncome+=category.total;
                     addRow(category);
                 }
                 addRow({
-                    name: "",
+                    name: false,
                     total: totalIncome
                 });
 
 
                 addHeader("Expenses");
+                var totalExpenses = 0;
                 for (var i=0; i<expenses.length; i++){
                     var category = expenses[i];
+                    totalExpenses+=category.total;
                     addRow(category);
                 }
-
+                addRow({
+                    name: false,
+                    total: totalExpenses
+                });
 
                 reportDiv.update(table);
                 reportDiv.show();
@@ -316,7 +324,7 @@ javaxt.express.finance.Reports = function(parent, config) {
   //** showDetails
   //**************************************************************************
     var showDetails = function(category){
-
+        if (!category.id) return;
 
         get("report/Transactions?categoryID=" + category.id +
             "&startDate=" + startDate + "&endDate=" + endDate,  {
@@ -348,7 +356,7 @@ javaxt.express.finance.Reports = function(parent, config) {
                         },
                         {
                             header: "Amount",
-                            width: 85,
+                            width: 125,
                             align: "right"
                         }
                     ]
@@ -374,6 +382,18 @@ javaxt.express.finance.Reports = function(parent, config) {
                 }
 
                 table.addRows(arr);
+
+
+                table.onSelectionChange = function(rows){
+                    for (var i=0; i<rows.length; i++){
+                        var row = rows[i];
+                        if (row.selected){
+                            var transactionID = parseInt(row.get(0));
+                            console.log("Edit transaction " + transactionID);
+                            break;
+                        }
+                    }
+                };
 
                 transactionsPanel.update(div);
                 transactionsPanel.show();
