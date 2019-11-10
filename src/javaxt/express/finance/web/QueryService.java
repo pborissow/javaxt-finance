@@ -19,7 +19,6 @@ public class QueryService extends javaxt.express.services.QueryService {
     }
 
     private static javaxt.io.Directory getJobDir(JSONObject config){
-      //Set path to the sql jobs directory
         javaxt.io.Directory jobDir = null;
         if (config.has("jobDir")){
             String dir = config.get("jobDir").toString().trim();
@@ -30,14 +29,13 @@ public class QueryService extends javaxt.express.services.QueryService {
             }
         }
         if (jobDir==null || !jobDir.exists()){
-            throw new IllegalArgumentException("Invalid \"jobDir\" defined in config file");
+            throw new IllegalArgumentException("Invalid \"jobDir\" defined in the \"webserver\" section of the config file");
         }
         console.log("jobDir: " + jobDir);
         return jobDir;
     }
 
     private static javaxt.io.Directory getLogDir(JSONObject config){
-      //Set path to the sql log directory
         javaxt.io.Directory logDir = null;
         if (config.has("logDir")){
             String dir = config.get("logDir").toString().trim();
