@@ -39,13 +39,13 @@ public class Config extends javaxt.express.Config {
 
       //Update relative paths in the web config
         JSONObject webConfig = config.get("webserver").toJSONObject();
-        updateDir("webDir", webConfig, configFile);
-        updateDir("logDir", webConfig, configFile);
-        updateDir("jobDir", webConfig, configFile);
+        updateDir("webDir", webConfig, configFile, false);
+        updateDir("logDir", webConfig, configFile, true);
+        updateDir("jobDir", webConfig, configFile, true);
         updateFile("keystore", webConfig, configFile);
 
         JSONObject downloadConfig = config.get("downloads").toJSONObject();
-        updateDir("dir", downloadConfig, configFile);
+        updateDir("dir", downloadConfig, configFile, true);
         webConfig.set("downloadDir", downloadConfig.get("dir"));
 
 
@@ -154,7 +154,7 @@ public class Config extends javaxt.express.Config {
   /** Used to update a path to a directory defined in a config file. Resolves
    *  both canonical and relative paths (relative to the configFile).
    */
-    public static void updateDir(String key, JSONObject config, javaxt.io.File configFile){
+    public static void updateDir(String key, JSONObject config, javaxt.io.File configFile, boolean create){
         if (config.has(key)){
             String path = config.get(key).toString();
             if (path==null){
@@ -170,6 +170,9 @@ public class Config extends javaxt.express.Config {
                     javaxt.io.Directory dir = new javaxt.io.Directory(path);
                     if (!dir.exists()) dir = new javaxt.io.Directory(configFile.MapPath(path));
 
+                    if (!dir.exists() && create) dir.create();
+                    
+                    
                     if (dir.exists()){
                         config.set(key, dir.toString());
                     }
