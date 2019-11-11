@@ -7,8 +7,25 @@ javaxt.express.finance.Dashboard = function(parent, config) {
     var me = this;
     var orgConfig = config;
     var defaultConfig = {
-        
+
     };
+
+    var accountStats; //<--DataStore
+    var accountChart, linkChart; //<--Chart.js
+    var colors = [
+        "#FEFE33",
+        "#FABC02",
+        "#FB9902",
+        "#FD5308",
+        "#FE2712",
+        "#A7194B",
+        "#8601AF",
+        "#3D01A4",
+        "#0247FE",
+        "#0392CE",
+        "#66B032",
+        "#D0EA2B"
+    ];
 
 
   //**************************************************************************
@@ -33,69 +50,105 @@ javaxt.express.finance.Dashboard = function(parent, config) {
 
 
 
-      //Create main table
+      //Create table with 2 rows
         var table = createTable();
         var tbody = table.firstChild;
-        var tr = document.createElement("tr");
+        var tr, td;
+
+        tr = document.createElement("tr");
         tbody.appendChild(tr);
-        var td;
-
-
         td = document.createElement("td");
-        td.style.height = "100%";
         tr.appendChild(td);
-        //td.innerHTML = "Dashboard";
-        renderLinkStatus(td);
+        var row1 = td;
+
+        tr = document.createElement("tr");
+        tbody.appendChild(tr);
+        td = document.createElement("td");
+        tr.appendChild(td);
+        var row2 = td;
 
         parent.appendChild(table);
         me.el = table;
+
+
+
+      //Create pie charts in row 1
+        table = createTable();
+        row1.appendChild(table);
+        tbody = table.firstChild;
+        tr = document.createElement("tr");
+        tbody.appendChild(tr);
+
+        td = document.createElement("td");
+        td.style.textAlign = "center";
+        tr.appendChild(td);
+        renderAccounts(td);
+
+        td = document.createElement("td");
+        td.style.textAlign = "center";
+        tr.appendChild(td);
+        renderLinkStatus(td);
+
+        td = document.createElement("td");
+        td.style.textAlign = "center";
+        tr.appendChild(td);
+        renderFreshness(td);
+
+
+
+
+      //Create data store
+        getTransactionsPerAccount(orgConfig, function(){
+            accountStats = orgConfig.stats.accounts;
+
+            var updateCharts = function(){
+                var data = {};
+                for (var i=0; i<accountStats.length; i++){
+                    var record = accountStats.get(i);
+                    data[record.name] = record.count;
+                }
+                accountChart.load(data);
+                linkChart.load(data);
+            };
+            updateCharts();
+
+            var events = ["add", "remove", "update"];
+            for (var i=0; i<events.length; i++){
+                accountStats.addEventListener(events[i], function(){
+                    updateCharts();
+                }, me);
+            }
+        });
+
     };
-    
-    
+
+
   //**************************************************************************
-  //** renderLinkStatus
+  //** renderAccounts
   //**************************************************************************
-    var renderLinkStatus = function(parent){
-        
-        var w = 250;
-        var h = 250;
-        var div = document.createElement("div");
-        div.style.width = w+"px";
-        div.style.height = h+"px";
-        div.style.display = "inline-block";
-        parent.appendChild(div);
-        
-        var canvas = document.createElement("canvas");
-        canvas.style.width = w+"px";
-        canvas.style.height = h+"px";
-        canvas.width = w;
-        canvas.height = h;
-        div.appendChild(canvas);
+    var renderAccounts = function(parent){
+        var canvas = createCanvas(parent);
         var ctx = canvas.getContext('2d');
 
+
         var data = {
-            labels: [
-                "Value"
-            ],
-            datasets: [
-                {
-                    data: [0, 0],
-                    backgroundColor: [
-                        "#3ec556",
-                        "#f8f8f8"
-                    ],
-                    hoverBackgroundColor: [
-                        "#3ec556",
-                        "rgba(0,0,0,0)"
-                    ],
-                    borderWidth: [
-                        0, 0
-                    ]
-                }]
+            datasets: [{
+                data: [0, 100],
+                backgroundColor: [
+                    "#3ec556",
+                    "#f8f8f8"
+                ],
+                hoverBackgroundColor: [
+                    "#3ec556",
+                    "#f8f8f8"
+                ],
+                borderWidth: [
+                    0, 0
+                ]
+            }]
         };
 
 
-        
         var chart = new Chart(ctx, {
             type: 'doughnut',
             data: data,
@@ -113,37 +166,177 @@ javaxt.express.finance.Dashboard = function(parent, config) {
                 }
             }
         });
-        
-        
-        var dataset = chart.data.datasets[0];
-        
-        get("report/linkStatus", {
-            success: function(text){
-                var stats = JSON.parse(text);
-                stats.linked = 85;
-                stats.unlinked = 15;
-                dataset.data[0] = stats.linked;
-                dataset.data[1] = stats.unlinked;
-                var d = (stats.linked/(stats.linked+stats.unlinked))*100;
-                console.log(d);
-            },
-            failure: function(request){
-                alert(request);
+
+        accountChart = chart;
+        accountChart.load = function(data){
+            var dataset = chart.data.datasets[0];
+            dataset.data = [];
+
+            for (var key in data) {
+                if (data.hasOwnProperty(key)){
+                    var val = data[key];
+                    if (key!=="N/A"){
+                        dataset.data.push(val);
+                    }
+                }
             }
-        });
-        
+
+            dataset.backgroundColor = [];
+            dataset.borderWidth = [];
+            var colorIndex = 0;
+            for (var i=0; i<dataset.data.length; i++){
+                var color = colors[colorIndex];
+                colorIndex++;
+                if (colorIndex===dataset.data.length) colorIndex=0;
+                dataset.backgroundColor.push(color);
+                dataset.borderWidth.push(0);
+            }
+            dataset.hoverBackgroundColor = dataset.backgroundColor;
+
+            chart.update();
+        };
     };
 
+
+  //**************************************************************************
+  //** renderLinkStatus
+  //**************************************************************************
+    var renderLinkStatus = function(parent){
+
+        var canvas = createCanvas(parent);
+        var ctx = canvas.getContext('2d');
+
+        var data = {
+            datasets: [{
+                data: [0, 100],
+                backgroundColor: [
+                    "#3ec556",
+                    "#f8f8f8"
+                ],
+                hoverBackgroundColor: [
+                    "#3ec556",
+                    "#f8f8f8"
+                ],
+                borderWidth: [
+                    0, 0
+                ]
+            }]
+        };
+
+
+        var chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                cutoutPercentage: 88,
+                animation: {
+                    animationRotate: true,
+                    duration: 2000
+                },
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    enabled: false
+                }
+            }
+        });
+
+
+        linkChart = chart;
+        linkChart.load = function(data){
+            var linked = 0;
+            var unlinked = 0;
+            for (var key in data) {
+                if (data.hasOwnProperty(key)){
+                    var val = data[key];
+                    if (key==="N/A") unlinked = val;
+                    else linked+= val;
+                }
+            }
+            var dataset = chart.data.datasets[0];
+            dataset.data[0] = linked;
+            dataset.data[1] = unlinked;
+            var d = (linked/(linked+unlinked))*100;
+            console.log(d);
+            chart.update();
+        };
+    };
+
+
+  //**************************************************************************
+  //** renderFreshness
+  //**************************************************************************
+    var renderFreshness = function(parent){
+        var canvas = createCanvas(parent);
+        var ctx = canvas.getContext('2d');
+
+        var data = {
+            datasets: [{
+                data: [0, 100],
+                backgroundColor: [
+                    "#3ec556",
+                    "#f8f8f8"
+                ],
+                hoverBackgroundColor: [
+                    "#3ec556",
+                    "#f8f8f8"
+                ],
+                borderWidth: [
+                    0, 0
+                ]
+            }]
+        };
+
+
+        var chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                cutoutPercentage: 88,
+                animation: {
+                    animationRotate: true,
+                    duration: 2000
+                },
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    enabled: false
+                }
+            }
+        });
+    };
+
+
+  //**************************************************************************
+  //** createCanvas
+  //**************************************************************************
+    var createCanvas = function(parent){
+        var w = 250;
+        var h = 250;
+        var div = document.createElement("div");
+        div.style.width = w+"px";
+        div.style.height = h+"px";
+        div.style.display = "inline-block";
+        parent.appendChild(div);
+
+        var canvas = document.createElement("canvas");
+        canvas.style.width = w+"px";
+        canvas.style.height = h+"px";
+        canvas.width = w;
+        canvas.height = h;
+        div.appendChild(canvas);
+        return canvas;
+    };
 
 
   //**************************************************************************
   //** Utils
   //**************************************************************************
-    var get = javaxt.dhtml.utils.get;
-    var post = javaxt.dhtml.utils.post;
     var merge = javaxt.dhtml.utils.merge;
     var createTable = javaxt.dhtml.utils.createTable;
-
+    var getTransactionsPerAccount = javaxt.express.finance.utils.getTransactionsPerAccount;
 
     init();
 
