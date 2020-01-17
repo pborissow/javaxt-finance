@@ -7,7 +7,6 @@ import javaxt.express.ServiceResponse;
 import javaxt.express.ServiceRequest;
 
 import javaxt.io.Jar;
-import javaxt.io.Directory;
 import javaxt.sql.*;
 import javaxt.json.*;
 import javaxt.http.servlet.*;
@@ -32,7 +31,6 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
 public class WebServices extends WebService {
 
     private Database database;
-    private Directory downloadDir;
     private ReportService reportService;
     private QueryService queryService;
 
@@ -62,15 +60,6 @@ public class WebServices extends WebService {
         reportService = new ReportService();
         queryService = new QueryService(database, config);
 
-
-
-      //Set path to the download dir (demo only?)
-        String downloadDir = config.get("downloadDir").toString();
-        if (downloadDir!=null){
-            if (downloadDir.length()>0){
-                this.downloadDir = new javaxt.io.Directory(downloadDir);
-            }
-        }
     }
 
 
@@ -176,17 +165,6 @@ public class WebServices extends WebService {
         }
         else if (service.equalsIgnoreCase("runRules")){
             return runRules(request);
-        }
-        else if (service.equalsIgnoreCase("download")){ //demo only?
-            String relPath = request.getPath().substring("/download".length());
-            if (relPath.startsWith("/")) relPath = relPath.substring(1);
-            if (!relPath.contains("./")){
-                java.io.File file = new java.io.File(downloadDir + relPath);
-                if (file.exists() && !file.isDirectory()){
-                    return new ServiceResponse(new javaxt.io.File(file));
-                }
-            }
-            return new ServiceResponse(404);
         }
         else{
             return getServiceResponse(request, database);
