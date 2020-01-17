@@ -72,6 +72,7 @@ public class Main {
                 }
                 else{
                     JSONObject webConfig = Config.get("webserver").toJSONObject();
+                    webConfig.set("port", args.get("-port"));
                     new WebApp(webConfig, database).start();
                 }
             }
