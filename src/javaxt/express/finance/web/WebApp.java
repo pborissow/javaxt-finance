@@ -71,12 +71,13 @@ public class WebApp extends HttpServlet {
 
       //Generate list of socket addresses to bind to
         addresses = new ArrayList<>();
-        addresses.add(new InetSocketAddress("0.0.0.0", 80));
+        Integer port = config.get("port").toInteger();
+        addresses.add(new InetSocketAddress("0.0.0.0", port==null ? 80 : port));
         if (keystore!=null){
             try{
                 setKeyStore(keystore, new String(keypass));
                 setTrustStore(keystore);
-                addresses.add(new InetSocketAddress("0.0.0.0", 443));
+                addresses.add(new InetSocketAddress("0.0.0.0", port==null ? 443 : port));
             }
             catch(Exception e){
                 //e.printStackTrace();
