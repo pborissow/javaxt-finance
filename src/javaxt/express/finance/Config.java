@@ -44,9 +44,6 @@ public class Config extends javaxt.express.Config {
         updateDir("jobDir", webConfig, configFile, true);
         updateFile("keystore", webConfig, configFile);
 
-        JSONObject downloadConfig = config.get("downloads").toJSONObject();
-        updateDir("dir", downloadConfig, configFile, true);
-        webConfig.set("downloadDir", downloadConfig.get("dir"));
 
 
       //Load config
@@ -171,8 +168,8 @@ public class Config extends javaxt.express.Config {
                     if (!dir.exists()) dir = new javaxt.io.Directory(configFile.MapPath(path));
 
                     if (!dir.exists() && create) dir.create();
-                    
-                    
+
+
                     if (dir.exists()){
                         config.set(key, dir.toString());
                     }
