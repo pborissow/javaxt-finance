@@ -586,6 +586,56 @@ javaxt.express.finance.utils = {
             span.className = "transaction-grid-" + ((amount.indexOf("-")===0) ? "debit" : "credit");
             return span;
         }
+    },
+
+
+  //**************************************************************************
+  //** createDoughnut
+  //**************************************************************************
+  /** Used to create a doughnut pie chart
+   */
+    createDoughnut : function(canvas, options){
+        if (!options) options = {};
+
+        var ctx = canvas.getContext('2d');
+
+        var data = {
+            datasets: [{
+                data: [0, 100],
+                backgroundColor: [
+                    "#3ec556",
+                    "#f8f8f8"
+                ],
+                hoverBackgroundColor: [
+                    "#3ec556",
+                    "#f8f8f8"
+                ],
+                borderWidth: [
+                    0, 0
+                ]
+            }]
+        };
+
+
+        var chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                cutoutPercentage: options.cutout ? options.cutout : 88,
+                animation: {
+                    animationRotate: true,
+                    duration: 2000
+                },
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    enabled: false
+                }
+            }
+        });
+
+        return chart;
     }
 };
 
