@@ -12,20 +12,6 @@ javaxt.express.finance.Dashboard = function(parent, config) {
 
     var accountStats; //<--DataStore
     var accountChart, linkChart; //<--Chart.js
-    var colors = [
-        "#FEFE33",
-        "#FABC02",
-        "#FB9902",
-        "#FD5308",
-        "#FE2712",
-        "#A7194B",
-        "#8601AF",
-        "#3D01A4",
-        "#0247FE",
-        "#0392CE",
-        "#66B032",
-        "#D0EA2B"
-    ];
 
 
   //**************************************************************************
@@ -128,45 +114,7 @@ javaxt.express.finance.Dashboard = function(parent, config) {
   //**************************************************************************
     var renderAccounts = function(parent){
         var canvas = createCanvas(parent);
-        var ctx = canvas.getContext('2d');
-
-
-        var data = {
-            datasets: [{
-                data: [0, 100],
-                backgroundColor: [
-                    "#3ec556",
-                    "#f8f8f8"
-                ],
-                hoverBackgroundColor: [
-                    "#3ec556",
-                    "#f8f8f8"
-                ],
-                borderWidth: [
-                    0, 0
-                ]
-            }]
-        };
-
-
-        var chart = new Chart(ctx, {
-            type: 'doughnut',
-            data: data,
-            options: {
-                cutoutPercentage: 88,
-                animation: {
-                    animationRotate: true,
-                    duration: 2000
-                },
-                legend: {
-                    display: false
-                },
-                tooltips: {
-                    enabled: false
-                }
-            }
-        });
-
+        var chart = createDoughnut(canvas);
         accountChart = chart;
         accountChart.load = function(data){
             var dataset = chart.data.datasets[0];
@@ -184,6 +132,7 @@ javaxt.express.finance.Dashboard = function(parent, config) {
             dataset.backgroundColor = [];
             dataset.borderWidth = [];
             var colorIndex = 0;
+            var colors = javaxt.express.finance.style.colors;
             for (var i=0; i<dataset.data.length; i++){
                 var color = colors[colorIndex];
                 colorIndex++;
@@ -202,47 +151,8 @@ javaxt.express.finance.Dashboard = function(parent, config) {
   //** renderLinkStatus
   //**************************************************************************
     var renderLinkStatus = function(parent){
-
         var canvas = createCanvas(parent);
-        var ctx = canvas.getContext('2d');
-
-        var data = {
-            datasets: [{
-                data: [0, 100],
-                backgroundColor: [
-                    "#3ec556",
-                    "#f8f8f8"
-                ],
-                hoverBackgroundColor: [
-                    "#3ec556",
-                    "#f8f8f8"
-                ],
-                borderWidth: [
-                    0, 0
-                ]
-            }]
-        };
-
-
-        var chart = new Chart(ctx, {
-            type: 'doughnut',
-            data: data,
-            options: {
-                cutoutPercentage: 88,
-                animation: {
-                    animationRotate: true,
-                    duration: 2000
-                },
-                legend: {
-                    display: false
-                },
-                tooltips: {
-                    enabled: false
-                }
-            }
-        });
-
-
+        var chart = createDoughnut(canvas);
         linkChart = chart;
         linkChart.load = function(data){
             var linked = 0;
@@ -269,43 +179,7 @@ javaxt.express.finance.Dashboard = function(parent, config) {
   //**************************************************************************
     var renderFreshness = function(parent){
         var canvas = createCanvas(parent);
-        var ctx = canvas.getContext('2d');
-
-        var data = {
-            datasets: [{
-                data: [0, 100],
-                backgroundColor: [
-                    "#3ec556",
-                    "#f8f8f8"
-                ],
-                hoverBackgroundColor: [
-                    "#3ec556",
-                    "#f8f8f8"
-                ],
-                borderWidth: [
-                    0, 0
-                ]
-            }]
-        };
-
-
-        var chart = new Chart(ctx, {
-            type: 'doughnut',
-            data: data,
-            options: {
-                cutoutPercentage: 88,
-                animation: {
-                    animationRotate: true,
-                    duration: 2000
-                },
-                legend: {
-                    display: false
-                },
-                tooltips: {
-                    enabled: false
-                }
-            }
-        });
+        var chart = createDoughnut(canvas);
     };
 
 
@@ -336,6 +210,7 @@ javaxt.express.finance.Dashboard = function(parent, config) {
   //**************************************************************************
     var merge = javaxt.dhtml.utils.merge;
     var createTable = javaxt.dhtml.utils.createTable;
+    var createDoughnut = javaxt.express.finance.utils.createDoughnut;
     var getTransactionsPerAccount = javaxt.express.finance.utils.getTransactionsPerAccount;
 
     init();
