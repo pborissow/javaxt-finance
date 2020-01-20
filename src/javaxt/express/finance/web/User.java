@@ -11,7 +11,7 @@ public class User implements java.security.Principal, javaxt.express.User {
     public Long getID(){
         return id;
     }
-    public int getAccessLevel(){
+    public Integer getAccessLevel(){
         return accessLevel;
     }
 }
