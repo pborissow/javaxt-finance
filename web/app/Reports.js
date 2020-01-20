@@ -9,8 +9,8 @@ javaxt.express.finance.Reports = function(parent, config) {
     var defaultConfig = {
         style: javaxt.express.finance.style
     };
-    var mainDiv, reportDiv, transactionsPanel;
-    var startDate, endDate, timezone;
+    var reportList, accountDetails, accountGraphics, transactionsPanel, menu;
+    var timezone;
 
 
   //**************************************************************************
@@ -37,13 +37,14 @@ javaxt.express.finance.Reports = function(parent, config) {
         config = clone;
 
 
+      //Get or create animation effects
+        if (!config.fx) config.fx = new javaxt.dhtml.Effects();
 
+
+      //Get timezone
+        timezone = config.timezone;
         if (timezone==null || typeof timezone != 'string') timezone = "America/New_York";
         timezone = timezone.trim().replace(" ", "_");
-
-        var year = 2018;
-        startDate = moment.tz(year + "-01-01 00:00", timezone).toISOString();
-        endDate = moment.tz((year+1) + "-01-01 00:00", timezone).toISOString();
 
 
 
@@ -61,30 +62,144 @@ javaxt.express.finance.Reports = function(parent, config) {
         tr.appendChild(td);
 
 
-      //Create main div
-        mainDiv = document.createElement("div");
-        mainDiv.style.height = "100%";
-        td.appendChild(mainDiv);
-        mainDiv.show = function(){
-            this.style.visibility = '';
-            this.style.display = '';
+
+      //Create container for reports
+        reportList = document.createElement("div");
+        reportList.style.height = "100%";
+        td.appendChild(reportList);
+        reportList.show = function(callback){
+            config.fx.fadeIn(this, "easeInOutCubic", 600, callback);
         };
-        mainDiv.hide = function(){
-            this.style.visibility = 'hidden';
-            this.style.display = 'none';
+        reportList.hide = function(callback){
+            config.fx.fadeOut(this, "easeInOutCubic", 600, callback);
         };
 
 
-      //Create report divs
-        reportDiv = createPanel(function(){
-            if (transactionsPanel) transactionsPanel.hide();
-            reportDiv.hide();
-            mainDiv.show();
+
+      //Create accountDetails
+        accountDetails = createPanel({
+            onClose: function(){
+                if (transactionsPanel) transactionsPanel.hide();
+                if (accountGraphics) accountGraphics.hide();
+                accountDetails.hide();
+                reportList.show();
+            },
+            onSubTitle: function(div, e){
+                var rect = javaxt.dhtml.utils.getRect(div);
+                var x = rect.x + rect.width + 10;
+                var y = rect.y + (rect.height/2);
+                if (!menu) menu = createMenu();
+                menu.showAt(x, y, "right", "middle");
+            }
         });
-        td.appendChild(reportDiv);
-        transactionsPanel = createPanel(function(){
-            transactionsPanel.hide();
+        td.appendChild(accountDetails);
+
+
+
+      //Create accountGraphics
+        accountGraphics = createPanel({
+            title: "Expense Summary",
+            onClose: function(){
+                accountGraphics.hide();
+            }
         });
+        var div = document.createElement("div");
+        div.style.width = "425px";
+        div.style.padding = "15px";
+        var canvas = createCanvas(div);
+        var chart = createDoughnut(canvas, {cutout: 60});
+        accountGraphics.update(div);
+        accountGraphics.update = function(expenses){
+
+            var dataset = chart.data.datasets[0];
+            dataset.data = [];
+
+
+            for (var i=0; i<expenses.length; i++){
+                var name = expenses[i].name;
+                var val = expenses[i].total;
+                if (val<0) dataset.data.push(-val);
+            }
+
+
+            dataset.backgroundColor = [];
+            dataset.borderWidth = [];
+            var colorIndex = 0;
+            var colors = javaxt.express.finance.style.colors;
+            for (var i=0; i<dataset.data.length; i++){
+                var color = colors[colorIndex];
+                colorIndex++;
+                if (colorIndex===dataset.data.length) colorIndex=0;
+                dataset.backgroundColor.push(color);
+                dataset.borderWidth.push(0);
+            }
+            dataset.hoverBackgroundColor = dataset.backgroundColor;
+
+            chart.update();
+
+        };
+        td.appendChild(accountGraphics);
+
+
+
+      //Create transactionsPanel
+        transactionsPanel = createPanel({
+            onClose: function(){
+                transactionsPanel.hide();
+                if (accountGraphics) accountGraphics.show();
+            }
+        });
+        var div = document.createElement("div");
+        div.style.width = "600px";
+        div.style.height = "600px";
+
+        var style = {
+            row: "report-row",
+            selectedRow: "report-row-selected",
+            column: "report-cell"
+        };
+        merge(style, config.style.table);
+
+        var transactionsTable = new javaxt.dhtml.Table(div, {
+            style: style,
+            columns: [
+                {
+                    header: "ID",
+                    hidden: true
+                },
+                {
+                    header: "Date",
+                    width: 85,
+                    align: "right"
+                },
+                {
+                    header: "Desciption",
+                    width: "100%"
+                },
+                {
+                    header: "Amount",
+                    width: 125,
+                    align: "right"
+                }
+            ]
+        });
+        transactionsTable.onSelectionChange = function(rows){
+            for (var i=0; i<rows.length; i++){
+                var row = rows[i];
+                if (row.selected){
+                    var transactionID = parseInt(row.get(0));
+                    console.log("Edit transaction " + transactionID);
+                    break;
+                }
+            }
+        };
+        transactionsPanel.update(div);
+        transactionsPanel.clear = function(){
+            transactionsTable.clear();
+        };
+        transactionsPanel.update = function(arr){
+            transactionsTable.addRows(arr);
+        };
         td.appendChild(transactionsPanel);
 
 
@@ -102,18 +217,16 @@ javaxt.express.finance.Reports = function(parent, config) {
 
             accounts.addEventListener("remove", function(account){
                 var div = getReport(account);
-                if (div) mainDiv.removeChild(div);
+                if (div) reportList.removeChild(div);
             }, me);
 
             accounts.addEventListener("update", function(account){
                 var div = getReport(account);
                 if (div){
-                    div.innerHTML = account.name + " Account Balance";
+                    div.innerHTML = account.name + " Account";
                 }
             }, me);
         });
-
-
 
 
         parent.appendChild(table);
@@ -121,66 +234,12 @@ javaxt.express.finance.Reports = function(parent, config) {
     };
 
 
-    var createPanel = function(onclick){
-
-        var div = document.createElement("div");
-        div.className = "report-panel";
-        div.show = function(){
-            this.style.visibility = '';
-            this.style.display = '';
-        };
-        div.hide = function(){
-            this.style.visibility = 'hidden';
-            this.style.display = 'none';
-        };
-        div.hide();
-
-
-        var buttonDiv = document.createElement("div");
-        buttonDiv.style.position = "relative";
-        div.appendChild(buttonDiv);
-
-        var innerDiv = document.createElement("div");
-        innerDiv.style.position = "absolute";
-        innerDiv.style.top = 0;
-        innerDiv.style.right = 0;
-        innerDiv.style.width = "18px";
-        innerDiv.style.height = "18px";
-        innerDiv.style.zIndex = 1;
-        innerDiv.style.cursor = "pointer";
-        innerDiv.innerHTML = "&#x2715;";
-        innerDiv.onclick = onclick;
-        buttonDiv.appendChild(innerDiv);
-
-
-
-        var contentDiv = document.createElement("div");
-        contentDiv.style.position = "relative";
-        div.appendChild(contentDiv);
-
-        div.clear = function(){
-            contentDiv.innerHTML = "";
-        };
-
-        div.update = function(content){
-            if (typeof parent === "string"){
-                contentDiv.innerHTML = content;
-            }
-            else{
-                contentDiv.appendChild(content);
-            }
-        };
-
-        return div;
-    };
-
-
   //**************************************************************************
   //** getReport
   //**************************************************************************
     var getReport = function(account){
-        for (var i=0; i<mainDiv.childNodes.length; i++){
-            var div = mainDiv.childNodes[i];
+        for (var i=0; i<reportList.childNodes.length; i++){
+            var div = reportList.childNodes[i];
             if (div.accountID===account.id){
                 return div;
             }
@@ -195,21 +254,43 @@ javaxt.express.finance.Reports = function(parent, config) {
     var addReport = function(account){
         var div = document.createElement("div");
         div.className = "report-preview";
-        div.innerHTML = account.name + " Account Balance";
+        div.innerHTML = account.name + " Account";
         div.account = account;
         div.onclick = function(){
-            mainDiv.hide();
-            showReport(this.account);
+            var account = this.account;
+            reportList.hide(function(){
+                get("report/DistinctYears?accountID=" + account.id, {
+                    success: function(text){
+                        var arr = JSON.parse(text);
+                        var year = new Date().getFullYear();
+                        if (arr.length>0) year = arr[0];
+
+                        accountDetails.years = arr;
+                        getAccountSummary(account, year);
+                    }
+                });
+            });
         };
-        mainDiv.appendChild(div);
+        reportList.appendChild(div);
     };
 
 
   //**************************************************************************
-  //** showReport
+  //** getAccountSummary
   //**************************************************************************
-    var showReport = function(account){
+  /** Used to render income and expenses for a given account
+   */
+    var getAccountSummary = function(account, year, type){
 
+        accountDetails.account = account;
+        accountDetails.year = year;
+        accountDetails.type = type;
+
+        var comparePreviousYear = (type==="prevYear");
+
+
+        var startDate = moment.tz(year + "-01-01 00:00", timezone).toISOString();
+        var endDate = moment.tz((year+1) + "-01-01 00:00", timezone).toISOString();
         get("report/AccountSummary?accountID=" + account.id +
             "&startDate=" + startDate + "&endDate=" + endDate,  {
             success: function(text){
@@ -218,15 +299,16 @@ javaxt.express.finance.Reports = function(parent, config) {
                 var expenses = json.expenses;
 
 
-                reportDiv.clear();
-
+                accountDetails.clear();
+                accountDetails.setTitle(account.name + " Account");
+                accountDetails.setSubTitle( (comparePreviousYear?((year-1)+"-") : "") + year);
 
 
                 var table = createTable();
                 table.style.height = "";
                 var tbody = table.firstChild;
                 var tr, td;
-
+                var rows = [];
 
 
                 tr = document.createElement("tr");
@@ -241,14 +323,26 @@ javaxt.express.finance.Reports = function(parent, config) {
                 tr.childNodes[0].style.width = "100%";
 
 
-                var addHeader = function(title){
+                var addHeader = function(title, col1, col2){
                     tr = document.createElement("tr");
                     tbody.appendChild(tr);
                     td = document.createElement("td");
                     td.className = "report-header";
-                    td.colSpan = numColumns;
+                    //if (!addColHeader) td.colSpan = numColumns;
                     td.innerHTML = title;
                     tr.appendChild(td);
+
+
+                    td = document.createElement("td");
+                    td.className = "report-header report-column-header";
+                    if (col1) td.innerHTML = col1;
+                    tr.appendChild(td);
+
+                    td = document.createElement("td");
+                    td.className = "report-header report-column-header";
+                    if (col2) td.innerHTML = col2;
+                    tr.appendChild(td);
+
                 };
 
                 var addRow = function(category){
@@ -258,7 +352,12 @@ javaxt.express.finance.Reports = function(parent, config) {
                     tr.className = "report-row" + (isFooter? "-footer" : "");
                     tr.category = category;
                     tr.onclick = function(){
-                        showDetails(this.category);
+                        for (var i=0; i<rows.length; i++){
+                            var idx = rows[i].className.indexOf(" report-row-selected");
+                            if (idx>0) rows[i].className = rows[i].className.substring(0, idx);
+                        }
+                        this.className += " report-row-selected";
+                        getTransactions(this.category, startDate, endDate);
                     };
                     tbody.appendChild(tr);
 
@@ -271,7 +370,7 @@ javaxt.express.finance.Reports = function(parent, config) {
                     td = document.createElement("td");
                     td.className = cls;
                     td.style.textAlign = "right";
-                    td.innerHTML = formatCurrency(category.total/12);
+                    td.innerHTML = formatCurrency(comparePreviousYear ? category.prevYear : category.total/12);
                     tr.appendChild(td);
 
                     td = document.createElement("td");
@@ -279,37 +378,152 @@ javaxt.express.finance.Reports = function(parent, config) {
                     td.style.textAlign = "right";
                     td.innerHTML = formatCurrency(category.total);
                     tr.appendChild(td);
+                    rows.push(tr);
                 };
 
 
-                addHeader("Income");
-                var totalIncome = 0;
-                income.sort(function(a, b){return b.total - a.total;});
-                for (var i=0; i<income.length; i++){
-                    var category = income[i];
-                    totalIncome+=category.total;
-                    addRow(category);
+                var updatePanels = function(){
+                    accountDetails.update(table);
+                    accountDetails.show();
+
+                    accountGraphics.update(expenses);
+                    accountGraphics.show();
+                };
+
+
+                if (comparePreviousYear){
+
+                    startDate = moment.tz((year-1) + "-01-01 00:00", timezone).toISOString();
+
+                    var currDate = moment().tz(timezone);
+                    var currYear = parseInt(currDate.format("YYYY"));
+                    if (year===currYear){
+                        currDate = currDate.add(1, 'day');
+                        endDate = moment.tz(currDate.format("YYYY-MM-DD") + " 00:00", timezone).toISOString();
+                    }
+                    else{
+                        endDate = moment.tz(year + "-01-01 00:00", timezone).toISOString();
+                    }
+
+
+                  //Get data from the previous year
+                    get("report/AccountSummary?accountID=" + account.id +
+                        "&startDate=" + startDate + "&endDate=" + endDate,  {
+                        success: function(text){
+                            var json = JSON.parse(text);
+
+
+
+                          //Update income records
+                            var income2 = json.income;
+                            for (var i=0; i<income2.length; i++){
+                                var addRecord = true;
+                                for (var j=0; j<income.length; j++){
+                                    if (income[j].name===income2[i].name){
+                                        addRecord = false;
+                                        income[j].prevYear = income2[i].total;
+                                    }
+                                }
+                                if (addRecord){
+                                    income.push({
+                                        name: income2[i].name,
+                                        total: 0,
+                                        prevYear: income2[i].total
+                                    });
+                                }
+                            }
+
+
+                          //Update expense records
+                            var expenses2 = json.expenses;
+                            for (var i=0; i<expenses2.length; i++){
+                                var addRecord = true;
+                                for (var j=0; j<expenses.length; j++){
+                                    if (expenses[j].name===expenses2[i].name){
+                                        addRecord = false;
+                                        expenses[j].prevYear = expenses2[i].total;
+                                    }
+                                }
+                                if (addRecord){
+                                    expenses.push({
+                                        name: expenses2[i].name,
+                                        total: 0,
+                                        prevYear: expenses2[i].total
+                                    });
+                                }
+                            }
+
+
+                          //Render income
+                            addHeader("Income", (year-1), year);
+                            var totalIncome = 0;
+                            var prevIncome = 0;
+                            income.sort(function(a, b){return b.total - a.total;});
+                            for (var i=0; i<income.length; i++){
+                                var category = income[i];
+                                totalIncome+=category.total;
+                                prevIncome+=category.prevYear;
+                                addRow(category);
+                            }
+                            addRow({
+                                name: false,
+                                total: totalIncome,
+                                prevYear: prevIncome
+                            });
+
+
+                          //Render expenses
+                            addHeader("Expenses");
+                            var totalExpenses = 0;
+                            for (var i=0; i<expenses.length; i++){
+                                var category = expenses[i];
+                                totalExpenses+=category.total;
+                                addRow(category);
+                            }
+                            addRow({
+                                name: false,
+                                total: totalExpenses
+                            });
+
+
+                            updatePanels();
+                        }
+                    });
+
+
                 }
-                addRow({
-                    name: false,
-                    total: totalIncome
-                });
+                else{
+
+                  //Render income
+                    addHeader("Income", "Monthly Avg", "YTD Total");
+                    var totalIncome = 0;
+                    income.sort(function(a, b){return b.total - a.total;});
+                    for (var i=0; i<income.length; i++){
+                        var category = income[i];
+                        totalIncome+=category.total;
+                        addRow(category);
+                    }
+                    addRow({
+                        name: false,
+                        total: totalIncome
+                    });
 
 
-                addHeader("Expenses");
-                var totalExpenses = 0;
-                for (var i=0; i<expenses.length; i++){
-                    var category = expenses[i];
-                    totalExpenses+=category.total;
-                    addRow(category);
+                  //Render expenses
+                    addHeader("Expenses");
+                    var totalExpenses = 0;
+                    for (var i=0; i<expenses.length; i++){
+                        var category = expenses[i];
+                        totalExpenses+=category.total;
+                        addRow(category);
+                    }
+                    addRow({
+                        name: false,
+                        total: totalExpenses
+                    });
+
+                    updatePanels();
                 }
-                addRow({
-                    name: false,
-                    total: totalExpenses
-                });
-
-                reportDiv.update(table);
-                reportDiv.show();
 
             },
             failure: function(request){
@@ -319,51 +533,17 @@ javaxt.express.finance.Reports = function(parent, config) {
     };
 
 
-
   //**************************************************************************
-  //** showDetails
+  //** getTransactions
   //**************************************************************************
-    var showDetails = function(category){
+    var getTransactions = function(category, startDate, endDate){
         if (!category.id) return;
 
         get("report/Transactions?categoryID=" + category.id +
             "&startDate=" + startDate + "&endDate=" + endDate,  {
             success: function(text){
                 transactionsPanel.clear();
-
-                var div = document.createElement("div");
-                div.style.width = "600px";
-                div.style.height = "600px";
-
-                var table = new javaxt.dhtml.Table(div, {
-                    style: {
-                        row: "report-row",
-                        column: "report-cell"
-                    },
-                    columns: [
-                        {
-                            header: "ID",
-                            hidden: true
-                        },
-                        {
-                            header: "Date",
-                            width: 85,
-                            align: "right"
-                        },
-                        {
-                            header: "Desciption",
-                            width: "100%"
-                        },
-                        {
-                            header: "Amount",
-                            width: 125,
-                            align: "right"
-                        }
-                    ]
-                });
-
-
-
+                transactionsPanel.setTitle(category.name);
 
                 var arr = JSON.parse(text);
                 for (var i=0; i<arr.length; i++){
@@ -381,29 +561,224 @@ javaxt.express.finance.Reports = function(parent, config) {
                     ];
                 }
 
-                table.addRows(arr);
-
-
-                table.onSelectionChange = function(rows){
-                    for (var i=0; i<rows.length; i++){
-                        var row = rows[i];
-                        if (row.selected){
-                            var transactionID = parseInt(row.get(0));
-                            console.log("Edit transaction " + transactionID);
-                            break;
-                        }
-                    }
-                };
-
-                transactionsPanel.update(div);
+                accountGraphics.hide();
                 transactionsPanel.show();
+                transactionsPanel.update(arr);
             },
             failure: function(request){
                 alert(request);
             }
         });
+    };
 
 
+  //**************************************************************************
+  //** createMenu
+  //**************************************************************************
+    var createMenu = function(){
+        var body = document.getElementsByTagName("body")[0];
+        var callout = new javaxt.dhtml.Callout(body, {
+            style: {
+                panel: "callout-panel",
+                arrow: "callout-arrow"
+            }
+        });
+
+        var innerDiv = callout.getInnerDiv();
+        var contentDiv = document.createElement("div");
+        contentDiv.style.padding = "5px";
+        innerDiv.appendChild(contentDiv);
+
+
+        var form = new javaxt.dhtml.Form(contentDiv, {
+            style: config.style.form,
+            items: [
+                {
+                    name: "year",
+                    label: "Year",
+                    type: createComboBox({
+                        style: config.style.combobox,
+                        scrollbar: true
+                    })
+                },
+                {
+                    name: "type",
+                    label: "Columns",
+                    type: "radio",
+                    alignment: "vertical",
+                    options: [
+                        {
+                            label: "Show Montly Average",
+                            value: "montlyAvg"
+                        },
+                        {
+                            label: "Compare Previous Year",
+                            value: "prevYear"
+                        }
+                    ]
+                }
+            ],
+            buttons: [
+                {
+                    name: "Update",
+                    onclick: function(){
+                        var year = parseInt(form.getValue("year"));
+                        var type = form.getValue("type");
+                        getAccountSummary(accountDetails.account, year, type);
+                        menu.hide();
+                    }
+                }
+            ]
+        });
+
+
+        callout.onShow = function(){
+
+          //Update type
+            if (accountDetails.type){
+                form.setValue("type", accountDetails.type);
+            }
+            else{
+                form.setValue("type", "montlyAvg");
+            }
+
+
+          //Update year
+            var year = form.findField("year");
+            year.clear();
+            var arr = accountDetails.years;
+            if (arr){
+                for (var i=0; i<arr.length; i++){
+                    year.add(arr[i]);
+                }
+
+                if (accountDetails.year){
+                    year.setValue(accountDetails.year);
+                }
+                else {
+                    if (arr.length>0) year.setValue(arr[0]);
+                }
+            }
+        };
+
+        return callout;
+    };
+
+
+  //**************************************************************************
+  //** createPanel
+  //**************************************************************************
+    var createPanel = function(config){
+
+        var panel = document.createElement("div");
+        panel.className = "report-panel";
+
+
+        var titleDiv = document.createElement("div");
+        titleDiv.className = "report-title";
+        panel.appendChild(titleDiv);
+
+
+        var title = document.createElement("div");
+        if (config.title) title.innerHTML = config.title;
+        titleDiv.appendChild(title);
+
+
+        var innerDiv = document.createElement("div");
+        innerDiv.style.position = "absolute";
+        innerDiv.style.top = 0;
+        innerDiv.style.right = 0;
+        innerDiv.style.width = "18px";
+        innerDiv.style.height = "18px";
+        innerDiv.style.zIndex = 1;
+        innerDiv.style.cursor = "pointer";
+        innerDiv.innerHTML = "&#x2715;";
+        innerDiv.onclick = config.onClose;
+        titleDiv.appendChild(innerDiv);
+
+
+        var subtitleDiv = document.createElement("div");
+        subtitleDiv.style.textAlign = "center";
+        panel.appendChild(subtitleDiv);
+
+        var subtitle = document.createElement("div");
+        subtitle.className = "report-subtitle";
+        subtitle.style.display = "inline-block";
+        subtitle.onclick = function(e){
+            if (config.onSubTitle) config.onSubTitle(this, e);
+        };
+        subtitleDiv.appendChild(subtitle);
+
+
+        var body = document.createElement("div");
+        body.className = "report-body";
+        panel.appendChild(body);
+
+
+        panel.show = function(){
+            this.style.visibility = '';
+            this.style.display = '';
+        };
+        panel.hide = function(){
+            this.style.visibility = 'hidden';
+            this.style.display = 'none';
+        };
+        panel.hide();
+
+        panel.clear = function(){
+            title.innerHTML = "";
+            subtitle.innerHTML = "";
+            body.innerHTML = "";
+        };
+
+        panel.setTitle = function(str){
+            title.innerHTML = str;
+        };
+
+        panel.setSubTitle = function(str){
+            subtitle.innerHTML = str;
+        };
+
+        panel.update = function(content){
+            if (typeof parent === "string"){
+                body.innerHTML = content;
+            }
+            else{
+                body.appendChild(content);
+            }
+        };
+
+        return panel;
+    };
+
+
+  //**************************************************************************
+  //** createComboBox
+  //**************************************************************************
+    var createComboBox = function(comboboxConfig){
+        return new javaxt.dhtml.ComboBox(document.createElement("div"), comboboxConfig);
+    };
+
+
+  //**************************************************************************
+  //** createCanvas
+  //**************************************************************************
+    var createCanvas = function(parent){
+        var w = 250;
+        var h = 250;
+        var div = document.createElement("div");
+        div.style.width = w+"px";
+        div.style.height = h+"px";
+        div.style.display = "inline-block";
+        parent.appendChild(div);
+
+        var canvas = document.createElement("canvas");
+        canvas.style.width = w+"px";
+        canvas.style.height = h+"px";
+        canvas.width = w;
+        canvas.height = h;
+        div.appendChild(canvas);
+        return canvas;
     };
 
 
@@ -414,6 +789,7 @@ javaxt.express.finance.Reports = function(parent, config) {
     var merge = javaxt.dhtml.utils.merge;
     var createTable = javaxt.dhtml.utils.createTable;
     var createCell = javaxt.express.finance.utils.createCell;
+    var createDoughnut = javaxt.express.finance.utils.createDoughnut;
     var getAccounts = javaxt.express.finance.utils.getAccounts;
     var formatCurrency = javaxt.express.finance.utils.formatCurrency;
 
