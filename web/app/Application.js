@@ -14,7 +14,6 @@ javaxt.express.finance.Application = function(parent, config) {
 
     var me = this;
     var carousel;
-    var fx = new javaxt.dhtml.Effects();
 
     var nav;
     var apps = [];
@@ -27,7 +26,7 @@ javaxt.express.finance.Application = function(parent, config) {
 
       //Set global configuration variables
         if (!config) config = {};
-        if (!config.fx) config.fx = fx;
+        if (!config.fx) config.fx = new javaxt.dhtml.Effects();
 
 
       //Create main table
@@ -220,7 +219,7 @@ javaxt.express.finance.Application = function(parent, config) {
             animate: true,
             animationSteps: 600,
             transitionEffect: "easeInOutCubic",
-            fx: fx
+            fx: config.fx
         });
 
 
@@ -238,6 +237,7 @@ javaxt.express.finance.Application = function(parent, config) {
 
       //Add event handlers
         carousel.beforeChange = function(){
+            parent.className = "blur";
             sliding = true;
         };
         carousel.onChange = function(currPanel, prevPanel){
@@ -252,6 +252,7 @@ javaxt.express.finance.Application = function(parent, config) {
                 }
             }
 
+            parent.className = "";
             sliding = false;
         };
 
@@ -259,7 +260,7 @@ javaxt.express.finance.Application = function(parent, config) {
       //Create apps
         createApp("Dashboard", javaxt.express.finance.Dashboard);
         createApp("Transactions", javaxt.express.finance.Transactions, "aliceblue");
-        createApp("Reports", javaxt.express.finance.Reports, "#75bdbd");
+        createApp("Reports", javaxt.express.finance.Reports, "#e2e2e2");
         createApp("Invoices", javaxt.express.finance.Invoices, "bisque");
     };
 
