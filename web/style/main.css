@@ -1,8 +1,11 @@
+@import url(https://fonts.googleapis.com/css?family=Montserrat);
+@import url(https://fonts.googleapis.com/css?family=Great+Vibes);
+
+
 /**************************************************************************/
 /** Header
 /**************************************************************************/
 
-@import url(https://fonts.googleapis.com/css?family=Montserrat);
 
 .header{
     height: 68px;
@@ -177,7 +180,32 @@
     padding: 1px 0 0 5px;
 }
 
+.facet-checkbox {
+    width: 13px;
+    height: 13px;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    background: #F6F6F6;
+    cursor: pointer;
+    margin: 0px;
+    color: #2b2b2b;
+}
 
+
+.facet-checkmark {
+    display: block;
+    width: 3px;
+    height: 6px;
+    border: solid #ffffff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin: 1px 0 0 4px;
+}
+
+
+.facet-label, .facet-checkbox {
+    margin: 2px 0 3px 0;
+}
 
 /**************************************************************************/
 /** 16x16 Icons
@@ -478,34 +506,88 @@
 /**************************************************************************/
 /** Reports Panel
 /**************************************************************************/
+
+.report-preview, .report-panel {
+    display:inline-block;
+    float: left;
+}
+
 .report-preview {
     width:150px;
     height:150px;
     border:1px solid #dcdcdc;
+    border-radius: 5px;
     background-color:#fff;
-    display:inline-block;
     margin:50px;
     padding: 5px;
     font-size: 18px;
     box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: all .4s ease;
+    user-select: none;
+}
+
+
+.report-preview:hover { /** Super cheezy*/
+    box-shadow: 0px 20px 14px 0 rgba(0, 0, 0, 0.2), 14px 20px 20px 0 rgba(0, 0, 0, 0.2);
+    transition: all .4s ease;
 }
 
 .report-panel {
     border:1px solid #dcdcdc;
+    border-radius: 5px;
     background-color:#fff;
-    display:inline-block;
     margin:50px;
-    padding: 5px;
     font-size: 18px;
     box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
+}
+
+.report-title {
+    font-size: 20px;
+    text-align: center;
+    background-color: #f0f8ff;
+    position: relative;
+    padding: 5px 0 5px 0;
+    border-bottom: 1px solid #aacde2;
+    border-top: 1px solid #aacde2;
+    color: #0d4262;
+    user-select: none;
+}
+
+.report-subtitle {
+  font: 400 55px/0.8 'Great Vibes', Helvetica, sans-serif;
+  color: #da9860;
+  user-select: none;
+  text-align: center;
+  padding-top: 9px;
+  transition: all .4s ease;
+  cursor:pointer;
+}
+
+.report-subtitle:hover{
+    transition: all .4s ease;
+    text-shadow: 4px 4px 3px rgba(0,0,0,0.1);
+    color: #ff8116;
+}
+
+.report-body {
+    position: relative;
+    padding: 0 5px 5px 5px;
 }
 
 .report-header {
     font-size: 18px;
     padding: 10px 0 5px;
     border-bottom: 1px solid #5f5f5f;
+    user-select: none;
 }
 
+.report-column-header{
+    font-size: 10px;
+    text-align: center;
+    padding: 15px 0 0 0;
+    color: #797979;
+}
 
 .report-row, .report-cell,
 .report-row-footer, .report-cell-footer{
@@ -515,12 +597,18 @@
 
 .report-row {
     cursor: pointer;
-
 }
 
 .report-row:hover{
     background-color:#EDF3FE;
 }
+
+.report-row-selected, .report-row-selected:hover{
+    background-color:#b9e5ff;
+    cursor: pointer;
+    transition: all .4s ease;
+}
+
 
 .report-cell, .report-cell-footer {
     border-left: 1px solid #dcdcdc;
@@ -541,6 +629,31 @@
 
 
 /**************************************************************************/
+/** Callout
+/**************************************************************************/
+
+.callout-panel, .callout-arrow{
+    border: 1px solid #aacde2;
+    background-color: #f0f8ff;
+}
+
+.callout-panel {
+    border-radius: 5px;
+    box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
+}
+
+.callout-arrow {
+    /*
+  //Only backgroundColor, borderColor, width, height, and padding
+  //are considered. All other properties are ignored.
+  */
+    width: 10px;
+    height: 10px;
+    padding: 10px;
+}
+
+
+/**************************************************************************/
 /** Misc
 /**************************************************************************/
 
@@ -554,4 +667,14 @@
     border-left: none;
 }
 
+
+/** Used to create a blur effect. Requires an svg element (see index.html)
+ */
+.blur {
+    filter: progid:DXImageTransform.Microsoft.Blur(PixelRadius='3');
+    -webkit-filter: url(#blur-filter);
+    filter: url(#blur-filter);
+    -webkit-filter: blur(3px);
+    filter: blur(3px);
+}
 

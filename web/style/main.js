@@ -18,6 +18,21 @@ javaxt.dhtml.utils.merge({
         },
         body: "facet-body",
         label: "facet-label",
-        checkmark: "checkmark"
-    }
+        checkbox: "facet-checkbox",
+        checkmark: "facet-checkmark"
+    },
+    colors: [
+        "#FEFE33",
+        "#FABC02",
+        "#FB9902",
+        "#FD5308",
+        "#FE2712",
+        "#A7194B",
+        "#8601AF",
+        "#3D01A4",
+        "#0247FE",
+        "#0392CE",
+        "#66B032",
+        "#D0EA2B"
+    ]
 }, javaxt.dhtml.style.default);
