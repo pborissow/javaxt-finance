@@ -246,6 +246,47 @@ public class ReportService extends WebService {
 
 
   //**************************************************************************
+  //** getDistinctYears
+  //**************************************************************************
+  /** Returns a distinct list of years found in the transaction table.
+   *  Provides an option to filter dates by account. Note that this method
+   *  currently does not account for timezones with may yield unexpected
+   *  results.
+   */
+    public ServiceResponse getDistinctYears(ServiceRequest request, Database database)
+        throws ServletException, IOException {
+
+        Long accountID = getAccountID(request);
+
+        String sql = "select distinct(year(date)) as year from ";
+        if (accountID==null){
+            sql += "TRANSACTION";
+        }
+        else{
+            sql += "transaction left join category on transaction.category_id=category.id " +
+            "where account_id=" + accountID;
+        }
+        sql += " order by year desc";
+
+
+        Connection conn = null;
+        try{
+            conn = database.getConnection();
+            JSONArray arr = new JSONArray();
+            for (Recordset rs : conn.getRecordset(sql)){
+                arr.add(rs.getValue(0).toInteger());
+            }
+            conn.close();
+            return new ServiceResponse(arr);
+        }
+        catch(Exception e){
+            if (conn!=null) conn.close();
+            return new ServiceResponse(e);
+        }
+    }
+
+
+  //**************************************************************************
   //** getAccountID
   //**************************************************************************
     private Long getAccountID(ServiceRequest request){
