@@ -30,7 +30,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
         notificationWindow;
 
     var dateDisplayFormat;
-    var fx = new javaxt.dhtml.Effects();
     var isMobile = false;
     var accounts, accountStats; //<--Both are DataStores
     var filter = {};
@@ -56,6 +55,9 @@ javaxt.express.finance.Transactions = function(parent, config) {
         merge(clone, defaultConfig);
         config = clone;
 
+
+      //Get or create animation effects
+        if (!config.fx) config.fx = new javaxt.dhtml.Effects();
 
 
       //Set date format
@@ -225,16 +227,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
             label: "Edit",
             icon: "editIcon",
             toggle: true,
-            disabled: false
+            disabled: true
         });
-        editButton.onClick = function(){
-            if (this.isSelected()){
-                transactionEditor.show();
-            }
-            else{
-                transactionEditor.hide();
-            }
-        };
 
 
 
@@ -250,6 +244,23 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
 
         createSpacer(toolbar);
+
+
+      //Categorize button
+        var categorizeButton = createButton(toolbar, {
+            label: "Categorize",
+            icon: "mergeIcon",
+            toggle: true,
+            disabled: false
+        });
+        categorizeButton.onClick = function(){
+            if (this.isSelected()){
+                transactionEditor.show();
+            }
+            else{
+                transactionEditor.hide();
+            }
+        };
 
 
       //Filter button
@@ -346,7 +357,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
                 {header: 'Date', field: 'date', width:'90', align: 'right'},
                 {header: 'Day', width:'90', align: 'left'},
                 {header: 'Description', field: 'description', width:'100%'},
-                {header: 'Source', field: 'sourceID', width:'60'},
+                {header: 'Source', field: 'sourceID', width:'75'},
                 {header: 'Account', width:'120'},
                 {header: 'Category', width:'120'},
                 {header: 'Amount', field: 'amount', width:'90', align: 'right'}
@@ -414,7 +425,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
         div.style.height = "100%";
         div.style.position = "relative";
         div.style.backgroundColor = "#fff";
-        fx.setTransition(div, "easeInOutCubic", 600);
+        config.fx.setTransition(div, "easeInOutCubic", 600);
         parent.appendChild(div);
 
 
@@ -575,9 +586,9 @@ javaxt.express.finance.Transactions = function(parent, config) {
         var currSelection = null;
 
         var panel = createPanel(parent, numColumns===2);
-        panel.table.className = "blue-table";
+        panel.table.className = "green-table";
 
-        panel.toolbar.className = "bbar bbar-blue";
+        panel.toolbar.className = "bbar bbar-green";
         panel.createButton.onClick = function(){
             editCategory();
         };
@@ -590,10 +601,10 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
 
         var style = merge({
-            headerRow: "blue-table-header",
-            headerColumn : "blue-table-header-col",
-            row: "blue-table-row",
-            selectedRow: "blue-table-row-selected"
+            headerRow: "green-table-header",
+            headerColumn : "green-table-header-col",
+            row: "green-table-row",
+            selectedRow: "green-table-row-selected"
         }, config.style.table);
 
 
@@ -1160,7 +1171,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
         div.style.position = "relative";
         div.style.overflow = "hidden";
         div.style.borderRight = "1px solid #dcdcdc";
-        fx.setTransition(div, "easeInOutCubic", 600);
+        config.fx.setTransition(div, "easeInOutCubic", 600);
         parent.appendChild(div);
 
 
@@ -1200,7 +1211,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
                                 if (accounts.get(j).name===accountName){
                                     var categories = accounts.get(j).categories;
                                     if (categories){
-                                        filter.categoryID = "";
                                         for (var k=0; k<categories.length; k++){
                                             if (x>0) filter.categoryID+=",";
                                             filter.categoryID+=categories.get(k).id;
