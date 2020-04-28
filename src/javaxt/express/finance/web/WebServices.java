@@ -212,7 +212,7 @@ public class WebServices extends WebService {
             JSONObject json = request.getJson();
             long sourceID = json.get("source").toLong();
             Source source = new Source(sourceID);
-            JSONObject template = source.getInfo().get("template").toJSONObject();
+            JSONObject template = source.getTemplate().getInfo();
             int startRow = template.has("startRow") ? template.get("startRow").toInteger() : 0;
             Boolean containsHeader = template.get("containsHeader").toBoolean();
             if (containsHeader==null) containsHeader = false;
