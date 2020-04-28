@@ -278,7 +278,7 @@ javaxt.express.finance.ImportWizard = function(config) {
                 sourceList.clear();
 
               //Populate list of sources
-                get("SourceAccounts?fields=vendorID", {
+                get("SourceAccounts?fields=vendorID&active=true", {
                     success: function(text){
                         var vendorIDs = [];
                         var rows = JSON.parse(text).rows;
@@ -288,7 +288,7 @@ javaxt.express.finance.ImportWizard = function(config) {
                         vendorIDs = Array.from(new Set(vendorIDs));
 
                         if (vendorIDs.length>0){
-                            get("Vendors?fields=id,name&id=" + vendorIDs.join(), {
+                            get("Vendors?fields=id,name&id=" + vendorIDs.join() + "&orderby=name", {
                                 success: function(text){
                                     var rows = JSON.parse(text).rows;
                                     for (var i=0; i<rows.length; i++){
@@ -296,12 +296,18 @@ javaxt.express.finance.ImportWizard = function(config) {
                                         var vendorID = col[0];
                                         var vendorName = col[1];
                                         sourceList.add(vendorName, vendorID);
+                                        if (rows.length==1) sourceList.setValue(vendorID);
                                     }
+
+                                    sourceType.setValue("existingSource");
                                 },
                                 failure: function(request){
                                     alert(request);
                                 }
                             });
+                        }
+                        else{
+                            next();
                         }
                     },
                     failure: function(request){
@@ -324,6 +330,8 @@ javaxt.express.finance.ImportWizard = function(config) {
                         return false;
                     }
                     else{
+                        panel = getPanel("Template", selectTemplate);
+
                         get("Vendor/" + vendorID, {
                             success: function(text){
                                 vendor = JSON.parse(text);
@@ -336,7 +344,6 @@ javaxt.express.finance.ImportWizard = function(config) {
                     }
                 }
 
-                panel = getPanel("Template", selectTemplate);
 
                 return panel;
             },
@@ -380,8 +387,7 @@ javaxt.express.finance.ImportWizard = function(config) {
             title: "New Source",
             el: parent,
             init: function(){
-                console.log(history.length);
-                //if (history.length==1)
+                form.clear();
             },
             validate: function(callback){
 
@@ -498,16 +504,16 @@ javaxt.express.finance.ImportWizard = function(config) {
         div.style.maxWidth = "350px";
         td.appendChild(div);
 
-        var sourceList = new javaxt.dhtml.ComboBox(div, {
+        var templateList = new javaxt.dhtml.ComboBox(div, {
             maxVisibleRows: 5,
             style: config.style.combobox
         });
 
-        sourceList.show = function(){
+        templateList.show = function(){
             tr.style.visibility = '';
             tr.style.display = '';
         };
-        sourceList.hide = function(){
+        templateList.hide = function(){
             tr.style.visibility = 'hidden';
             tr.style.display = 'none';
         };
@@ -519,10 +525,10 @@ javaxt.express.finance.ImportWizard = function(config) {
         form.onChange = function(field, value){
             if (field===templateType){
                 if (value=="newTemplate"){
-                    sourceList.hide();
+                    templateList.hide();
                 }
                 else{
-                    sourceList.show();
+                    templateList.show();
                 }
             }
         };
@@ -536,12 +542,12 @@ javaxt.express.finance.ImportWizard = function(config) {
 
               //Select one of the radio buttons
                 templateType.setValue("newTemplate");
-                sourceList.clear();
+                templateList.clear();
 
 
               //Get list of known templates and populate the combobox
                 if (vendor.id){
-                    get("SourceTemplates?vendorID="+vendor.id, {
+                    get("SourceTemplates?vendorID="+vendor.id  + "&active=true&orderby=id desc", {
                         success: function(text){
                             var response = JSON.parse(text);
                             var rows = response.rows;
@@ -558,8 +564,11 @@ javaxt.express.finance.ImportWizard = function(config) {
                                             sourceTemplate[col] = row[cols[col]];
                                         }
                                     }
-                                    sourceList.add(sourceTemplate.name, sourceTemplate);
+                                    templateList.add(sourceTemplate.name, sourceTemplate);
+                                    if (rows.length==1) templateList.setValue(sourceTemplate.name);
                                 }
+
+                                templateType.setValue("existingTemplate");
                             }
                             else{
                                 //TODO: disable "existingTemplate"
@@ -579,9 +588,9 @@ javaxt.express.finance.ImportWizard = function(config) {
                     panel.init();
                 }
                 else{
-                    template = sourceList.getValue();
+                    template = templateList.getValue();
                     if (!template){
-                        warn("Please select a template", sourceList);
+                        warn("Please select a template", templateList);
                         return false;
                     }
                     panel = getPanel("Select Account", selectAccount);
@@ -1453,7 +1462,7 @@ javaxt.express.finance.ImportWizard = function(config) {
 
               //Get list of known templates and populate the combobox
                 if (vendor.id){
-                    get("SourceAccounts?vendorID="+vendor.id, {
+                    get("SourceAccounts?vendorID="+vendor.id + "&orderby=accountName", {
                         success: function(text){
                             var response = JSON.parse(text);
                             var rows = response.rows;
@@ -1462,6 +1471,7 @@ javaxt.express.finance.ImportWizard = function(config) {
                                 cols[response.cols[i]] = i;
                             }
                             if (rows.length>0){
+
                                 for (var i=0; i<rows.length; i++){
                                     var row = rows[i];
                                     var sourceAccount = {};
@@ -1470,17 +1480,32 @@ javaxt.express.finance.ImportWizard = function(config) {
                                             sourceAccount[col] = row[cols[col]];
                                         }
                                     }
-                                    accountList.add(sourceAccount.name, sourceAccount);
+                                    var label = sourceAccount.accountName;
+                                    var accountNumber = sourceAccount.accountNumber;
+                                    if (accountNumber){
+                                        if (accountNumber.length>4) accountNumber = accountNumber.substring(accountNumber.length-4);
+                                        label += " ..." + accountNumber;
+                                    }
+                                    label += " (" + vendor.name + ")";
+
+                                    accountList.add(label, sourceAccount);
+                                    if (rows.length==1) accountList.setValue(label);
                                 }
+
+                                accountType.setValue("existingAccount");
                             }
                             else{
-                                //TODO: disable "existingAccount"
+                                //next();
                             }
                         },
                         failure: function(request){
                             alert(request);
                         }
                     });
+                }
+                else{
+                    console.log("Next!");
+                    //next();
                 }
             },
             getNextPanel: function(){
