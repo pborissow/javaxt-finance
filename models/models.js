@@ -83,6 +83,10 @@ var models = {
         fields: [
             {name: 'account',       type: 'SourceAccount'},
             {name: 'template',      type: 'SourceTemplate'}
+        ],
+        constraints: [
+            {name: 'account',    required: true},
+            {name: 'template',   required: true}
         ]
     },
 
@@ -100,8 +104,9 @@ var models = {
         ],
         constraints: [
             {name: 'accountName',    required: true,  length: 75},
-            {name: 'accountNumber',  required: true,  length: 125},
-            {name: 'active',         required: true}
+            {name: 'accountNumber',  required: false, length: 125},
+            {name: 'active',         required: true},
+            {name: 'vendor',  required: true}
         ],
         defaults: [
             {name: 'active',  value: true}
@@ -122,7 +127,8 @@ var models = {
         ],
         constraints: [
             {name: 'name',    required: true,  length: 75,  unique: true},
-            {name: 'active',  required: true}
+            {name: 'active',  required: true},
+            {name: 'vendor',  required: true}
         ],
         defaults: [
             {name: 'active',  value: true}
