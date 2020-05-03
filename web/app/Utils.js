@@ -548,6 +548,13 @@ javaxt.express.finance.utils = {
   //**************************************************************************
     createButton: function(toolbar, btn){
 
+        if (!btn.style){
+            btn.style = {};
+            var defaultStyle = javaxt.express.finance.style.toolbarButton;
+            javaxt.dhtml.utils.merge(btn.style, defaultStyle);
+        }
+
+
         if (btn.icon){
             btn.style.icon = "toolbar-button-icon " + btn.icon;
             delete btn.icon;
@@ -638,77 +645,3 @@ javaxt.express.finance.utils = {
         return chart;
     }
 };
-
-
-
-  //**************************************************************************
-  //** alert
-  //**************************************************************************
-  /** Overrides the native javascript alert() method by creating a
-   *  javaxt.dhtml.Alert window.
-   */
-    var alert = function(msg, callback, scope){
-
-        if (msg==null) msg = "";
-
-
-      //Special case for ajax request
-        if (!(typeof(msg) === 'string' || msg instanceof String)){
-            if (msg.responseText){
-                msg = (msg.responseText.length>0 ? msg.responseText : msg.statusText);
-            }
-        }
-
-        var win = javaxt.dhtml.Alert;
-
-        if (!win){
-
-            var body = document.getElementsByTagName("body")[0];
-
-
-            var outerDiv = document.createElement('div');
-            outerDiv.style.width = "100%";
-            outerDiv.style.height = "100%";
-            outerDiv.style.position = "relative";
-            outerDiv.style.cursor = "inherit";
-            var innerDiv = document.createElement('div');
-            innerDiv.style.width = "100%";
-            innerDiv.style.height = "100%";
-            innerDiv.style.position = "absolute";
-            innerDiv.style.overflowX = 'hidden';
-            innerDiv.style.cursor = "inherit";
-            outerDiv.appendChild(innerDiv);
-
-
-            win = javaxt.dhtml.Alert = new javaxt.dhtml.Window(body, {
-                width: 450,
-                height: 200,
-                valign: "top",
-                modal: true,
-                title: "Alert",
-                body: outerDiv,
-                style: {
-                    panel: "window",
-                    header: "window-header alert-header",
-                    title: "window-title",
-                    buttonBar: {
-                        float: "right",
-                        padding: "9px"
-                    },
-                    button: "window-header-button",
-                    body: {
-                        padding: "10px 10px 15px 15px",
-                        verticalAlign: "top"
-                    }
-                }
-            });
-            win.div = innerDiv;
-        }
-
-
-        win.div.innerHTML = msg;
-        win.show();
-
-    };
-
-    javaxt.dhtml.Alert = null;
