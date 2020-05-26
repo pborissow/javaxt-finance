@@ -341,6 +341,51 @@ javaxt.express.finance.utils = {
 
 
   //**************************************************************************
+  //** getDataStore
+  //**************************************************************************
+  /** Used to get or create a DataStore. The DataStore is assigned to a given
+   *  config object (e.g. config.vendors). A callback is called when the
+   *  DataStore becomes available for use.
+   *  @param name Name of the datastore. The name is a plural varient of a
+   *  Model name (e.g. "vendors", "templates", etc).
+   */
+    getDataStore: function(name, config, callback){
+        if (config[name]){
+            if (config[name] instanceof javaxt.dhtml.DataStore) {
+                if (callback) callback.call();
+            }
+            else{
+                var timer;
+                var interval = 100;
+                var checkAccounts = function(){
+                    if (config[name] instanceof javaxt.dhtml.DataStore) {
+                        clearTimeout(timer);
+                        if (callback) callback.call();
+                    }
+                    else{
+                        timer = setTimeout(checkAccounts, interval);
+                    }
+                };
+                timer = setTimeout(checkAccounts, interval);
+            }
+        }
+        else{
+            config[name] = "Loading...";
+            javaxt.dhtml.utils.get(name, {
+                success: function(text){
+                    var parseResponse = javaxt.express.finance.utils.normalizeResponse;
+                    config[name] = new javaxt.dhtml.DataStore(parseResponse(text));
+                    if (callback) callback.call();
+                },
+                failure: function(request){
+                    alert(request);
+                }
+            });
+        }
+    },
+
+
+  //**************************************************************************
   //** getAccounts
   //**************************************************************************
   /** Used to get or create a DataStore with accounts and categories. The
@@ -643,5 +688,86 @@ javaxt.express.finance.utils = {
         });
 
         return chart;
+    },
+
+
+  //**************************************************************************
+  //** createWaitMask
+  //**************************************************************************
+  /** Inserts a mask with a spinner. Assumes the parent is a relative div
+   */
+    createWaitMask : function(parent){
+        var waitMask = document.createElement('div');
+        waitMask.className = "waitmask";
+        waitMask.show = function(){
+            waitMask.style.display = "";
+            waitMask.style.opacity = "";
+            waitMask.innerHTML = "";
+            new javaxt.express.Spinner(waitMask,{size:"50px",lineWidth:3}).show();
+        };
+        waitMask.hide = function(){
+            waitMask.innerHTML = "";
+            waitMask.style.display = "none";
+            waitMask.style.opacity = 0;
+        };
+        waitMask.hide();
+        parent.appendChild(waitMask);
+        return waitMask;
+    },
+
+
+  //**************************************************************************
+  //** warn
+  //**************************************************************************
+  /** Used to display a warning/error message over a given form field.
+   */
+    warn: function(msg, field){
+        var tr = field.row;
+        var td;
+        if (tr){
+            td = tr.childNodes[2];
+        }
+        else{
+            td = field.el.parentNode;
+        }
+        var getRect = javaxt.dhtml.utils.getRect;
+        var rect = getRect(td);
+
+
+        var inputs = td.getElementsByTagName("input");
+        if (inputs.length>0){
+            inputs[0].blur();
+            var cls = "form-input-error";
+            if (inputs[0].className){
+                if (inputs[0].className.indexOf(cls)==-1) inputs[0].className += " " + cls;
+            }
+            else{
+                inputs[0].className = cls;
+            }
+            rect = getRect(inputs[0]);
+            field.resetColor = function(){
+                if (inputs[0].className){
+                    inputs[0].className = inputs[0].className.replace(cls,"");
+                }
+            };
+        }
+
+        var callout = javaxt.express.formError;
+        if (!callout){
+            var body = document.getElementsByTagName("body")[0];
+            callout = new javaxt.dhtml.Callout(body,{
+                style:{
+                    panel: "error-callout-panel",
+                    arrow: "error-callout-arrow"
+                }
+            });
+            javaxt.express.formError = callout;
+        }
+
+        callout.getInnerDiv().innerHTML = msg;
+
+        var x = rect.x + (rect.width/2);
+        var y = rect.y;
+        callout.showAt(x, y, "above", "center");
     }
 };
