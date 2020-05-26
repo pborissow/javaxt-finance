@@ -1289,17 +1289,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
 
   //**************************************************************************
-  //** createButton
-  //**************************************************************************
-    var createButton = function(parent, btn){
-        var defaultStyle = JSON.parse(JSON.stringify(config.style.toolbarButton));
-        if (btn.style) btn.style = merge(btn.style, defaultStyle);
-        else btn.style = defaultStyle;
-        return javaxt.express.finance.utils.createButton(parent, btn);
-    };
-
-
-  //**************************************************************************
   //** Utils
   //**************************************************************************
     var get = javaxt.dhtml.utils.get;
@@ -1309,6 +1298,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var createTable = javaxt.dhtml.utils.createTable;
     var createCell = javaxt.express.finance.utils.createCell;
     var createSpacer = javaxt.express.finance.utils.createSpacer;
+    var createButton = javaxt.express.finance.utils.createButton;
 
     var isNumber = javaxt.express.finance.utils.isNumber;
     var getMomentFormat = javaxt.express.finance.utils.getMomentFormat;
