@@ -22,7 +22,7 @@ javaxt.express.finance.ImportWizard = function(config) {
 
     var alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
     var dateDisplayFormat;
-    var datePopup, callout;
+    var datePopup;
     var data, vendor, template, account;
     var columnEditor;
 
@@ -1990,47 +1990,6 @@ javaxt.express.finance.ImportWizard = function(config) {
 
 
   //**************************************************************************
-  //** warn
-  //**************************************************************************
-  /** Used to display a warning/error message over a given input
-   */
-    var warn = function(msg, input){
-        var tr = input.row;
-        var td;
-        if (tr){
-            td = tr.childNodes[2];
-        }
-        else{
-            td = input.el.parentNode;
-        }
-
-        var rect = getRect(td);
-
-
-        var inputs = td.getElementsByTagName("input");
-        if (inputs.length>0){
-            inputs[0].style.backgroundColor = "#ffebeb";
-            rect = getRect(inputs[0]);
-        }
-
-        if (!callout){
-            callout = new javaxt.dhtml.Callout(body,{
-                style:{
-                    panel: "error-callout-panel",
-                    arrow: "error-callout-arrow"
-                }
-            });
-        }
-
-        callout.getInnerDiv().innerHTML = msg;
-
-        var x = rect.x + (rect.width/2);
-        var y = rect.y;
-        callout.showAt(x, y, "above", "center");
-    };
-
-
-  //**************************************************************************
   //** isDate
   //**************************************************************************
   /** Returns true if the given object can be converted to a date and if the
@@ -2068,9 +2027,9 @@ javaxt.express.finance.ImportWizard = function(config) {
     var get = javaxt.dhtml.utils.get;
     var save = javaxt.dhtml.utils.post;
     var merge = javaxt.dhtml.utils.merge;
-    var getRect = javaxt.dhtml.utils.getRect;
     var setStyle = javaxt.dhtml.utils.setStyle;
 
+    var warn = javaxt.express.finance.utils.warn;
     var isNumber = javaxt.express.finance.utils.isNumber;
     var formatCurrency = javaxt.express.finance.utils.formatCurrency;
     var parseCSV = javaxt.express.finance.utils.parseCSV;
