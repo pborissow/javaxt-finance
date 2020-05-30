@@ -31,7 +31,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
     var dateDisplayFormat;
     var isMobile = false;
-    var accounts, accountStats; //<--Both are DataStores
+    var vendors, sources, sourceAccounts, accounts, accountStats; //DataStores
     var filter = {};
 
 
@@ -109,6 +109,12 @@ javaxt.express.finance.Transactions = function(parent, config) {
         parent.appendChild(table);
         me.el = table;
 
+
+        getSources(orgConfig, function(){
+            vendors = orgConfig.vendors;
+            sources = orgConfig.sources;
+            sourceAccounts = orgConfig.sourceAccounts;
+        });
 
 
       //Get accounts and update the panels
@@ -356,8 +362,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
             columns: [
                 {header: 'Date', field: 'date', width:'90', align: 'right'},
                 {header: 'Day', width:'90', align: 'left'},
+                {header: 'Source', field: 'sourceID', width:'120'},
                 {header: 'Description', field: 'description', width:'100%'},
-                {header: 'Source', field: 'sourceID', width:'75'},
                 {header: 'Account', width:'120'},
                 {header: 'Category', width:'120'},
                 {header: 'Amount', field: 'amount', width:'90', align: 'right'}
@@ -369,13 +375,38 @@ javaxt.express.finance.Transactions = function(parent, config) {
                 row.set('Date', date);
                 row.set('Day', m.format('dddd'));
                 row.set('Description', transaction.description);
-                row.set('Source', transaction.sourceID);
                 row.set('Amount', createCell("currency", transaction.amount));
 
                 var category = findCategory(transaction.categoryID);
                 if (category){
                     row.set("Category", category.name);
                     row.set("Account", category.account.name);
+                }
+
+
+                var source = findSource(transaction.sourceID);
+                if (source){
+
+                    var div = document.createElement("div");
+                    div.className = "transaction-grid-source";
+                    if (source.color) div.style.color = source.color;
+
+                    if (source.vendor){
+                        var d = document.createElement("div");
+                        d.innerHTML = source.vendor;
+                        div.appendChild(d);
+                        //if (source.color) d.style.color = source.color;
+                    }
+
+                    if (source.account){
+                        var d = document.createElement("div");
+                        d.innerHTML = source.account;
+                        div.appendChild(d);
+                        if (source.color) d.style.opacity = 0.5;
+                    }
+
+
+                    row.set('Source', div);
                 }
             }
         });
@@ -387,6 +418,44 @@ javaxt.express.finance.Transactions = function(parent, config) {
             categoryGrid.deselectAll();
         };
 
+    };
+
+
+  //**************************************************************************
+  //** findSource
+  //**************************************************************************
+    var findSource = function(sourceID){
+        if (!isNumber(sourceID)) return null;
+        for (var i=0; i<sources.length; i++){
+            var source = sources.get(i);
+            if (sourceID===source.id){
+                for (var j=0; j<sourceAccounts.length; j++){
+                    var sourceAccount = sourceAccounts.get(j);
+                    if (sourceAccount.id===source.accountID){
+                        var accountName = sourceAccount.accountName;
+                        var vendorName, color;
+                        for (var k=0; k<vendors.length; k++){
+                            var vendor = vendors.get(k);
+                            if (sourceAccount.vendorID===vendor.id){
+                                vendorName = vendor.name;
+                                if (vendor.info) color = vendor.info.color;
+                                break;
+                            }
+                        }
+
+
+                        return {
+                            account: accountName,
+                            vendor: vendorName,
+                            color: color
+                        };
+                    }
+                }
+
+                break;
+            }
+        }
+        return null;
     };
 
 
@@ -1304,6 +1373,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var getMomentFormat = javaxt.express.finance.utils.getMomentFormat;
 
     var parseResponse = javaxt.express.finance.utils.normalizeResponse;
+    var getSources = javaxt.express.finance.utils.getSources;
     var getAccounts = javaxt.express.finance.utils.getAccounts;
     var getTransactionsPerAccount = javaxt.express.finance.utils.getTransactionsPerAccount;
 
