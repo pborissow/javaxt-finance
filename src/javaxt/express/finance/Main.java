@@ -1,5 +1,6 @@
 package javaxt.express.finance;
 import javaxt.express.finance.web.WebApp;
+import javaxt.express.finance.utils.*;
 import javaxt.utils.Console;
 import javaxt.io.Jar;
 import javaxt.json.*;
@@ -64,6 +65,9 @@ public class Main {
                 if (conn!=null) conn.close();
                 e.printStackTrace();
             }
+        }
+        else if (args.containsKey("-updateSources")){
+            Maintenance.updateSources(arr[arr.length-1], database);
         }
         else{
             try{
