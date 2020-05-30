@@ -386,6 +386,21 @@ javaxt.express.finance.utils = {
 
 
   //**************************************************************************
+  //** getSources
+  //**************************************************************************
+    getSources: function(config, callback){
+        var getDataStore = javaxt.express.finance.utils.getDataStore;
+        getDataStore("vendors", config, function(){
+            getDataStore("sources", config, function(){
+                getDataStore("sourceAccounts", config, function(){
+                    if (callback) callback.call();
+                });
+            });
+        });
+    },
+
+
+  //**************************************************************************
   //** getAccounts
   //**************************************************************************
   /** Used to get or create a DataStore with accounts and categories. The
