@@ -17,10 +17,7 @@ javaxt.dhtml.style.default = {
         header: "panel-header window-header",
         title: "panel-title window-title",
         button: "window-header-button",
-        buttonBar: {
-            float: "right",
-            padding: "9px"
-        },
+        buttonBar: "window-header-button-bar",
         mask: "window-mask"
     },
 
@@ -88,7 +85,7 @@ javaxt.dhtml.style.default = {
         ascendingSortIcon: "table-icon-sort-asc",
         descendingSortIcon: "table-icon-sort-desc"
     },
-    
+
     tabPanel: {
 
     },

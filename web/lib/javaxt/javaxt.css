@@ -45,6 +45,16 @@ input, select, textarea { /* Allows overriding native style of form elements on 
 }
 
 
+.noselect, .javaxt-noselect {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -o-user-select: none;
+    -ms-user-select: none;
+    -khtml-user-select: none;
+    user-select: none;
+}
+
+
 /**************************************************************************/
 /** Panel
 /**************************************************************************/
@@ -131,7 +141,7 @@ input, select, textarea { /* Allows overriding native style of form elements on 
 
 /* Padding for button icons */
 .toolbar-button-icon {
-    margin: 0 3px 0 0px;
+    margin: 0 5px 0 0px;
 }
 
 /* Menu pulldown icon (triangle) */
@@ -473,7 +483,6 @@ select:focus, textarea:focus, input:focus{
 }
 
 .window-header {
-
     background: #0f6391;
     height: 36px;
     cursor: default;
@@ -487,7 +496,6 @@ select:focus, textarea:focus, input:focus{
 }
 
 .window-title {
-
     color: white;
     text-align: center;
     white-space: nowrap;
@@ -501,13 +509,24 @@ select:focus, textarea:focus, input:focus{
     padding-left: 9px;
 }
 
+.window-header-button-bar {
+    position: absolute;
+    right: 0;
+    padding: 6px 7px 0 0;
+}
+
 .window-header-button {
-    width: 18px;
-    height: 18px;
     font-size: 18px;
     border: 0;
     color: #ffffff;
     cursor: pointer;
+    padding: 5px;
+}
+
+.window-header-button:hover {
+    background-color:#5b9bd2;
+    transition: 0.1s;
+    border-radius: 3px;
 }
 
 .window-mask {
@@ -520,6 +539,9 @@ select:focus, textarea:focus, input:focus{
     background-color: #cb6400;
 }
 
+.alert-header .window-header-button:hover {
+    background-color: #ea985c;
+}
 
 
 
@@ -529,6 +551,7 @@ select:focus, textarea:focus, input:focus{
 /** Default style for grid controls
  */
 .table-header {
+    height: 36px; /*table-header-col height + border */
     border-bottom: 1px solid #ababab;
     background: #eaeaea;
     background-image: linear-gradient(to bottom, #f9f9f9, #e4e5e7);
