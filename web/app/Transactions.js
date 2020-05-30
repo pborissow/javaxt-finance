@@ -30,9 +30,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
         notificationWindow;
 
     var dateDisplayFormat;
-    var fx = new javaxt.dhtml.Effects();
     var isMobile = false;
-    var accounts, accountStats; //<--Both are DataStores
+    var vendors, sources, sourceAccounts, accounts, accountStats; //DataStores
     var filter = {};
 
 
@@ -56,6 +55,9 @@ javaxt.express.finance.Transactions = function(parent, config) {
         merge(clone, defaultConfig);
         config = clone;
 
+
+      //Get or create animation effects
+        if (!config.fx) config.fx = new javaxt.dhtml.Effects();
 
 
       //Set date format
@@ -107,6 +109,12 @@ javaxt.express.finance.Transactions = function(parent, config) {
         parent.appendChild(table);
         me.el = table;
 
+
+        getSources(orgConfig, function(){
+            vendors = orgConfig.vendors;
+            sources = orgConfig.sources;
+            sourceAccounts = orgConfig.sourceAccounts;
+        });
 
 
       //Get accounts and update the panels
@@ -225,16 +233,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
             label: "Edit",
             icon: "editIcon",
             toggle: true,
-            disabled: false
+            disabled: true
         });
-        editButton.onClick = function(){
-            if (this.isSelected()){
-                transactionEditor.show();
-            }
-            else{
-                transactionEditor.hide();
-            }
-        };
 
 
 
@@ -250,6 +250,23 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
 
         createSpacer(toolbar);
+
+
+      //Categorize button
+        var categorizeButton = createButton(toolbar, {
+            label: "Categorize",
+            icon: "mergeIcon",
+            toggle: true,
+            disabled: false
+        });
+        categorizeButton.onClick = function(){
+            if (this.isSelected()){
+                transactionEditor.show();
+            }
+            else{
+                transactionEditor.hide();
+            }
+        };
 
 
       //Filter button
@@ -345,8 +362,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
             columns: [
                 {header: 'Date', field: 'date', width:'90', align: 'right'},
                 {header: 'Day', width:'90', align: 'left'},
+                {header: 'Source', field: 'sourceID', width:'120'},
                 {header: 'Description', field: 'description', width:'100%'},
-                {header: 'Source', field: 'sourceID', width:'60'},
                 {header: 'Account', width:'120'},
                 {header: 'Category', width:'120'},
                 {header: 'Amount', field: 'amount', width:'90', align: 'right'}
@@ -358,13 +375,38 @@ javaxt.express.finance.Transactions = function(parent, config) {
                 row.set('Date', date);
                 row.set('Day', m.format('dddd'));
                 row.set('Description', transaction.description);
-                row.set('Source', transaction.sourceID);
                 row.set('Amount', createCell("currency", transaction.amount));
 
                 var category = findCategory(transaction.categoryID);
                 if (category){
                     row.set("Category", category.name);
                     row.set("Account", category.account.name);
+                }
+
+
+                var source = findSource(transaction.sourceID);
+                if (source){
+
+                    var div = document.createElement("div");
+                    div.className = "transaction-grid-source";
+                    if (source.color) div.style.color = source.color;
+
+                    if (source.vendor){
+                        var d = document.createElement("div");
+                        d.innerHTML = source.vendor;
+                        div.appendChild(d);
+                        //if (source.color) d.style.color = source.color;
+                    }
+
+                    if (source.account){
+                        var d = document.createElement("div");
+                        d.innerHTML = source.account;
+                        div.appendChild(d);
+                        if (source.color) d.style.opacity = 0.5;
+                    }
+
+
+                    row.set('Source', div);
                 }
             }
         });
@@ -376,6 +418,44 @@ javaxt.express.finance.Transactions = function(parent, config) {
             categoryGrid.deselectAll();
         };
 
+    };
+
+
+  //**************************************************************************
+  //** findSource
+  //**************************************************************************
+    var findSource = function(sourceID){
+        if (!isNumber(sourceID)) return null;
+        for (var i=0; i<sources.length; i++){
+            var source = sources.get(i);
+            if (sourceID===source.id){
+                for (var j=0; j<sourceAccounts.length; j++){
+                    var sourceAccount = sourceAccounts.get(j);
+                    if (sourceAccount.id===source.accountID){
+                        var accountName = sourceAccount.accountName;
+                        var vendorName, color;
+                        for (var k=0; k<vendors.length; k++){
+                            var vendor = vendors.get(k);
+                            if (sourceAccount.vendorID===vendor.id){
+                                vendorName = vendor.name;
+                                if (vendor.info) color = vendor.info.color;
+                                break;
+                            }
+                        }
+
+
+                        return {
+                            account: accountName,
+                            vendor: vendorName,
+                            color: color
+                        };
+                    }
+                }
+
+                break;
+            }
+        }
+        return null;
     };
 
 
@@ -414,7 +494,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
         div.style.height = "100%";
         div.style.position = "relative";
         div.style.backgroundColor = "#fff";
-        fx.setTransition(div, "easeInOutCubic", 600);
+        config.fx.setTransition(div, "easeInOutCubic", 600);
         parent.appendChild(div);
 
 
@@ -575,9 +655,9 @@ javaxt.express.finance.Transactions = function(parent, config) {
         var currSelection = null;
 
         var panel = createPanel(parent, numColumns===2);
-        panel.table.className = "blue-table";
+        panel.table.className = "green-table";
 
-        panel.toolbar.className = "bbar bbar-blue";
+        panel.toolbar.className = "bbar bbar-green";
         panel.createButton.onClick = function(){
             editCategory();
         };
@@ -590,10 +670,10 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
 
         var style = merge({
-            headerRow: "blue-table-header",
-            headerColumn : "blue-table-header-col",
-            row: "blue-table-row",
-            selectedRow: "blue-table-row-selected"
+            headerRow: "green-table-header",
+            headerColumn : "green-table-header-col",
+            row: "green-table-row",
+            selectedRow: "green-table-row-selected"
         }, config.style.table);
 
 
@@ -1160,7 +1240,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
         div.style.position = "relative";
         div.style.overflow = "hidden";
         div.style.borderRight = "1px solid #dcdcdc";
-        fx.setTransition(div, "easeInOutCubic", 600);
+        config.fx.setTransition(div, "easeInOutCubic", 600);
         parent.appendChild(div);
 
 
@@ -1200,7 +1280,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
                                 if (accounts.get(j).name===accountName){
                                     var categories = accounts.get(j).categories;
                                     if (categories){
-                                        filter.categoryID = "";
                                         for (var k=0; k<categories.length; k++){
                                             if (x>0) filter.categoryID+=",";
                                             filter.categoryID+=categories.get(k).id;
@@ -1279,17 +1358,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
 
   //**************************************************************************
-  //** createButton
-  //**************************************************************************
-    var createButton = function(parent, btn){
-        var defaultStyle = JSON.parse(JSON.stringify(config.style.toolbarButton));
-        if (btn.style) btn.style = merge(btn.style, defaultStyle);
-        else btn.style = defaultStyle;
-        return javaxt.express.finance.utils.createButton(parent, btn);
-    };
-
-
-  //**************************************************************************
   //** Utils
   //**************************************************************************
     var get = javaxt.dhtml.utils.get;
@@ -1299,11 +1367,13 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var createTable = javaxt.dhtml.utils.createTable;
     var createCell = javaxt.express.finance.utils.createCell;
     var createSpacer = javaxt.express.finance.utils.createSpacer;
+    var createButton = javaxt.express.finance.utils.createButton;
 
     var isNumber = javaxt.express.finance.utils.isNumber;
     var getMomentFormat = javaxt.express.finance.utils.getMomentFormat;
 
     var parseResponse = javaxt.express.finance.utils.normalizeResponse;
+    var getSources = javaxt.express.finance.utils.getSources;
     var getAccounts = javaxt.express.finance.utils.getAccounts;
     var getTransactionsPerAccount = javaxt.express.finance.utils.getTransactionsPerAccount;
 

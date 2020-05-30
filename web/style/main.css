@@ -116,6 +116,10 @@
     padding: 12px;
 }
 
+.form-input-error {
+    background-color: #ffebeb;
+}
+
 
 /**************************************************************************/
 /** Transaction Grid
@@ -134,6 +138,13 @@
     padding: 3px 5px;
     border-radius: 5px;
     margin-right: 4px;
+}
+
+.transaction-grid-source {
+    font-size: 9px;
+    line-height: 13px;
+    margin-top: 5px;
+    color: #a2a2a2;
 }
 
 
@@ -207,52 +218,157 @@
     margin: 2px 0 3px 0;
 }
 
+
+
+/**************************************************************************/
+/** Material Spinner
+/**************************************************************************/
+
+.spinner {
+  -webkit-animation: rotator 1.4s linear infinite;
+          animation: rotator 1.4s linear infinite;
+
+   -webkit-transition: opacity 1.4s ease-out; /* Safari */
+           transition: opacity 1.4s ease-out;
+
+    opacity: 0;
+}
+
+.path {
+  stroke: #4285F4;
+  stroke-dasharray: 187;
+  stroke-dashoffset: 0;
+  -webkit-transform-origin: center;
+          transform-origin: center;
+  -webkit-animation: dash 1.4s ease-in-out infinite;
+          animation: dash 1.4s ease-in-out infinite;
+}
+
+@-webkit-keyframes rotator {
+  0% {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(270deg);
+            transform: rotate(270deg);
+  }
+}
+
+@keyframes rotator {
+  0% {
+    -webkit-transform: rotate(0deg);
+            transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(270deg);
+            transform: rotate(270deg);
+  }
+}
+
+@-webkit-keyframes dash {
+  0% {
+    stroke-dashoffset: 187;
+  }
+  50% {
+    stroke-dashoffset: 46.75;
+    -webkit-transform: rotate(135deg);
+            transform: rotate(135deg);
+  }
+  100% {
+    stroke-dashoffset: 187;
+    -webkit-transform: rotate(450deg);
+            transform: rotate(450deg);
+  }
+}
+@keyframes dash {
+  0% {
+    stroke-dashoffset: 187;
+  }
+  50% {
+    stroke-dashoffset: 46.75;
+    -webkit-transform: rotate(135deg);
+            transform: rotate(135deg);
+  }
+  100% {
+    stroke-dashoffset: 187;
+    -webkit-transform: rotate(450deg);
+            transform: rotate(450deg);
+  }
+}
+
+
+/**************************************************************************/
+/** Waitmask
+/**************************************************************************/
+
+.waitmask {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    top: 0;
+    left: 0;
+    background-color: rgba(255,255,255,0.5);
+}
+
+
 /**************************************************************************/
 /** 16x16 Icons
 /**************************************************************************/
 
-.copyIcon, .deleteIcon, .downIcon, .editIcon, .newIcon, .openIcon,
-.redoIcon, .refreshIcon, .rightIcon, .runIcon, .saveIcon, .undoIcon {
+.checklistIcon, .copyIcon, .deleteIcon, .downIcon, .editIcon, .filterIcon,
+.mergeIcon, .newIcon, .openIcon, .redoIcon, .refreshIcon, .rightIcon, .runIcon,
+.saveIcon, .undoIcon {
     background: transparent url('../images/icons.png');
     background-repeat: no-repeat;
     width: 16px;
     height: 16px;
 }
-.copyIcon {
+.checklistIcon {
     background-position: -2px -2px;
 }
-.deleteIcon {
+.copyIcon {
     background-position: -22px -2px;
 }
-.downIcon {
+.deleteIcon {
     background-position: -42px -2px;
 }
+.downIcon {
+    background-position: -62px -2px;
+}
 .editIcon {
+    background-position: -82px -2px;
+}
+.filterIcon {
     background-position: -2px -22px;
 }
-.newIcon {
+.mergeIcon {
     background-position: -22px -22px;
 }
-.openIcon {
+.newIcon {
     background-position: -42px -22px;
 }
+.openIcon {
+    background-position: -62px -22px;
+}
 .redoIcon {
-    background-position: -2px -42px;
+    background-position: -82px -22px;
 }
 .refreshIcon {
-    background-position: -22px -42px;
+    background-position: -2px -42px;
 }
 .rightIcon {
-    background-position: -42px -42px;
+    background-position: -22px -42px;
 }
 .runIcon {
-    background-position: -2px -62px;
+    background-position: -42px -42px;
 }
 .saveIcon {
-    background-position: -22px -62px;
+    background-position: -62px -42px;
 }
 .undoIcon {
-    background-position: -42px -62px;
+    background-position: -82px -42px;
 }
 
 
@@ -338,25 +454,8 @@
 }
 
 .orange-table-header-col {
-    font-family: helvetica,arial,verdana,sans-serif;
-    font-size: 14px;
-    white-space: nowrap;
-
-
-    height: 35px;
-    line-height: 35px;
-    padding: 0 5px;
-
-
     color: #5a521a;
     text-shadow: 0px 2px 1px #efefef;
-    text-align: center;
-    font-weight: bold;
-
-
-    border-left: 1px solid #cccccc;
-    border-right: 1px solid #cccccc;
-    cursor: default;
 }
 
 .orange-table-header-col:first-child{
@@ -392,6 +491,11 @@
     background-color: #bbb062;
 }
 
+.bbar-orange .bbar-button.bbar-button-hover {
+    background: #827939;
+}
+
+
 /**************************************************************************/
 /** Blue Panel
 /**************************************************************************/
@@ -407,23 +511,8 @@
 }
 
 .blue-table-header-col {
-    font-family: helvetica,arial,verdana,sans-serif;
-    font-size: 14px;
-    white-space: nowrap;
-
-
-    height: 35px;
-    line-height: 35px;
-    padding: 0 5px;
-
     color: #416073;
     text-shadow: 0px 2px 1px #bad9ec;
-    text-align: center;
-    font-weight: bold;
-
-    border-left: 1px solid #cccccc;
-    border-right: 1px solid #cccccc;
-    cursor: default;
 }
 
 .blue-table-row, .blue-table-row-selected {
@@ -447,9 +536,72 @@
     border-bottom: 1px solid #cccccc;
 }
 
-
 .bbar-blue {
     background-color: #5a88a5;
+}
+
+
+/**************************************************************************/
+/** Green Panel
+/**************************************************************************/
+
+.green-table {
+    background-color: #f0fff9;
+}
+
+.green-table-header {
+    border-bottom: 1px solid #5aa56e;
+    background: #44aa00;
+    background-image: linear-gradient(to bottom, #d6f5e2, #9ad2a1);
+}
+
+.green-table-header-col {
+    color: #364a37;
+    text-shadow: 0px 2px 1px #baecd5;
+}
+
+.green-table-row, .green-table-row-selected {
+    background: #f0fff9;
+    border-bottom: 1px solid #c3d5e4;
+    cursor: pointer;
+}
+
+.green-table-row:hover{
+    background-color:#daf1ff;
+}
+
+.green-table-row-selected {
+    background:#FFFFB1;
+    border-bottom: 1px solid #cccccc;
+}
+
+.bbar-green {
+    background-color: #5aa560;
+}
+
+.bbar-green .bbar-button.bbar-button-hover {
+    background: #296d2f;
+}
+
+
+
+.blue-table-header-col,
+.green-table-header-col,
+.orange-table-header-col{
+    font-family: helvetica,arial,verdana,sans-serif;
+    font-size: 14px;
+    white-space: nowrap;
+
+    height: 35px;
+    line-height: 35px;
+    padding: 0 5px;
+
+    text-align: center;
+    font-weight: bold;
+
+    border-left: 1px solid #cccccc;
+    border-right: 1px solid #cccccc;
+    cursor: default;
 }
 
 
@@ -468,7 +620,7 @@
     cursor: pointer;
     color: #272727;
     border: 1px solid rgba(0, 0, 0, 0);
-    opacity: 0.8;
+    opacity: 0.9;
     transition: 0.2s;
     width: 25px;
 }
@@ -656,6 +808,10 @@
 /**************************************************************************/
 /** Misc
 /**************************************************************************/
+
+.no-border {
+    border: 0 none;
+}
 
 
 /** Used in conjunction with table-header-col and table-col to make

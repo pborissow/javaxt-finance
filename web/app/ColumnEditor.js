@@ -6,7 +6,7 @@ if(!javaxt.express.finance) javaxt.express.finance={};
 //**  ColumnEditor
 //******************************************************************************
 /**
- *   Popup window used to create and edit categories
+ *   Popup window used to create and edit scripts used to parse CSV data
  *
  ******************************************************************************/
 
@@ -350,23 +350,11 @@ javaxt.express.finance.ColumnEditor = function() {
 
 
   //**************************************************************************
-  //** createButton
-  //**************************************************************************
-    var createButton = function(parent, btn){
-        var defaultStyle = JSON.parse(JSON.stringify(config.style.toolbarButton));
-        if (btn.style) btn.style = merge(btn.style, defaultStyle);
-        else btn.style = defaultStyle;
-        return javaxt.express.finance.utils.createButton(parent, btn);
-    };
-
-
-
-  //**************************************************************************
   //** Utils
   //**************************************************************************
     var merge = javaxt.dhtml.utils.merge;
     var createTable = javaxt.dhtml.utils.createTable;
-
+    var createButton = javaxt.express.finance.utils.createButton;
 
     init();
 };

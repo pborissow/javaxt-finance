@@ -22,8 +22,8 @@ javaxt.express.finance.ImportWizard = function(config) {
 
     var alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
     var dateDisplayFormat;
-    var datePopup, callout;
-    var data, source, template;
+    var datePopup;
+    var data, vendor, template, account;
     var columnEditor;
 
 
@@ -141,17 +141,16 @@ javaxt.express.finance.ImportWizard = function(config) {
    */
     this.start = function(csv){
 
-
-
         data = parseCSV(csv);
-        source = null;
+        vendor = null;
         template = null;
+        account = null;
 
 
       //Get or create first panel
         var firstPanel;
         if (panels.length==0){
-            firstPanel = createFirstPanel();
+            firstPanel = selectSource();
             mainDiv.appendChild(firstPanel.el);
             panels.push(firstPanel);
         }
@@ -187,13 +186,280 @@ javaxt.express.finance.ImportWizard = function(config) {
 
 
   //**************************************************************************
-  //** createFirstPanel
+  //** selectSource
   //**************************************************************************
-    var createFirstPanel = function(){
+    var selectSource = function(){
 
       //Create form
         var parent = document.createElement("div");
-        parent.setAttribute("desc", "firstPanel");
+        parent.setAttribute("desc", "selectSource");
+        var form = new javaxt.dhtml.Form(parent, {
+            style: config.style.form,
+            items: [
+                {
+                    group: "Select Source",
+                    items: [
+                        {
+                            name: "sourceType",
+                            label: "",
+                            type: "radio",
+                            options: [
+                                {
+                                    label: "New Source",
+                                    value: "newSource"
+                                },
+                                {
+                                    label: "Existing Source",
+                                    value: "existingSource"
+                                }
+                            ],
+                            alignment: "vertical"
+                        }
+
+                    ]
+                }
+            ]
+
+        });
+
+
+
+      //Add custom combobox under the "Existing Source" radio button
+        var sourceType = form.findField("sourceType");
+        var tbody = sourceType.row.childNodes[2].childNodes[0].childNodes[0];
+        var tr = document.createElement("tr");
+        tbody.appendChild(tr);
+        var td = document.createElement("td");
+        td.style.padding = "5px 0 0 22px";
+        tr.appendChild(td);
+
+        var div = document.createElement("div");
+        div.style.maxWidth = "350px";
+        td.appendChild(div);
+
+        var sourceList = new javaxt.dhtml.ComboBox(div, {
+            maxVisibleRows: 5,
+            style: config.style.combobox
+        });
+
+        sourceList.show = function(){
+            tr.style.visibility = '';
+            tr.style.display = '';
+        };
+        sourceList.hide = function(){
+            tr.style.visibility = 'hidden';
+            tr.style.display = 'none';
+        };
+
+
+
+
+      //Show/hide the combobox when the radio button changes
+        form.onChange = function(field, value){
+            if (field===sourceType){
+                if (value=="newSource"){
+                    sourceList.hide();
+                }
+                else{
+                    sourceList.show();
+                }
+            }
+        };
+
+
+      //Return panel
+        return {
+            title: "Import CSV",
+            el: parent,
+            init: function(){
+
+              //Update form
+                sourceType.setValue("newSource");
+                sourceList.clear();
+
+              //Populate list of sources
+                get("SourceAccounts?fields=vendorID&active=true", {
+                    success: function(text){
+                        var vendorIDs = [];
+                        var rows = JSON.parse(text).rows;
+                        for (var i=0; i<rows.length; i++){
+                            vendorIDs.push(rows[i][0]);
+                        }
+                        vendorIDs = Array.from(new Set(vendorIDs));
+
+                        if (vendorIDs.length>0){
+                            get("Vendors?fields=id,name&id=" + vendorIDs.join() + "&orderby=name", {
+                                success: function(text){
+                                    var rows = JSON.parse(text).rows;
+                                    for (var i=0; i<rows.length; i++){
+                                        var col = rows[i];
+                                        var vendorID = col[0];
+                                        var vendorName = col[1];
+                                        sourceList.add(vendorName, vendorID);
+                                        if (rows.length==1) sourceList.setValue(vendorID);
+                                    }
+
+                                    sourceType.setValue("existingSource");
+                                },
+                                failure: function(request){
+                                    alert(request);
+                                }
+                            });
+                        }
+                        else{
+                            next();
+                        }
+                    },
+                    failure: function(request){
+                        alert(request);
+                    }
+                });
+            },
+            getNextPanel: function(){
+
+                var panel;
+                if (sourceType.getValue()=="newSource"){
+                    panel = getPanel("New Source", createSource);
+                    panel.init();
+                }
+                else{
+
+                    var vendorID = sourceList.getValue();
+                    if (!vendorID){
+                        warn("Please select a source", sourceList);
+                        return false;
+                    }
+                    else{
+                        panel = getPanel("Template", selectTemplate);
+
+                        get("Vendor/" + vendorID, {
+                            success: function(text){
+                                vendor = JSON.parse(text);
+                                panel.init();
+                            },
+                            failure: function(request){
+                                alert(request);
+                            }
+                        });
+                    }
+                }
+
+
+                return panel;
+            },
+            reset: function(){
+
+            }
+        };
+    };
+
+
+  //**************************************************************************
+  //** createSource
+  //**************************************************************************
+    var createSource = function(){
+
+      //Create form
+        var parent = document.createElement("div");
+        parent.setAttribute("desc", "New Source");
+        var form = new javaxt.dhtml.Form(parent, {
+            style: config.style.form,
+            items: [
+                {
+                    name: "name",
+                    label: "Name",
+                    type: "text"
+                },
+                {
+                    name: "description",
+                    label: "Description",
+                    type: "textarea"
+                }
+            ]
+        });
+
+
+        var sources;
+
+
+      //Return panel
+        return {
+            title: "New Source",
+            el: parent,
+            init: function(){
+                form.clear();
+            },
+            validate: function(callback){
+
+                var values = form.getData();
+                var name = values.name;
+                if (name) name = name.trim();
+                if (name==null || name==="") {
+                    warn("Name is required", form.findField("name"));
+                    return false;
+                }
+
+                var isNameUnique = function(){
+                    for (var i=0; i<sources.length; i++){
+                        if (name.toLowerCase()==sources[i].toLowerCase()){
+                            warn("A source exists with this name", form.findField("name"));
+                            return false;
+                        }
+                    }
+                    return true;
+                };
+
+              //Create source
+                vendor = {
+                    name: name,
+                    description: values.description,
+                    active: true
+                };
+
+
+                if (sources){
+                    if (isNameUnique()){
+                        if (callback) callback.apply(me, [vendor]);
+                    }
+                }
+                else{
+                    get("Vendors?fields=name", {
+                        success: function(text){
+                            sources = [];
+                            var rows = JSON.parse(text).rows;
+                            for (var i=0; i<rows.length; i++){
+                                sources.push(rows[i][0]);
+                            }
+                            if (isNameUnique()){
+                                if (callback) callback.apply(me, [vendor]);
+                            }
+                        },
+                        failure: function(request){
+                            alert(request);
+                        }
+                    });
+                }
+            },
+            getNextPanel: function(){
+                var panel = getPanel("New Template", createTemplate);
+                panel.init();
+                return panel;
+            },
+            reset: function(){
+
+            }
+        };
+    };
+
+
+  //**************************************************************************
+  //** selectTemplate
+  //**************************************************************************
+    var selectTemplate = function(){
+
+      //Create form
+        var parent = document.createElement("div");
+        parent.setAttribute("desc", "Template");
         var form = new javaxt.dhtml.Form(parent, {
             style: config.style.form,
             items: [
@@ -238,16 +504,16 @@ javaxt.express.finance.ImportWizard = function(config) {
         div.style.maxWidth = "350px";
         td.appendChild(div);
 
-        var sourceList = new javaxt.dhtml.ComboBox(div, {
+        var templateList = new javaxt.dhtml.ComboBox(div, {
             maxVisibleRows: 5,
             style: config.style.combobox
         });
 
-        sourceList.show = function(){
+        templateList.show = function(){
             tr.style.visibility = '';
             tr.style.display = '';
         };
-        sourceList.hide = function(){
+        templateList.hide = function(){
             tr.style.visibility = 'hidden';
             tr.style.display = 'none';
         };
@@ -259,10 +525,10 @@ javaxt.express.finance.ImportWizard = function(config) {
         form.onChange = function(field, value){
             if (field===templateType){
                 if (value=="newTemplate"){
-                    sourceList.hide();
+                    templateList.hide();
                 }
                 else{
-                    sourceList.show();
+                    templateList.show();
                 }
             }
         };
@@ -276,56 +542,58 @@ javaxt.express.finance.ImportWizard = function(config) {
 
               //Select one of the radio buttons
                 templateType.setValue("newTemplate");
+                templateList.clear();
 
-                sourceList.clear();
 
               //Get list of known templates and populate the combobox
-                get("sources", {
-                    success: function(text){
-                        var response = JSON.parse(text);
-                        var rows = response.rows;
-                        var cols = {};
-                        for (var i=0; i<response.cols.length; i++){
-                            cols[response.cols[i]] = i;
-                        }
-                        if (rows.length>0){
-                            for (var i=0; i<rows.length; i++){
-                                var row = rows[i];
-                                var source = {};
-                                for (var col in cols) {
-                                    if (cols.hasOwnProperty(col)){
-                                        source[col] = row[cols[col]];
-                                    }
-                                }
-                                sourceList.add(source.name, source);
+                if (vendor.id){
+                    get("SourceTemplates?vendorID="+vendor.id  + "&active=true&orderby=id desc", {
+                        success: function(text){
+                            var response = JSON.parse(text);
+                            var rows = response.rows;
+                            var cols = {};
+                            for (var i=0; i<response.cols.length; i++){
+                                cols[response.cols[i]] = i;
                             }
+                            if (rows.length>0){
+                                for (var i=0; i<rows.length; i++){
+                                    var row = rows[i];
+                                    var sourceTemplate = {};
+                                    for (var col in cols) {
+                                        if (cols.hasOwnProperty(col)){
+                                            sourceTemplate[col] = row[cols[col]];
+                                        }
+                                    }
+                                    templateList.add(sourceTemplate.name, sourceTemplate);
+                                    if (rows.length==1) templateList.setValue(sourceTemplate.name);
+                                }
+
+                                templateType.setValue("existingTemplate");
+                            }
+                            else{
+                                //TODO: disable "existingTemplate"
+                            }
+                        },
+                        failure: function(request){
+                            alert(request);
                         }
-                        else{
-                            //TODO: disable "existingTemplate"
-                        }
-                    },
-                    failure: function(request){
-                        alert(request);
-                    }
-                });
+                    });
+                }
             },
             getNextPanel: function(){
 
                 var panel;
                 if (templateType.getValue()=="newTemplate"){
-
                     panel = getPanel("New Template", createTemplate);
-                    if (history.length==1) panel.init();
+                    panel.init();
                 }
                 else{
-
-                    source = sourceList.getValue();
-                    if (source==null){
-                        warn("Please select a template", sourceList);
+                    template = templateList.getValue();
+                    if (!template){
+                        warn("Please select a template", templateList);
                         return false;
                     }
-                    template = source.info.template;
-                    panel = getPanel("Preview", createPreview);
+                    panel = getPanel("Select Account", selectAccount);
                     panel.init();
                 }
 
@@ -387,15 +655,15 @@ javaxt.express.finance.ImportWizard = function(config) {
 
               //Get date format
                 var momentFormat;
-                if (template.dateFormat!=null) momentFormat = getMomentFormat(template.dateFormat);
+                if (template.info.dateFormat!=null) momentFormat = getMomentFormat(template.info.dateFormat);
 
 
               //Generate data for the grid
                 var arr = [];
-                var offset = parseInt(template.startRow);
+                var offset = parseInt(template.info.startRow);
                 if (isNaN(offset) || offset<1) offset = 0;
                 else offset = offset-1;
-                if (template.containsHeader==true) offset++;
+                if (template.info.containsHeader==true) offset++;
 
 
 
@@ -404,7 +672,7 @@ javaxt.express.finance.ImportWizard = function(config) {
                 if (endAt>len) endAt=len;
                 var sampleData = data.slice(offset, len>endAt ? endAt : len);
 
-                if (template.columnParser){
+                if (template.info.columnParser){
                     (function (script) {
                         try{
                             eval(script);
@@ -416,7 +684,7 @@ javaxt.express.finance.ImportWizard = function(config) {
                             alert(e);
                             console.log(e);
                         }
-                    })(template.columnParser);
+                    })(template.info.columnParser);
                 }
 
 
@@ -425,14 +693,14 @@ javaxt.express.finance.ImportWizard = function(config) {
                 for (var i=0; i<sampleData.length; i++){
                     var row = sampleData[i];
                     var cols = row.slice(0, row.length);
-                    var date = cols[template.dateColumn];
-                    var desc = cols[template.descColumn];
-                    var debit = parseFloat(cols[template.debitColumn]);
-                    var credit = parseFloat(cols[template.creditColumn]);
+                    var date = cols[template.info.dateColumn];
+                    var desc = cols[template.info.descColumn];
+                    var debit = parseFloat(cols[template.info.debitColumn]);
+                    var credit = parseFloat(cols[template.info.creditColumn]);
                     var amount = null;
 
 
-                    if (template.debitColumn == template.creditColumn){
+                    if (template.info.debitColumn == template.info.creditColumn){
                         amount = debit;
                     }
                     else{
@@ -468,8 +736,34 @@ javaxt.express.finance.ImportWizard = function(config) {
             },
             getNextPanel: function(){
 
-                win.close();
-                me.onEnd(source);
+                var callback = function(source){
+                    win.close();
+                    me.onEnd(source);
+                };
+
+
+                if (vendor.id){
+                    saveSource(callback);
+                }
+                else{
+                    save("vendor", JSON.stringify(vendor), {
+                        success: function(id){
+                            get("vendor/"+id, {
+                                success: function(text){
+                                    vendor = JSON.parse(text);
+                                    saveSource(callback);
+                                },
+                                failure: function(request){
+                                    alert(request);
+                                }
+                            });
+                        },
+                        failure: function(request){
+                            alert(request);
+                        }
+                    });
+                }
+
 
                 return null;
             },
@@ -477,6 +771,42 @@ javaxt.express.finance.ImportWizard = function(config) {
                 grid.clear();
             }
         };
+    };
+
+    var saveSource = function(callback){
+
+        var source = {
+            template: template,
+            account: account
+        };
+
+        if (template.active!==false) template.active = true;
+
+        if (!source.template.vendor){
+            source.template.vendor = vendor;
+        }
+        if (!source.account.vendor){
+            source.account.vendor = vendor;
+        }
+
+        save("source", JSON.stringify(source), {
+            success: function(id){
+                get("source/"+id, {
+                    success: function(text){
+                        source = JSON.parse(text);
+
+                        if (callback) callback.apply(me, [source]);
+                    },
+                    failure: function(request){
+                        alert(request);
+                    }
+                });
+            },
+            failure: function(request){
+                alert(request);
+            }
+        });
+
     };
 
 
@@ -924,7 +1254,7 @@ javaxt.express.finance.ImportWizard = function(config) {
                     if (!isNumber(val)){
                         if (val==null || val==""){
                             for (var i=offset; i<data.length; i++){
-                                val = data[i][colID];
+                                val = getColumns(i)[colID];
                                 if (val!=null){
                                     if (!isNumber(val) && val!=""){
                                         err();
@@ -993,12 +1323,12 @@ javaxt.express.finance.ImportWizard = function(config) {
                 }
 
 
-                template = values;
+                template = {info:values};
 
 
 
               //Return next panel
-                return getPanel("Save Template", createSave);
+                return getPanel("Save Template", createTemplate2);
 
             },
             setValue: function(name, value){
@@ -1038,16 +1368,249 @@ javaxt.express.finance.ImportWizard = function(config) {
     };
 
 
+  //**************************************************************************
+  //** selectTemplate
+  //**************************************************************************
+    var selectAccount = function(){
+
+      //Create form
+        var parent = document.createElement("div");
+        parent.setAttribute("desc", "Account");
+        var form = new javaxt.dhtml.Form(parent, {
+            style: config.style.form,
+            items: [
+                {
+                    group: "Select Account",
+                    items: [
+                        {
+                            name: "accountType",
+                            label: "",
+                            type: "radio",
+                            options: [
+                                {
+                                    label: "New Account",
+                                    value: "newAccount"
+                                },
+                                {
+                                    label: "Existing Account",
+                                    value: "existingAccount"
+                                }
+                            ],
+                            alignment: "vertical"
+                        }
+
+                    ]
+                }
+            ]
+        });
+
+
+
+      //Add custom combobox under the "Existing Template" radio button
+        var accountType = form.findField("accountType");
+        var tbody = accountType.row.childNodes[2].childNodes[0].childNodes[0];
+        var tr = document.createElement("tr");
+        tbody.appendChild(tr);
+        var td = document.createElement("td");
+        td.style.padding = "5px 0 0 22px";
+        tr.appendChild(td);
+
+        var div = document.createElement("div");
+        div.style.maxWidth = "350px";
+        td.appendChild(div);
+
+        var accountList = new javaxt.dhtml.ComboBox(div, {
+            maxVisibleRows: 5,
+            style: config.style.combobox
+        });
+
+        accountList.show = function(){
+            tr.style.visibility = '';
+            tr.style.display = '';
+        };
+        accountList.hide = function(){
+            tr.style.visibility = 'hidden';
+            tr.style.display = 'none';
+        };
+
+
+
+
+      //Show/hide the combobox when the radio button changes
+        form.onChange = function(field, value){
+            if (field===accountType){
+                if (value=="newAccount"){
+                    accountList.hide();
+                }
+                else{
+                    accountList.show();
+                }
+            }
+        };
+
+
+      //Return panel
+        return {
+            title: "Import CSV",
+            el: parent,
+            init: function(){
+
+              //Select one of the radio buttons
+                accountType.setValue("newAccount");
+                accountList.clear();
+
+
+              //Get list of known templates and populate the combobox
+                if (vendor.id){
+                    get("SourceAccounts?vendorID="+vendor.id + "&orderby=accountName", {
+                        success: function(text){
+                            var response = JSON.parse(text);
+                            var rows = response.rows;
+                            var cols = {};
+                            for (var i=0; i<response.cols.length; i++){
+                                cols[response.cols[i]] = i;
+                            }
+                            if (rows.length>0){
+
+                                for (var i=0; i<rows.length; i++){
+                                    var row = rows[i];
+                                    var sourceAccount = {};
+                                    for (var col in cols) {
+                                        if (cols.hasOwnProperty(col)){
+                                            sourceAccount[col] = row[cols[col]];
+                                        }
+                                    }
+                                    var label = sourceAccount.accountName;
+                                    var accountNumber = sourceAccount.accountNumber;
+                                    if (accountNumber){
+                                        if (accountNumber.length>4) accountNumber = accountNumber.substring(accountNumber.length-4);
+                                        label += " ..." + accountNumber;
+                                    }
+                                    label += " (" + vendor.name + ")";
+
+                                    accountList.add(label, sourceAccount);
+                                    if (rows.length==1) accountList.setValue(label);
+                                }
+
+                                accountType.setValue("existingAccount");
+                            }
+                            else{
+                                //next();
+                            }
+                        },
+                        failure: function(request){
+                            alert(request);
+                        }
+                    });
+                }
+                else{
+                    console.log("Next!");
+                    //next();
+                }
+            },
+            getNextPanel: function(){
+
+                var panel;
+                if (accountType.getValue()=="newAccount"){
+                    panel = getPanel("New Account", createAccount);
+                    panel.init();
+                }
+                else{
+                    account = accountList.getValue();
+                    if (!account){
+                        warn("Please select an account", accountList);
+                        return false;
+                    }
+                    panel = getPanel("Preview", createPreview);
+                    panel.init();
+                }
+
+                return panel;
+            },
+            reset: function(){
+
+            }
+        };
+    };
+
 
   //**************************************************************************
-  //** createSave
+  //** createAccount
   //**************************************************************************
-    var createSave = function(){
+    var createAccount = function(){
+
+      //Create form
+        var parent = document.createElement("div");
+        parent.setAttribute("desc", "createAccount");
+        var form = new javaxt.dhtml.Form(parent, {
+            style: config.style.form,
+            items: [
+                {
+                    name: "name",
+                    label: "Account Name",
+                    type: "text"
+                },
+                {
+                    name: "number",
+                    label: "Account Number",
+                    type: "text"
+                }
+            ]
+        });
+
+
+      //Return panel
+        return {
+            title: "Create Account",
+            el: parent,
+            init: function(){
+                form.clear();
+            },
+            validate: function(callback){
+                var values = form.getData();
+                var name = values.name;
+                if (name) name = name.trim();
+                if (name==null || name==="") {
+                    warn("Name is required", form.findField("name"));
+                    return false;
+                }
+                if (callback) callback.apply(me, []);
+            },
+            getNextPanel: function(){
+
+                var values = form.getData();
+                var name = values.name;
+                if (name) name = name.trim();
+
+                var number = values.number;
+                if (number) number = number.trim();
+
+                account = {
+                    accountName: name,
+                    accountNumber: number,
+                    active: true
+                };
+
+                var panel = getPanel("Preview", createPreview);
+                panel.init();
+                return panel;
+            },
+            reset: function(){
+                form.clear();
+            }
+        };
+    };
+
+
+  //**************************************************************************
+  //** createTemplate2
+  //**************************************************************************
+    var createTemplate2 = function(){
 
 
       //Create form
         var parent = document.createElement("div");
-        parent.setAttribute("desc", "save");
+        parent.setAttribute("desc", "saveTemplate");
         var form = new javaxt.dhtml.Form(parent, {
             style: config.style.form,
             items: [
@@ -1065,97 +1628,43 @@ javaxt.express.finance.ImportWizard = function(config) {
         });
 
 
-        var sources;
-        var validate = function(callback){
-
-            var values = form.getData();
-            var name = values.name;
-            if (name) name = name.trim();
-            if (name==null || name==="") {
-                warn("Name is required", form.findField("name"));
-                return false;
-            }
-
-            var isNameUnique = function(){
-                for (var i=0; i<sources.length; i++){
-                    if (name.toLowerCase()==sources[i].toLowerCase()){
-                        warn("A template exists with this name", form.findField("name"));
-                        return false;
-                    }
-                }
-                return true;
-            };
-
-          //Create source
-            source = {
-                name: name,
-                description: values.description,
-                active: true,
-                info: {
-                    template: template
-                }
-            };
-
-
-            if (sources){
-                if (isNameUnique()){
-                    if (callback) callback.apply(me, [source]);
-                }
-            }
-            else{
-                get("sources?fields=name", {
-                    success: function(text){
-                        sources = [];
-                        var rows = JSON.parse(text).rows;
-                        for (var i=0; i<rows.length; i++){
-                            sources.push(rows[i][0]);
-                        }
-                        if (isNameUnique()){
-                            if (callback) callback.apply(me, [source]);
-                        }
-                    },
-                    failure: function(request){
-                        alert(request);
-                    }
-                });
-            }
-        };
-
-
 
       //Return panel
         return {
             title: "Save Template",
-            isLast: true,
             el: parent,
             init: function(){
                 form.clear();
-                sources = null;
+            },
+            validate: function(callback){
+                var values = form.getData();
+                var name = values.name;
+                if (name) name = name.trim();
+                if (name==null || name==="") {
+                    warn("Name is required", form.findField("name"));
+                    return false;
+                }
+                if (callback) callback.apply(me, []);
             },
             getNextPanel: function(){
-                validate(function(source){
-                    save("source", JSON.stringify(source), {
-                        success: function(id){
-                            get("source/"+id, {
-                                success: function(text){
-                                    source = JSON.parse(text);
-                                    win.close();
-                                    me.onEnd(source);
-                                },
-                                failure: function(request){
-                                    alert(request);
-                                }
-                            });
-                        },
-                        failure: function(request){
-                            alert(request);
-                        }
-                    });
-                });
+
+                var values = form.getData();
+                var name = values.name;
+                if (name) name = name.trim();
+
+                var description = values.description;
+                if (description) description = description.trim();
+
+                template.name = name;
+                template.description = description;
+
+
+                var panel = getPanel("Select Account", selectAccount);
+                panel.init();
+                return panel;
             },
             reset: function(){
                 form.clear();
-                sources = null;
             }
         };
     };
@@ -1205,17 +1714,25 @@ javaxt.express.finance.ImportWizard = function(config) {
 
         var currPanel = history[idx];
         var nextPanel = currPanel.getNextPanel();
-        if (nextPanel){
 
-            mainDiv.removeChild(mainDiv.childNodes[0]);
-            mainDiv.appendChild(nextPanel.el);
 
-            win.setTitle(nextPanel.title);
-            history.length = idx+1;
-            history.push(nextPanel);
-            idx++;
-            backButton.show();
-        }
+        var _next = function(){
+            if (nextPanel){
+
+                mainDiv.removeChild(mainDiv.childNodes[0]);
+                mainDiv.appendChild(nextPanel.el);
+
+                win.setTitle(nextPanel.title);
+                history.length = idx+1;
+                history.push(nextPanel);
+                idx++;
+                backButton.show();
+            }
+        };
+
+
+        if (currPanel.validate) currPanel.validate(_next);
+        else _next();
     };
 
 
@@ -1473,47 +1990,6 @@ javaxt.express.finance.ImportWizard = function(config) {
 
 
   //**************************************************************************
-  //** warn
-  //**************************************************************************
-  /** Used to display a warning/error message over a given input
-   */
-    var warn = function(msg, input){
-        var tr = input.row;
-        var td;
-        if (tr){
-            td = tr.childNodes[2];
-        }
-        else{
-            td = input.el.parentNode;
-        }
-
-        var rect = getRect(td);
-
-
-        var inputs = td.getElementsByTagName("input");
-        if (inputs.length>0){
-            inputs[0].style.backgroundColor = "#ffebeb";
-            rect = getRect(inputs[0]);
-        }
-
-        if (!callout){
-            callout = new javaxt.dhtml.Callout(body,{
-                style:{
-                    panel: "error-callout-panel",
-                    arrow: "error-callout-arrow"
-                }
-            });
-        }
-
-        callout.getInnerDiv().innerHTML = msg;
-
-        var x = rect.x + (rect.width/2);
-        var y = rect.y;
-        callout.showAt(x, y, "above", "center");
-    };
-
-
-  //**************************************************************************
   //** isDate
   //**************************************************************************
   /** Returns true if the given object can be converted to a date and if the
@@ -1551,9 +2027,9 @@ javaxt.express.finance.ImportWizard = function(config) {
     var get = javaxt.dhtml.utils.get;
     var save = javaxt.dhtml.utils.post;
     var merge = javaxt.dhtml.utils.merge;
-    var getRect = javaxt.dhtml.utils.getRect;
     var setStyle = javaxt.dhtml.utils.setStyle;
 
+    var warn = javaxt.express.finance.utils.warn;
     var isNumber = javaxt.express.finance.utils.isNumber;
     var formatCurrency = javaxt.express.finance.utils.formatCurrency;
     var parseCSV = javaxt.express.finance.utils.parseCSV;

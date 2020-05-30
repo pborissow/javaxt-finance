@@ -266,7 +266,7 @@ javaxt.express.finance.Application = function(parent, config) {
 
 
   //**************************************************************************
-  //** createPanel
+  //** createApp
   //**************************************************************************
     var createApp = function(label, appClass, color){
 
@@ -299,8 +299,11 @@ javaxt.express.finance.Application = function(parent, config) {
 
                 if (li.selected){
                     currSelection = i;
-                    li.selected = false;
-                    li.className = "header-link";
+
+                    if (li!==this){
+                        li.selected = false;
+                        li.className = "header-link";
+                    }
                 }
             }
 

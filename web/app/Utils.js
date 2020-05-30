@@ -341,6 +341,66 @@ javaxt.express.finance.utils = {
 
 
   //**************************************************************************
+  //** getDataStore
+  //**************************************************************************
+  /** Used to get or create a DataStore. The DataStore is assigned to a given
+   *  config object (e.g. config.vendors). A callback is called when the
+   *  DataStore becomes available for use.
+   *  @param name Name of the datastore. The name is a plural varient of a
+   *  Model name (e.g. "vendors", "templates", etc).
+   */
+    getDataStore: function(name, config, callback){
+        if (config[name]){
+            if (config[name] instanceof javaxt.dhtml.DataStore) {
+                if (callback) callback.call();
+            }
+            else{
+                var timer;
+                var interval = 100;
+                var checkAccounts = function(){
+                    if (config[name] instanceof javaxt.dhtml.DataStore) {
+                        clearTimeout(timer);
+                        if (callback) callback.call();
+                    }
+                    else{
+                        timer = setTimeout(checkAccounts, interval);
+                    }
+                };
+                timer = setTimeout(checkAccounts, interval);
+            }
+        }
+        else{
+            config[name] = "Loading...";
+            javaxt.dhtml.utils.get(name, {
+                success: function(text){
+                    var parseResponse = javaxt.express.finance.utils.normalizeResponse;
+                    config[name] = new javaxt.dhtml.DataStore(parseResponse(text));
+                    if (callback) callback.call();
+                },
+                failure: function(request){
+                    alert(request);
+                }
+            });
+        }
+    },
+
+
+  //**************************************************************************
+  //** getSources
+  //**************************************************************************
+    getSources: function(config, callback){
+        var getDataStore = javaxt.express.finance.utils.getDataStore;
+        getDataStore("vendors", config, function(){
+            getDataStore("sources", config, function(){
+                getDataStore("sourceAccounts", config, function(){
+                    if (callback) callback.call();
+                });
+            });
+        });
+    },
+
+
+  //**************************************************************************
   //** getAccounts
   //**************************************************************************
   /** Used to get or create a DataStore with accounts and categories. The
@@ -548,6 +608,13 @@ javaxt.express.finance.utils = {
   //**************************************************************************
     createButton: function(toolbar, btn){
 
+        if (!btn.style){
+            btn.style = {};
+            var defaultStyle = javaxt.express.finance.style.toolbarButton;
+            javaxt.dhtml.utils.merge(btn.style, defaultStyle);
+        }
+
+
         if (btn.icon){
             btn.style.icon = "toolbar-button-icon " + btn.icon;
             delete btn.icon;
@@ -636,79 +703,86 @@ javaxt.express.finance.utils = {
         });
 
         return chart;
-    }
-};
-
+    },
 
 
   //**************************************************************************
-  //** alert
+  //** createWaitMask
   //**************************************************************************
-  /** Overrides the native javascript alert() method by creating a
-   *  javaxt.dhtml.Alert window.
+  /** Inserts a mask with a spinner. Assumes the parent is a relative div
    */
-    var alert = function(msg, callback, scope){
+    createWaitMask : function(parent){
+        var waitMask = document.createElement('div');
+        waitMask.className = "waitmask";
+        waitMask.show = function(){
+            waitMask.style.display = "";
+            waitMask.style.opacity = "";
+            waitMask.innerHTML = "";
+            new javaxt.express.Spinner(waitMask,{size:"50px",lineWidth:3}).show();
+        };
+        waitMask.hide = function(){
+            waitMask.innerHTML = "";
+            waitMask.style.display = "none";
+            waitMask.style.opacity = 0;
+        };
+        waitMask.hide();
+        parent.appendChild(waitMask);
+        return waitMask;
+    },
 
-        if (msg==null) msg = "";
+
+  //**************************************************************************
+  //** warn
+  //**************************************************************************
+  /** Used to display a warning/error message over a given form field.
+   */
+    warn: function(msg, field){
+        var tr = field.row;
+        var td;
+        if (tr){
+            td = tr.childNodes[2];
+        }
+        else{
+            td = field.el.parentNode;
+        }
+        var getRect = javaxt.dhtml.utils.getRect;
+        var rect = getRect(td);
 
 
-      //Special case for ajax request
-        if (!(typeof(msg) === 'string' || msg instanceof String)){
-            if (msg.responseText){
-                msg = (msg.responseText.length>0 ? msg.responseText : msg.statusText);
+        var inputs = td.getElementsByTagName("input");
+        if (inputs.length>0){
+            inputs[0].blur();
+            var cls = "form-input-error";
+            if (inputs[0].className){
+                if (inputs[0].className.indexOf(cls)==-1) inputs[0].className += " " + cls;
             }
+            else{
+                inputs[0].className = cls;
+            }
+            rect = getRect(inputs[0]);
+            field.resetColor = function(){
+                if (inputs[0].className){
+                    inputs[0].className = inputs[0].className.replace(cls,"");
+                }
+            };
         }
 
-        var win = javaxt.dhtml.Alert;
-
-        if (!win){
-
+        var callout = javaxt.express.formError;
+        if (!callout){
             var body = document.getElementsByTagName("body")[0];
-
-
-            var outerDiv = document.createElement('div');
-            outerDiv.style.width = "100%";
-            outerDiv.style.height = "100%";
-            outerDiv.style.position = "relative";
-            outerDiv.style.cursor = "inherit";
-            var innerDiv = document.createElement('div');
-            innerDiv.style.width = "100%";
-            innerDiv.style.height = "100%";
-            innerDiv.style.position = "absolute";
-            innerDiv.style.overflowX = 'hidden';
-            innerDiv.style.cursor = "inherit";
-            outerDiv.appendChild(innerDiv);
-
-
-            win = javaxt.dhtml.Alert = new javaxt.dhtml.Window(body, {
-                width: 450,
-                height: 200,
-                valign: "top",
-                modal: true,
-                title: "Alert",
-                body: outerDiv,
-                style: {
-                    panel: "window",
-                    header: "window-header alert-header",
-                    title: "window-title",
-                    buttonBar: {
-                        float: "right",
-                        padding: "9px"
-                    },
-                    button: "window-header-button",
-                    body: {
-                        padding: "10px 10px 15px 15px",
-                        verticalAlign: "top"
-                    }
+            callout = new javaxt.dhtml.Callout(body,{
+                style:{
+                    panel: "error-callout-panel",
+                    arrow: "error-callout-arrow"
                 }
             });
-            win.div = innerDiv;
+            javaxt.express.formError = callout;
         }
 
+        callout.getInnerDiv().innerHTML = msg;
 
-        win.div.innerHTML = msg;
-        win.show();
-
-    };
-
-    javaxt.dhtml.Alert = null;
+        var x = rect.x + (rect.width/2);
+        var y = rect.y;
+        callout.showAt(x, y, "above", "center");
+    }
+};

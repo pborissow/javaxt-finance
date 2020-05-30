@@ -13,11 +13,8 @@ import java.sql.SQLException;
 
 public class Source extends javaxt.sql.Model {
 
-    private String name;
-    private String description;
-    private Boolean active;
-    private String accountNumber;
-    private JSONObject info;
+    private SourceAccount account;
+    private SourceTemplate template;
 
 
   //**************************************************************************
@@ -26,11 +23,8 @@ public class Source extends javaxt.sql.Model {
     public Source(){
         super("source", new java.util.HashMap<String, String>() {{
             
-            put("name", "name");
-            put("description", "description");
-            put("active", "active");
-            put("accountNumber", "account_number");
-            put("info", "info");
+            put("account", "account_id");
+            put("template", "template_id");
 
         }});
         
@@ -69,12 +63,17 @@ public class Source extends javaxt.sql.Model {
 
         try{
             this.id = getValue(rs, "id").toLong();
-            this.name = getValue(rs, "name").toString();
-            this.description = getValue(rs, "description").toString();
-            this.active = getValue(rs, "active").toBoolean();
-            this.accountNumber = getValue(rs, "account_number").toString();
-            this.info = new JSONObject(getValue(rs, "info").toString());
+            Long accountID = getValue(rs, "account_id").toLong();
+            Long templateID = getValue(rs, "template_id").toLong();
 
+
+
+          //Set account
+            if (accountID!=null) account = new SourceAccount(accountID);
+
+
+          //Set template
+            if (templateID!=null) template = new SourceTemplate(templateID);
 
         }
         catch(Exception e){
@@ -93,52 +92,41 @@ public class Source extends javaxt.sql.Model {
 
         Long id = json.get("id").toLong();
         if (id!=null && id>0) this.id = id;
-        this.name = json.get("name").toString();
-        this.description = json.get("description").toString();
-        this.active = json.get("active").toBoolean();
-        this.accountNumber = json.get("accountNumber").toString();
-        this.info = json.get("info").toJSONObject();
+        if (json.has("account")){
+            account = new SourceAccount(json.get("account").toJSONObject());
+        }
+        else if (json.has("accountID")){
+            try{
+                account = new SourceAccount(json.get("accountID").toLong());
+            }
+            catch(Exception e){}
+        }
+        if (json.has("template")){
+            template = new SourceTemplate(json.get("template").toJSONObject());
+        }
+        else if (json.has("templateID")){
+            try{
+                template = new SourceTemplate(json.get("templateID").toLong());
+            }
+            catch(Exception e){}
+        }
     }
 
 
-    public String getName(){
-        return name;
+    public SourceAccount getAccount(){
+        return account;
     }
 
-    public void setName(String name){
-        this.name = name;
+    public void setAccount(SourceAccount account){
+        this.account = account;
     }
 
-    public String getDescription(){
-        return description;
+    public SourceTemplate getTemplate(){
+        return template;
     }
 
-    public void setDescription(String description){
-        this.description = description;
-    }
-
-    public Boolean getActive(){
-        return active;
-    }
-
-    public void setActive(Boolean active){
-        this.active = active;
-    }
-
-    public String getAccountNumber(){
-        return accountNumber;
-    }
-
-    public void setAccountNumber(String accountNumber){
-        this.accountNumber = accountNumber;
-    }
-
-    public JSONObject getInfo(){
-        return info;
-    }
-
-    public void setInfo(JSONObject info){
-        this.info = info;
+    public void setTemplate(SourceTemplate template){
+        this.template = template;
     }
     
     
@@ -148,7 +136,7 @@ public class Source extends javaxt.sql.Model {
   //** get
   //**************************************************************************
   /** Used to find a Source using a given set of constraints. Example:
-   *  Source obj = Source.get("name=", name);
+   *  Source obj = Source.get("account_id=", account_id);
    */
     public static Source get(Object...args) throws SQLException {
         Object obj = _get(Source.class, args);

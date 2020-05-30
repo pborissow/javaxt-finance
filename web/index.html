@@ -10,6 +10,9 @@
 <!-- iScroll -->
 <script src="lib/iscroll/iscroll.js" type="text/javascript"></script>
 
+<!-- IRO -->
+<script src="lib/iro/iro.min.js" type="text/javascript"></script>
+
 <!-- Chart.js -->
 <script src="lib/chartjs/Chart.min.js" type="text/javascript"></script>
 
@@ -65,6 +68,14 @@ window.onload = function() {
         return false;
     };
 
+  //Prevent native browser shortcuts (ctrl+a,h,o,p,s,...)
+    document.addEventListener("keydown", function(e){
+        if ((e.keyCode == 65 || e.keyCode == 72 || e.keyCode == 79 || e.keyCode == 80 || e.keyCode == 83) &&
+        (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey)) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    });
 
   //Add logic to prevent touch devices like iPad from scrolling beyond the document
   //http://stackoverflow.com/a/26853900

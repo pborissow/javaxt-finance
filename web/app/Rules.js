@@ -333,17 +333,6 @@ javaxt.express.finance.Rules = function(parent, config) {
 
 
   //**************************************************************************
-  //** createButton
-  //**************************************************************************
-    var createButton = function(parent, btn){
-        var defaultStyle = JSON.parse(JSON.stringify(config.style.toolbarButton));
-        if (btn.style) btn.style = merge(btn.style, defaultStyle);
-        else btn.style = defaultStyle;
-        return javaxt.express.finance.utils.createButton(parent, btn);
-    };
-
-
-  //**************************************************************************
   //** Utils
   //**************************************************************************
     var get = javaxt.dhtml.utils.get;
@@ -352,6 +341,7 @@ javaxt.express.finance.Rules = function(parent, config) {
     var merge = javaxt.dhtml.utils.merge;
     var createTable = javaxt.dhtml.utils.createTable;
     var createSpacer = javaxt.express.finance.utils.createSpacer;
+    var createButton = javaxt.express.finance.utils.createButton;
     var parseResponse = javaxt.express.finance.utils.normalizeResponse;
 
 
