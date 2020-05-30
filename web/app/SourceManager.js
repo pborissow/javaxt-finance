@@ -27,6 +27,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
     var grid, grid2; //DataGrids
     var editor;
     var vendors; //DataStore
+    var colorPicker;
 
 
   //**************************************************************************
@@ -202,7 +203,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                 {header: 'Category', width:'100%'}
             ]
         });
-        grid.load([['Accounts'],['Templates'],['Vendors']]);
+        grid.load([['Accounts'],['Sources'],['Templates'],['Vendors']]);
         grid.onSelectionChange = function(){
 
             editor.clear();
@@ -220,7 +221,19 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                     grid2.load(vendors);
                 }
                 else{
-                    get("Source"+selectedRecord + "?orderby=" + (selectedRecord==="Accounts" ? "accountName" : "name"),{
+
+                    var url;
+                    if (selectedRecord=="Sources"){
+                        url = "SourceAccounts?orderby=accountName";
+                    }
+                    else if (selectedRecord=="Templates"){
+                        url = "SourceTemplates?orderby=name";
+                    }
+                    else{
+                        url = selectedRecord + "?orderby=name";
+                    }
+
+                    get(url,{
                         success: function(text){
                             grid2.load(normalizeResponse(text));
                         }
@@ -250,10 +263,26 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                 {header: 'Name', width:'100%'}
             ],
             update: function(row, data){
+
+              //Find vendor name
+                var vendorName;
+                if (data.vendorID){
+                    for (var i=0; i<vendors.length; i++){
+                        var vendor = vendors.get(i);
+                        if (vendor.id===data.vendorID){
+                            vendorName = vendor.name;
+                            break;
+                        }
+                    }
+                }
+
+
+              //Find name attribute in the data and update row
                 for (var key in data) {
                     if (data.hasOwnProperty(key)){
-                        if (key.toLowerCase().indexOf("name")>-1){
+                        if (key.toLowerCase().indexOf("name")>-1){ //remove "s"
                             var name = data[key];
+                            if (vendorName) name += " (" + vendorName + ")";
                             row.set(0, name);
                             break;
                         }
@@ -296,6 +325,9 @@ javaxt.express.finance.SourceManager = function(parent, config) {
         var data = grid2.getSelectedRecords()[0];
         if (model=="Accounts"){
             editAccount(data);
+        }
+        else if (model=="Sources"){
+            editSource(data);
         }
         else if (model=="Templates"){
             editTemplate(data);
@@ -385,11 +417,132 @@ javaxt.express.finance.SourceManager = function(parent, config) {
     };
 
 
-
   //**************************************************************************
   //** editAccount
   //**************************************************************************
-    var editAccount = function(sourceAccount){
+    var editAccount = function(account){
+        editor.clear();
+        var orgAccount = account;
+
+
+        var form = new javaxt.dhtml.Form(editor.getBody(), {
+            style: config.style.form,
+            items: [
+                {
+                    name: "name",
+                    label: "Name",
+                    type: "text"
+                },
+                {
+                    name: "description",
+                    label: "Description",
+                    type: "textarea"
+                },
+                {
+                    name: "color",
+                    label: "Color",
+                    type: new javaxt.dhtml.ComboBox(
+                        document.createElement("div"),{
+                            style: config.style.combobox
+                        }
+                    )
+                },
+                {
+                    name: "active",
+                    label: "Active",
+                    type: "radio",
+                    alignment: "vertical",
+                    options: [
+                        {
+                            label: "True",
+                            value: true
+                        },
+                        {
+                            label: "False",
+                            value: false
+                        }
+                    ]
+                }
+            ],
+            buttons: [
+                {
+                    name: "Reset",
+                    onclick: function(){
+                        reset();
+                    }
+                },
+                {
+                    name: "Save",
+                    onclick: function(){
+
+                        var account = form.getData();
+                        if (!account.name){
+                            warn("Name is required", form.findField("name"));
+                            return;
+                        }
+
+
+                        account.id = orgAccount.id;
+                        account.info = orgAccount.info;
+                        if (!account.info) account.info = {};
+                        account.info.color = getColor(account.color);
+                        delete account.color;
+
+
+
+                      //Save Account
+                        waitmask.show();
+                        post("Account", JSON.stringify(account), {
+                            success: function(){
+                                editor.clear();
+                                grid.onSelectionChange(); //force reload
+                                waitmask.hide();
+                            },
+                            failure: function(request){
+                                waitmask.hide();
+                                alert(request);
+                            }
+                        });
+
+                    }
+                }
+            ]
+        });
+
+
+
+      //Update color field
+        addColorPicker("color", form);
+
+
+        var reset = function(){
+            form.reset();
+            var defaultColor = "#6b6b6b";
+            if (account){
+                editor.setTitle("Edit Account");
+                form.setValue("name", account.name);
+                form.setValue("description", account.description);
+                form.setValue("active", account.active);
+
+                var color;
+                if (account.info) color = account.info.color;
+                if (!color) color = defaultColor;
+                form.setValue("color", color);
+            }
+            else{
+                editor.setTitle("New Account");
+                form.setValue("active", true);
+                form.setValue("color", defaultColor);
+            }
+        };
+        reset();
+    };
+
+
+  //**************************************************************************
+  //** editSource
+  //**************************************************************************
+    var editSource = function(sourceAccount){
         editor.clear();
 
         var vendorField;
@@ -409,7 +562,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
             items: [
                 {
                     name: "vendor",
-                    label: "Vendor Name",
+                    label: "Vendor",
                     type: vendorField
                 },
                 {
@@ -421,6 +574,15 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                     name: "number",
                     label: "Account Number",
                     type: "text"
+                },
+                {
+                    name: "color",
+                    label: "Color",
+                    type: new javaxt.dhtml.ComboBox(
+                        document.createElement("div"),{
+                            style: config.style.combobox
+                        }
+                    )
                 },
                 {
                     name: "active",
@@ -473,7 +635,11 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                         }
                         sourceAccount.accountName = account.name;
                         sourceAccount.accountNumber = account.number;
-                        sourceAccount.active = account.avtive;
+                        sourceAccount.active = account.active;
+
+
+                        if (!sourceAccount.info) sourceAccount.info = {};
+                        sourceAccount.info.color = getColor(account.color);
 
 
 
@@ -495,8 +661,14 @@ javaxt.express.finance.SourceManager = function(parent, config) {
             ]
         });
 
+
+      //Update color field
+        addColorPicker("color", form);
+
+
         var reset = function(){
             form.reset();
+            var defaultColor = "#6b6b6b";
             if (sourceAccount){
                 editor.setTitle("Edit Account");
                 form.setValue("name", sourceAccount.accountName);
@@ -511,6 +683,10 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                         break;
                     }
                 }
+                var color;
+                if (sourceAccount.info) color = sourceAccount.info.color;
+                if (!color) color = defaultColor;
+                form.setValue("color", color);
             }
             else{
                 editor.setTitle("New Account");
@@ -519,6 +695,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                     var vendor = vendors.get(i);
                     vendorField.add(vendor.name, vendor.id);
                 }
+                form.setValue("color", defaultColor);
             }
         };
         reset();
@@ -556,6 +733,15 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                     type: "textarea"
                 },
                 {
+                    name: "color",
+                    label: "Color",
+                    type: new javaxt.dhtml.ComboBox(
+                        document.createElement("div"),{
+                            style: config.style.combobox
+                        }
+                    )
+                },
+                {
                     name: "active",
                     label: "Active",
                     type: "radio",
@@ -590,6 +776,11 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                         }
 
                         vendor.id = orgVendor.id;
+                        vendor.info = orgVendor.info;
+                        if (!vendor.info) vendor.info = {};
+                        vendor.info.color = getColor(vendor.color);
+                        delete vendor.color;
+
 
 
                       //Save Vendor
@@ -635,20 +826,169 @@ javaxt.express.finance.SourceManager = function(parent, config) {
         });
 
 
+      //Update color field
+        addColorPicker("color", form);
+
+
         var reset = function(){
             form.reset();
+            var defaultColor = "#6b6b6b";
             if (vendor){
                 editor.setTitle("Edit Vendor");
                 form.setValue("name", vendor.name);
                 form.setValue("description", vendor.description);
                 form.setValue("active", vendor.active);
+
+                var color;
+                if (vendor.info) color = vendor.info.color;
+                if (!color) color = defaultColor;
+                form.setValue("color", color);
             }
             else{
                 editor.setTitle("New Vendor");
                 form.setValue("active", true);
+                form.setValue("color", defaultColor);
             }
         };
         reset();
+    };
+
+
+  //**************************************************************************
+  //** addColorPicker
+  //**************************************************************************
+    var addColorPicker = function(fieldName, form){
+        var colorField = form.findField(fieldName);
+        var colorPreview = colorField.getButton();
+        colorPreview.className = colorPreview.className.replace("pulldown-button-icon", "");
+        colorPreview.style.boxShadow = "none";
+        colorPreview.setColor = function(color){
+            colorPreview.style.backgroundColor =
+            colorPreview.style.borderColor = color;
+        };
+        colorField.setValue = function(color){
+            color = getColor(color);
+            colorPreview.setColor(color);
+            colorField.getInput().value = color;
+            form.onChange(colorField, color);
+        };
+        colorField.getValue = function(){
+            return colorField.getInput().value;
+        };
+        colorPreview.onclick = function(){
+            if (!colorPicker) colorPicker = createColorPicker();
+            var rect = javaxt.dhtml.utils.getRect(colorField.getInput());
+            var x = rect.x - 15;
+            var y = rect.y + (rect.height/2);
+            colorPicker.showAt(x, y, "left", "middle");
+            colorPicker.setColor(colorField.getValue());
+            colorPicker.onChange = function(color){
+                colorField.setValue(color);
+            };
+        };
+    };
+
+
+
+
+
+  //**************************************************************************
+  //** createColorPicker
+  //**************************************************************************
+  /** Used to create a callout with a colorpicker.
+   */
+    var createColorPicker = function(){
+
+      //Create popup
+        var body = document.getElementsByTagName("body")[0];
+        var popup = new javaxt.dhtml.Callout(body,{
+            style: config.style.callout
+        });
+        var innerDiv = popup.getInnerDiv();
+
+
+      //Create title div
+        var title = "Select Color";
+        var titleDiv = document.createElement("div");
+        titleDiv.className = "window-header";
+        titleDiv.innerHTML = "<div class=\"window-title\">" + title + "</div>";
+        innerDiv.appendChild(titleDiv);
+
+
+      //Create content div
+        var contentDiv = document.createElement("div");
+        contentDiv.style.padding = "15px";
+        contentDiv.style.fontSize = "12px";
+        innerDiv.appendChild(contentDiv);
+
+
+        var table = createTable();
+        var tbody = table.firstChild;
+        var tr = document.createElement('tr');
+        tbody.appendChild(tr);
+        var td = document.createElement('td');
+        tr.appendChild(td);
+        contentDiv.appendChild(table);
+
+
+        var cp = new iro.ColorPicker(td, {
+          width: 320,
+          height: 320,
+          anticlockwise: true,
+          borderWidth: 1,
+          borderColor: "#fff",
+          css: {
+            "#output": {
+              "background-color": "$color"
+            }
+          }
+        });
+
+
+        cp.on("color:change", function(c){
+            popup.onChange(c.hexString);
+        });
+
+
+        popup.setColor = function(color){
+            cp.color.set(getColor(color));
+        };
+
+        popup.onChange = function(hexColor){};
+
+
+        return popup;
+    };
+
+
+
+  //**************************************************************************
+  //** getColor
+  //**************************************************************************
+  /** Returns a hex color value for a given color
+   *  @param color Accepts html standard colors. Example: 'red', '#ff0000',
+   *  and 'rgb(255, 0, 0)'
+   */
+    var getColor = function(color){
+
+      //Get rgba color
+        var canvas = document.createElement('canvas');
+        canvas.height = 1;
+        canvas.width = 1;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 1, 1);
+        var rgba = ctx.getImageData(0, 0, 1, 1).data;
+
+
+      //Convert to hex
+        var hex = [0,1,2].map(
+            function(idx) {
+                var num = rgba[idx];
+                return ('0'+num.toString(16)).slice(-2);
+            }
+        ).join('');
+        return "#"+hex;
     };
 
 
