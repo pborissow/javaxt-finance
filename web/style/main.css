@@ -659,7 +659,7 @@
 /** Reports Panel
 /**************************************************************************/
 
-.report-preview, .report-panel {
+.report-preview {
     display:inline-block;
     float: left;
 }
@@ -685,25 +685,28 @@
     transition: all .4s ease;
 }
 
-.report-panel {
-    border:1px solid #dcdcdc;
-    border-radius: 5px;
-    background-color:#fff;
-    margin:50px;
-    font-size: 18px;
-    box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
+.report-header { /** Used in conjunction with window-header */
+    background-color: #f0f8ff;
+    box-shadow: none;
+    border: none;
+    border-bottom: 1px solid #aacde2;
+
 }
 
-.report-title {
-    font-size: 20px;
-    text-align: center;
-    background-color: #f0f8ff;
-    position: relative;
-    padding: 5px 0 5px 0;
-    border-bottom: 1px solid #aacde2;
-    border-top: 1px solid #aacde2;
+.report-title { /** Used in conjunction with window-title */
     color: #0d4262;
-    user-select: none;
+    text-align: center;
+    width: 100%;
+    font-size: 20px;
+    text-transform: none;
+}
+
+.report-header-button { /** Used in conjunction with window-header-button */
+    color: #0d4262;
+}
+
+.report-header-button:hover{
+    background-color:#c8e5ff;
 }
 
 .report-subtitle {
@@ -724,10 +727,10 @@
 
 .report-body {
     position: relative;
-    padding: 0 5px 5px 5px;
+    padding: 0 8px 5px 8px;
 }
 
-.report-header {
+.report-section-header {
     font-size: 18px;
     padding: 10px 0 5px;
     border-bottom: 1px solid #5f5f5f;

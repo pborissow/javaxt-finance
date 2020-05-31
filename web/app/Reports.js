@@ -11,7 +11,7 @@ javaxt.express.finance.Reports = function(parent, config) {
     };
     var reportList, accountDetails, accountGraphics, transactionsPanel, menu;
     var timezone;
-
+    var spacing = 30; //window spacing
 
   //**************************************************************************
   //** Constructor
@@ -77,7 +77,7 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
       //Create accountDetails
-        accountDetails = createPanel({
+        accountDetails = createPanel(td, {
             onClose: function(){
                 if (transactionsPanel) transactionsPanel.hide();
                 if (accountGraphics) accountGraphics.hide();
@@ -92,16 +92,13 @@ javaxt.express.finance.Reports = function(parent, config) {
                 menu.showAt(x, y, "right", "middle");
             }
         });
-        td.appendChild(accountDetails);
 
 
 
       //Create accountGraphics
-        accountGraphics = createPanel({
+        accountGraphics = createPanel(td, {
             title: "Expense Summary",
-            onClose: function(){
-                accountGraphics.hide();
-            }
+            closable: false
         });
         var div = document.createElement("div");
         div.style.width = "425px";
@@ -136,17 +133,17 @@ javaxt.express.finance.Reports = function(parent, config) {
             dataset.hoverBackgroundColor = dataset.backgroundColor;
 
             chart.update();
-
         };
-        td.appendChild(accountGraphics);
 
 
 
       //Create transactionsPanel
-        transactionsPanel = createPanel({
-            onClose: function(){
-                transactionsPanel.hide();
-                if (accountGraphics) accountGraphics.show();
+        transactionsPanel = createPanel(td, {
+            style: {
+                body: {
+                    padding: "0 0 5px 0",
+                    verticalAlign: "top"
+                }
             }
         });
         var div = document.createElement("div");
@@ -200,7 +197,6 @@ javaxt.express.finance.Reports = function(parent, config) {
         transactionsPanel.update = function(arr){
             transactionsTable.addRows(arr);
         };
-        td.appendChild(transactionsPanel);
 
 
       //Get accounts and create reports
@@ -327,19 +323,19 @@ javaxt.express.finance.Reports = function(parent, config) {
                     tr = document.createElement("tr");
                     tbody.appendChild(tr);
                     td = document.createElement("td");
-                    td.className = "report-header";
+                    td.className = "report-section-header";
                     //if (!addColHeader) td.colSpan = numColumns;
                     td.innerHTML = title;
                     tr.appendChild(td);
 
 
                     td = document.createElement("td");
-                    td.className = "report-header report-column-header";
+                    td.className = "report-section-header report-column-header";
                     if (col1) td.innerHTML = col1;
                     tr.appendChild(td);
 
                     td = document.createElement("td");
-                    td.className = "report-header report-column-header";
+                    td.className = "report-section-header report-column-header";
                     if (col2) td.innerHTML = col2;
                     tr.appendChild(td);
 
@@ -357,7 +353,7 @@ javaxt.express.finance.Reports = function(parent, config) {
                             if (idx>0) rows[i].className = rows[i].className.substring(0, idx);
                         }
                         this.className += " report-row-selected";
-                        getTransactions(this.category, startDate, endDate);
+                        getTransactions(this.category, year);
                     };
                     tbody.appendChild(tr);
 
@@ -384,10 +380,10 @@ javaxt.express.finance.Reports = function(parent, config) {
 
                 var updatePanels = function(){
                     accountDetails.update(table);
-                    accountDetails.show();
+                    accountDetails.showAt(spacing, spacing);
 
                     accountGraphics.update(expenses);
-                    accountGraphics.show();
+                    accountGraphics.showAt(accountDetails.getWidth()+(spacing*2), spacing);
                 };
 
 
@@ -415,6 +411,7 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
                           //Update income records
+                            for (var i=0; i<income.length; i++){income[i].prevYear=0;}
                             var income2 = json.income;
                             for (var i=0; i<income2.length; i++){
                                 var addRecord = true;
@@ -422,6 +419,7 @@ javaxt.express.finance.Reports = function(parent, config) {
                                     if (income[j].name===income2[i].name){
                                         addRecord = false;
                                         income[j].prevYear = income2[i].total;
+                                        break;
                                     }
                                 }
                                 if (addRecord){
@@ -435,6 +433,7 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
                           //Update expense records
+                            for (var i=0; i<expenses.length; i++){expenses[i].prevYear=0;}
                             var expenses2 = json.expenses;
                             for (var i=0; i<expenses2.length; i++){
                                 var addRecord = true;
@@ -442,6 +441,7 @@ javaxt.express.finance.Reports = function(parent, config) {
                                     if (expenses[j].name===expenses2[i].name){
                                         addRecord = false;
                                         expenses[j].prevYear = expenses2[i].total;
+                                        break;
                                     }
                                 }
                                 if (addRecord){
@@ -475,14 +475,17 @@ javaxt.express.finance.Reports = function(parent, config) {
                           //Render expenses
                             addHeader("Expenses");
                             var totalExpenses = 0;
+                            var prevExpenses = 0;
                             for (var i=0; i<expenses.length; i++){
-                                var category = expenses[i];
-                                totalExpenses+=category.total;
-                                addRow(category);
+                                var expense = expenses[i];
+                                totalExpenses+=expense.total;
+                                prevExpenses+=expense.prevYear;
+                                addRow(expense);
                             }
                             addRow({
                                 name: false,
-                                total: totalExpenses
+                                total: totalExpenses,
+                                prevYear: prevExpenses
                             });
 
 
@@ -536,9 +539,11 @@ javaxt.express.finance.Reports = function(parent, config) {
   //**************************************************************************
   //** getTransactions
   //**************************************************************************
-    var getTransactions = function(category, startDate, endDate){
+    var getTransactions = function(category, year){
         if (!category.id) return;
 
+        var startDate = moment.tz(year + "-01-01 00:00", timezone).toISOString();
+        var endDate = moment.tz((year+1) + "-01-01 00:00", timezone).toISOString();
         get("report/Transactions?categoryID=" + category.id +
             "&startDate=" + startDate + "&endDate=" + endDate,  {
             success: function(text){
@@ -561,8 +566,9 @@ javaxt.express.finance.Reports = function(parent, config) {
                     ];
                 }
 
-                accountGraphics.hide();
-                transactionsPanel.show();
+                if (!transactionsPanel.isOpen()){
+                    transactionsPanel.showAt(accountDetails.getWidth()+(spacing*3), spacing*3);
+                }
                 transactionsPanel.update(arr);
             },
             failure: function(request){
@@ -668,74 +674,55 @@ javaxt.express.finance.Reports = function(parent, config) {
   //**************************************************************************
   //** createPanel
   //**************************************************************************
-    var createPanel = function(config){
+    var createPanel = function(parent, options){
 
-        var panel = document.createElement("div");
-        panel.className = "report-panel";
-
-
-        var titleDiv = document.createElement("div");
-        titleDiv.className = "report-title";
-        panel.appendChild(titleDiv);
-
-
-        var title = document.createElement("div");
-        if (config.title) title.innerHTML = config.title;
-        titleDiv.appendChild(title);
-
-
-        var innerDiv = document.createElement("div");
-        innerDiv.style.position = "absolute";
-        innerDiv.style.top = 0;
-        innerDiv.style.right = 0;
-        innerDiv.style.width = "18px";
-        innerDiv.style.height = "18px";
-        innerDiv.style.zIndex = 1;
-        innerDiv.style.cursor = "pointer";
-        innerDiv.innerHTML = "&#x2715;";
-        innerDiv.onclick = config.onClose;
-        titleDiv.appendChild(innerDiv);
-
+        var div = document.createElement("div");
 
         var subtitleDiv = document.createElement("div");
         subtitleDiv.style.textAlign = "center";
-        panel.appendChild(subtitleDiv);
+        div.appendChild(subtitleDiv);
 
         var subtitle = document.createElement("div");
-        subtitle.className = "report-subtitle";
-        subtitle.style.display = "inline-block";
         subtitle.onclick = function(e){
-            if (config.onSubTitle) config.onSubTitle(this, e);
+            if (options.onSubTitle) options.onSubTitle(this, e);
         };
         subtitleDiv.appendChild(subtitle);
 
 
         var body = document.createElement("div");
-        body.className = "report-body";
-        panel.appendChild(body);
+        div.appendChild(body);
 
 
-        panel.show = function(){
-            this.style.visibility = '';
-            this.style.display = '';
+        var style = merge({}, config.style.window);
+        style.header += " report-header";
+        style.title += " report-title";
+        style.button += " report-header-button";
+        style.body = "report-body";
+        if (options.style){
+            if (options.style.body){
+                style.body = options.style.body;
+            }
+        }
+
+        var panel = new javaxt.dhtml.Window(parent, {
+            title: options.title,
+            body: div,
+            style: style
+        });
+
+        panel.onClose = function(){
+            if (options.onClose) options.onClose();
         };
-        panel.hide = function(){
-            this.style.visibility = 'hidden';
-            this.style.display = 'none';
-        };
-        panel.hide();
 
         panel.clear = function(){
-            title.innerHTML = "";
+            panel.setTitle("");
             subtitle.innerHTML = "";
             body.innerHTML = "";
         };
 
-        panel.setTitle = function(str){
-            title.innerHTML = str;
-        };
-
         panel.setSubTitle = function(str){
+            subtitle.className = "report-subtitle";
+            subtitle.style.display = "inline-block";
             subtitle.innerHTML = str;
         };
 
