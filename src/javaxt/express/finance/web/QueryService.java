@@ -1,6 +1,5 @@
 package javaxt.express.finance.web;
 import javaxt.json.JSONObject;
-import javaxt.utils.Console;
 
 
 //******************************************************************************
@@ -12,7 +11,6 @@ import javaxt.utils.Console;
  ******************************************************************************/
 
 public class QueryService extends javaxt.express.services.QueryService {
-    private static Console console = new Console();
 
     public QueryService(javaxt.sql.Database database, JSONObject config){
         super(database, getJobDir(config), getLogDir(config));
