@@ -707,6 +707,112 @@ javaxt.express.finance.utils = {
 
 
   //**************************************************************************
+  //** createBargraph
+  //**************************************************************************
+  /** Used to create a bar chart
+   */
+    createBargraph: function(canvas, options){
+        if (!options) options = {};
+
+        var ctx = canvas.getContext('2d');
+
+        var data = {
+            labels: [], //x-axis labels
+            datasets: [ //one or more json objects
+                /*
+                {
+                    label: "Blue",
+                    backgroundColor: "blue",
+                    data: [3,7,4]
+                },
+                {
+                    label: "Red",
+                    backgroundColor: "red",
+                    data: [4,3,5]
+                },
+                {
+                    label: "Green",
+                    backgroundColor: "green",
+                    data: [7,2,6]
+                }
+                */
+            ]
+        };
+
+
+        var chart = new Chart(ctx, {
+            type: 'bar',
+            data: data,
+            options: {
+                barValueSpacing: 20,
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            min: 0
+                        }
+                    }]
+                },
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    enabled: false
+                }
+            }
+        });
+
+        return chart;
+    },
+
+
+  //**************************************************************************
+  //** addLegend
+  //**************************************************************************
+  /** Used to add a custom legend to a canvas
+   */
+    addLegend: function(canvas){
+
+        var legend = document.createElement("div");
+        legend.style.position = "absolute";
+        legend.style.right = "5px";
+        legend.style.top = "7px";
+        canvas.parentNode.parentNode.appendChild(legend);
+
+
+        var table = javaxt.dhtml.utils.createTable();
+        table.style.height = "";
+        legend.appendChild(table);
+        var tbody = table.firstChild;
+        legend.addItem = function(label, backgroundColor, borderColor){
+            var tr, td;
+            tr = document.createElement("tr");
+            tbody.appendChild(tr);
+
+            td = document.createElement("td");
+            tr.appendChild(td);
+            var div = document.createElement("div");
+            div.className = "chart-legend-circle";
+            div.style.backgroundColor = backgroundColor;
+            if (borderColor){
+                div.className += "-outline";
+                div.style.borderColor = borderColor;
+            }
+            td.appendChild(div);
+
+            td = document.createElement("td");
+            td.className = "chart-legend-label noselect";
+            td.innerHTML = label;
+            tr.appendChild(td);
+        };
+        legend.clear = function(){
+            tbody.innerHTML = "";
+        };
+
+        return legend;
+    },
+
+
+  //**************************************************************************
   //** createWaitMask
   //**************************************************************************
   /** Inserts a mask with a spinner. Assumes the parent is a relative div
