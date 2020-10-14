@@ -178,6 +178,135 @@ public class ReportService extends WebService {
 
 
   //**************************************************************************
+  //** getMonthlyTotals
+  //**************************************************************************
+    public ServiceResponse getMonthlyTotals(ServiceRequest request, Database database)
+        throws ServletException, IOException {
+
+        Long accountID = getAccountID(request);
+        if (accountID==null) new ServiceResponse(400, "Account name or ID is required");
+
+        String years = request.getParameter("year").toString();
+        if (years==null) new ServiceResponse(400, "year is required");
+
+        String timezone = request.getParameter("timezone").toString();
+        if (timezone==null) timezone = "UTC";
+
+
+      //Set start/end dates
+        try{
+            int startYear, endYear;
+            if (years.contains("-")){
+                String[] arr = years.split("-");
+                startYear = Integer.parseInt(arr[0]);
+                endYear = Integer.parseInt(arr[1]);
+                if (endYear<startYear){
+                    int s = startYear;
+                    startYear = endYear;
+                    endYear = s;
+                }
+                endYear += 1;
+            }
+            else{
+                startYear = Integer.parseInt(years);
+                endYear = startYear+1;
+            }
+
+            javaxt.utils.Date startDate = new javaxt.utils.Date("1/1/"+startYear);
+            startDate.removeTimeStamp();
+            startDate.setTimeZone(timezone);
+
+            javaxt.utils.Date endDate = startDate.clone();
+            endDate.add(endYear-startYear, "year");
+
+            request.setParameter("startDate", startDate.toISOString());
+            request.setParameter("endDate", endDate.toISOString());
+        }
+        catch(Exception e){}
+
+
+      //Compile sql
+        String sql = "select transaction.amount, transaction.date, is_expense " +
+        "from transaction left join category on transaction.category_id=category.id " +
+        "where account_id=" + accountID + " AND " + getDateFilter(request) + " " +
+        "order by date";
+
+
+      //Execute query and generate response
+        Connection conn = null;
+        try{
+            conn = database.getConnection();
+
+            HashMap<Integer, TreeMap<Integer, BigDecimal>> income = new HashMap<>();
+            HashMap<Integer, TreeMap<Integer, BigDecimal>> expenses = new HashMap<>();
+
+            for (Recordset rs : conn.getRecordset(sql)){
+                javaxt.utils.Date date = rs.getValue("date").toDate();
+                BigDecimal amount = rs.getValue("amount").toBigDecimal();
+                boolean isExpense = rs.getValue("is_expense").toBoolean();
+
+                HashMap<Integer, TreeMap<Integer, BigDecimal>> map = isExpense ? expenses : income;
+
+
+                date.setTimeZone(timezone);
+                int year = date.getYear();
+                TreeMap<Integer, BigDecimal> months = map.get(year);
+                if (months==null){
+                    months = new TreeMap<>();
+                    map.put(year, months);
+                }
+
+                int month = date.getMonth();
+                BigDecimal currAmount = months.get(month);
+                if (currAmount==null) currAmount = new BigDecimal(0.0);
+                months.put(month, currAmount.add(amount));
+            }
+
+            conn.close();
+
+
+            JSONObject json = new JSONObject();
+            TreeSet<Integer> keys = new TreeSet<>();
+            keys.addAll(income.keySet());
+            keys.addAll(expenses.keySet());
+            Iterator<Integer> it = keys.descendingIterator();
+            while (it.hasNext()){
+                int year = it.next();
+                JSONObject _year = new JSONObject();
+                json.set(year+"", _year);
+
+                JSONArray arr;
+                TreeMap<Integer, BigDecimal> months;
+
+                arr = new JSONArray();
+                months = income.get(year);
+                for (int i=0; i<12; i++){
+                    BigDecimal amount = months.get(i+1);
+                    if (amount==null) amount = new BigDecimal(0.0);
+                    arr.add(amount);
+                }
+                _year.set("income", arr);
+
+                arr = new JSONArray();
+                months = expenses.get(year);
+                for (int i=0; i<12; i++){
+                    BigDecimal amount = months.get(i+1);
+                    if (amount==null) amount = new BigDecimal(0.0);
+                    arr.add(amount);
+                }
+                _year.set("expenses", arr);
+            }
+
+            return new ServiceResponse(json);
+        }
+        catch(Exception e){
+            if (conn!=null) conn.close();
+            return new ServiceResponse(e);
+        }
+    }
+
+
+  //**************************************************************************
   //** getTransactions
   //**************************************************************************
   /** Returns a list of transactions associated with a given account and
