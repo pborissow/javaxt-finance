@@ -809,6 +809,30 @@
 
 
 /**************************************************************************/
+/** Chart Legend
+/**************************************************************************/
+
+.chart-legend-circle, .chart-legend-circle-outline {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin: 2px 4px 2px 0;
+}
+
+.chart-legend-circle-outline {
+    width: 14px;
+    height: 14px;
+    border: 1px solid #36a2eb;
+}
+
+.chart-legend-label {
+    color: #404040;
+    font-size: 12px;
+}
+
+
+/**************************************************************************/
 /** Misc
 /**************************************************************************/
 
