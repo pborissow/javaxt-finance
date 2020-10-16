@@ -122,16 +122,41 @@ javaxt.express.finance.Transactions = function(parent, config) {
             accounts = orgConfig.accounts;
 
             accounts.addEventListener("add", function(account){
-                if (accountStats) accountStats.add(account.name);
+                if (accountStats) accountStats.add({name: account.name, count: 0});
             }, me);
 
             accounts.addEventListener("remove", function(account){
-                if (accountStats) accountStats.remove(account.name);
+                if (accountStats){
+
+                    var idx, currCount, na;
+                    for (var i=0; i<accountStats.length; i++){
+                        var record = accountStats.get(i);
+                        if (record.name===account.name){
+                            idx = i;
+                            currCount = record.count;
+                        }
+                        if (record.name==="N/A"){
+                            na = i;
+                        }
+                    }
+
+                    accountStats.removeAt(idx);
+                    var record = accountStats.get(na);
+                    record.count += currCount;
+                    accountStats.set(na, record);
+                }
             }, me);
 
             accounts.addEventListener("update", function(account, orgAccount){
-                if (account.name!=orgAccount.name){
-                    if (accountStats) accountStats.rename(orgAccount.name, account.name);
+                if (account.name!==orgAccount.name && accountStats){
+                    for (var i=0; i<accountStats.length; i++){
+                        var record = accountStats.get(i);
+                        if (record.name===orgAccount.name){
+                            record.name = account.name;
+                            accountStats.set(i, record);
+                            break;
+                        }
+                    }
                 }
             }, me);
 
@@ -147,6 +172,9 @@ javaxt.express.finance.Transactions = function(parent, config) {
     };
 
 
+  //**************************************************************************
+  //** updateAccountStats
+  //**************************************************************************
     var updateAccountStats = function(refresh){
         if (refresh===true) delete orgConfig.stats.accounts;
         getTransactionsPerAccount(orgConfig, function(){
@@ -775,15 +803,18 @@ javaxt.express.finance.Transactions = function(parent, config) {
                 });
 
 
-
               //Update account stats
-                var currCount = accountStats.get(account.name);
-                accountStats.set(account.name, currCount ? currCount+1 : 1);
-                var unlinkedCount = accountStats.get("N/A");
-                if (isNumber(unlinkedCount)){
-                    accountStats.set("N/A", (unlinkedCount-1));
+                for (var i=0; i<accountStats.length; i++){
+                    var record = accountStats.get(i);
+                    if (record.name===account.name){
+                        record.count += 1;
+                        accountStats.set(i, record);
+                    }
+                    if (record.name==="N/A"){
+                        record.count -= 1;
+                        accountStats.set(i, record);
+                    }
                 }
-
             },
             failure: function(request){
                 alert(request);
@@ -1296,7 +1327,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
             else {
                 delete filter.categoryID;
             }
-            console.log(filter);
             transactionGrid.refresh();
         };
 
