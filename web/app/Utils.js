@@ -495,14 +495,12 @@ javaxt.express.finance.utils = {
         else{
             config.stats.accounts = "Loading...";
             var get = javaxt.dhtml.utils.get;
-            var isNumber = javaxt.express.finance.utils.isNumber;
             var store = new javaxt.dhtml.DataStore();
+            config.stats.accounts = store;
 
             get("report/TransactionsPerAccount", {
                 success: function(text){
                     var data = JSON.parse(text);
-
-
                     for (var key in data) {
                        if (data.hasOwnProperty(key)){
                            store.add({
@@ -519,83 +517,9 @@ javaxt.express.finance.utils = {
                        });
                     }
 
-
-
-
-                    var _get = store.get;
-                    store.get = function(key){
-                        if (typeof parent === "string"){
-                            for (var i=0; i<store.length; i++){
-                                var record = _get(i);
-                                if (record.name===key) return record.count;
-                            }
-                            return null;
-                        }
-                        else{
-                            return _get(key);
-                        }
-                    };
-
-
-                    var _set = store.set;
-                    store.set = function(accountName, count){
-                        for (var i=0; i<store.length; i++){
-                            if (_get(i).name===accountName){
-                                _set(i, {
-                                    name: accountName,
-                                    count: count
-                                });
-                                return;
-                            }
-                        }
-                    };
-
-
-                    var _add = store.add;
-                    store.add = function(accountName){
-                        _add({
-                            name: accountName,
-                            count: 0
-                        });
-                    };
-
-
-                    store.remove = function(accountName){
-                        for (var i=0; i<store.length; i++){
-                            if (_get(i).name===accountName){
-
-                                var currCount = _get(i).count;
-                                var unlinkedCount = store.get("N/A");
-                                if (!isNumber(unlinkedCount)) unlinkedCount = 0;
-                                store.set("N/A", unlinkedCount+currCount);
-
-
-                                store.removeAt(i);
-                                return;
-                            }
-                        }
-                    };
-
-
-                    store.rename = function(orgName, newName){
-                        for (var i=0; i<store.length; i++){
-                            var record = _get(i);
-                            if (record.name===orgName){
-                                _set(i, {
-                                    name: newName,
-                                    count: record.count
-                                });
-                                break;
-                            }
-                        }
-                    };
-
-
-                    config.stats.accounts = store;
                     if (callback) callback.call();
                 },
                 failure: function(request){
-                    config.stats.accounts = store; //prevent infinite loop
                     alert(request);
                 }
             });
