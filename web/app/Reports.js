@@ -18,7 +18,8 @@ javaxt.express.finance.Reports = function(parent, config) {
         style: javaxt.express.finance.style
     };
     var mainDiv;
-    var reportList, accountDetails, pieChart, barGraph, transactionsPanel, menu;
+    var reportList, menu;
+    var accountDetails, pieChart, barGraph, transactionsPanel; //windows/panels
     var dateFormat;
     var timezone; //string
     var spacing = 30; //window spacing
@@ -159,7 +160,9 @@ javaxt.express.finance.Reports = function(parent, config) {
 
                     setTimeout(function(){
                         if (!pieChart) createPieChart(mainDiv);
-                        pieChart.setHeight((accountDetails.getHeight()/2)-spacing);
+                        var h = (accountDetails.getHeight()/2)-spacing;
+                        if (h<280) h = 280;
+                        pieChart.setHeight(h);
                         pieChart.showAt(accountDetails.getWidth()+(spacing*2), spacing);
                         pieChart.update(expenses);
 
@@ -610,11 +613,14 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
   //**************************************************************************
-  //** createTransactionList
+  //** createTransactionPanel
   //**************************************************************************
-    var createTransactionList = function(parent){
+    var createTransactionPanel = function(parent){
 
+      //Create panel
         transactionsPanel = createPanel(parent, {
+            width: "600px",
+            height: "640px",
             onClose: function(){
                 console.log("Update charts!");
             },
@@ -625,41 +631,62 @@ javaxt.express.finance.Reports = function(parent, config) {
                 }
             }
         });
-        var div = document.createElement("div");
-        div.style.width = "600px";
-        div.style.height = "600px";
 
+
+      //Create table with 2 rows
+        var table = createTable();
+        var tbody = table.firstChild;
+        var tr, td;
+
+        tr = document.createElement("tr");
+        tbody.appendChild(tr);
+        td = document.createElement("td");
+        td.style.width = "100%";
+        td.className = "panel-toolbar";
+        tr.appendChild(td);
+        var toolbar = document.createElement('div');
+        td.appendChild(toolbar);
+
+        tr = document.createElement("tr");
+        tbody.appendChild(tr);
+        td = document.createElement("td");
+        td.style.width = "100%";
+        td.style.height = "100%";
+        tr.appendChild(td);
+
+
+      //Create data table/grid
+        var columns = [
+            {
+                header: "ID",
+                hidden: true
+            },
+            {
+                header: "Date",
+                width: 85,
+                align: "right"
+            },
+            {
+                header: "Desciption",
+                width: "100%"
+            },
+            {
+                header: "Amount",
+                width: 100,
+                align: "right"
+            }
+        ];
         var style = {
             row: "report-row",
             selectedRow: "report-row-selected",
             column: "report-cell"
         };
         merge(style, config.style.table);
-
-        var transactionsTable = new javaxt.dhtml.Table(div, {
+        var grid = new javaxt.dhtml.Table(td, {
             style: style,
-            columns: [
-                {
-                    header: "ID",
-                    hidden: true
-                },
-                {
-                    header: "Date",
-                    width: 85,
-                    align: "right"
-                },
-                {
-                    header: "Desciption",
-                    width: "100%"
-                },
-                {
-                    header: "Amount",
-                    width: 125,
-                    align: "right"
-                }
-            ]
+            columns: columns
         });
-        transactionsTable.onSelectionChange = function(rows){
+        grid.onSelectionChange = function(rows){
             for (var i=0; i<rows.length; i++){
                 var row = rows[i];
                 if (row.selected){
@@ -669,12 +696,65 @@ javaxt.express.finance.Reports = function(parent, config) {
                 }
             }
         };
-        transactionsPanel.update(div);
+
+
+      //Append table
+        transactionsPanel.update(table);
         transactionsPanel.clear = function(){
-            transactionsTable.clear();
+            grid.clear();
         };
         transactionsPanel.update = function(arr){
-            transactionsTable.addRows(arr);
+            grid.addRows(arr);
+        };
+
+
+      //Add toolbar buttons
+        var isMobile = false;
+        var downloadButton = createButton(toolbar, {
+            label: "Download",
+            icon: "downloadIcon",
+            hidden: isMobile
+        });
+        var link;
+        downloadButton.onClick = function(){
+
+          //Create csv
+            var csvContent = "data:text/csv;charset=utf-8,";
+
+          //Add csv header
+            for (var i=0; i<columns.length; i++){
+                if (i>0) csvContent += ",";
+                csvContent += columns[i].header;
+            }
+            csvContent += "\r\n";
+
+
+          //Add csv data
+            grid.forEachRow(function (row, content) {
+                var row = "";
+                for (var i=0; i<content.length; i++){
+                    if (i>0) row += ",";
+                    var cell = content[i];
+                    if (!(typeof cell === "string")){
+                        cell = cell.innerText;
+                    }
+                    if (cell.indexOf(",")>-1) cell = "\"" + cell + "\"";
+                    cell = cell.replace("#",""); //TODO: find proper way to encode characters like this
+                    row += cell;
+                }
+                csvContent += row + "\r\n";
+            });
+
+
+            var encodedUri = encodeURI(csvContent);
+            if (!link){
+                link = document.createElement("a");
+                document.body.appendChild(link);
+            }
+            var title = transactionsPanel.getTitle();
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", title + ".csv");
+            link.click();
         };
     };
 
@@ -701,7 +781,7 @@ javaxt.express.finance.Reports = function(parent, config) {
         get("report/Transactions?categoryID=" + category.id +
             "&startDate=" + startDate + "&endDate=" + endDate,  {
             success: function(text){
-                if (!transactionsPanel) createTransactionList(mainDiv);
+                if (!transactionsPanel) createTransactionPanel(mainDiv);
 
 
                 transactionsPanel.clear();
@@ -737,9 +817,9 @@ javaxt.express.finance.Reports = function(parent, config) {
                         };
                         monthlyTotals[key] = json;
                     }
-                    if (amount<0){
-                        monthlyTotals[key].expenses[m.month()]+= amount;
-                    }
+
+                  //if (category.isExpense) then merge debits and credits
+                    monthlyTotals[key].expenses[m.month()]+= amount;
                 }
 
                 if (!transactionsPanel.isOpen()){
@@ -1000,6 +1080,8 @@ javaxt.express.finance.Reports = function(parent, config) {
     var merge = javaxt.dhtml.utils.merge;
     var createTable = javaxt.dhtml.utils.createTable;
     var createCell = javaxt.express.finance.utils.createCell;
+    var createButton = javaxt.express.finance.utils.createButton;
+
     var createDoughnut = javaxt.express.finance.utils.createDoughnut;
     var createBargraph = javaxt.express.finance.utils.createBargraph;
     var addLegend = javaxt.express.finance.utils.addLegend;
