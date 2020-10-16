@@ -281,7 +281,7 @@ public class ReportService extends WebService {
                 arr = new JSONArray();
                 months = income.get(year);
                 for (int i=0; i<12; i++){
-                    BigDecimal amount = months.get(i+1);
+                    BigDecimal amount = months==null ? null : months.get(i+1);
                     if (amount==null) amount = new BigDecimal(0.0);
                     arr.add(amount);
                 }
@@ -290,7 +290,7 @@ public class ReportService extends WebService {
                 arr = new JSONArray();
                 months = expenses.get(year);
                 for (int i=0; i<12; i++){
-                    BigDecimal amount = months.get(i+1);
+                    BigDecimal amount = months==null ? null : months.get(i+1);
                     if (amount==null) amount = new BigDecimal(0.0);
                     arr.add(amount);
                 }
