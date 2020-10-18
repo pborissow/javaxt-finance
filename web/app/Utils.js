@@ -401,6 +401,53 @@ javaxt.express.finance.utils = {
 
 
   //**************************************************************************
+  //** findSource
+  //**************************************************************************
+  /** Returns account name, vendor name, and color for a given sourceID
+   *  associated with a transaction. This information is used to render the
+   *  "Source" field in the transaction tables. 
+   *  @param sourceID number
+   *  @param vendors DataStore
+   *  @param sources DataStore
+   *  @param sourceAccounts DataStore
+   */
+    findSource: function(sourceID, vendors, sources, sourceAccounts){
+        var isNumber = javaxt.express.finance.utils.isNumber;
+        if (!isNumber(sourceID)) return null;
+        for (var i=0; i<sources.length; i++){
+            var source = sources.get(i);
+            if (sourceID===source.id){
+                for (var j=0; j<sourceAccounts.length; j++){
+                    var sourceAccount = sourceAccounts.get(j);
+                    if (sourceAccount.id===source.accountID){
+                        var accountName = sourceAccount.accountName;
+                        var vendorName, color;
+                        for (var k=0; k<vendors.length; k++){
+                            var vendor = vendors.get(k);
+                            if (sourceAccount.vendorID===vendor.id){
+                                vendorName = vendor.name;
+                                if (vendor.info) color = vendor.info.color;
+                                break;
+                            }
+                        }
+
+
+                        return {
+                            account: accountName,
+                            vendor: vendorName,
+                            color: color
+                        };
+                    }
+                }
+
+                break;
+            }
+        }
+        return null;
+    },
+
+
+  //**************************************************************************
   //** getAccounts
   //**************************************************************************
   /** Used to get or create a DataStore with accounts and categories. The
