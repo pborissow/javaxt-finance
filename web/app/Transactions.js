@@ -450,44 +450,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
 
   //**************************************************************************
-  //** findSource
-  //**************************************************************************
-    var findSource = function(sourceID){
-        if (!isNumber(sourceID)) return null;
-        for (var i=0; i<sources.length; i++){
-            var source = sources.get(i);
-            if (sourceID===source.id){
-                for (var j=0; j<sourceAccounts.length; j++){
-                    var sourceAccount = sourceAccounts.get(j);
-                    if (sourceAccount.id===source.accountID){
-                        var accountName = sourceAccount.accountName;
-                        var vendorName, color;
-                        for (var k=0; k<vendors.length; k++){
-                            var vendor = vendors.get(k);
-                            if (sourceAccount.vendorID===vendor.id){
-                                vendorName = vendor.name;
-                                if (vendor.info) color = vendor.info.color;
-                                break;
-                            }
-                        }
-
-
-                        return {
-                            account: accountName,
-                            vendor: vendorName,
-                            color: color
-                        };
-                    }
-                }
-
-                break;
-            }
-        }
-        return null;
-    };
-
-
-  //**************************************************************************
   //** findCategory
   //**************************************************************************
     var findCategory = function(categoryID){
@@ -1384,6 +1346,15 @@ javaxt.express.finance.Transactions = function(parent, config) {
             })(file);
             reader.readAsText(file);
         }
+    };
+
+
+
+  //**************************************************************************
+  //** findSource
+  //**************************************************************************
+    var findSource = function(sourceID){
+        return javaxt.express.finance.utils.findSource(sourceID, vendors, sources, sourceAccounts);
     };
 
 
