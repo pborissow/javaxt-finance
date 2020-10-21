@@ -16,6 +16,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var orgConfig = config;
     var defaultConfig = {
         style: javaxt.express.finance.style,
+        dateFormat: "M/d/yyyy",
+        timezone: "America/New_York",
         editor: {
             numColumns: 2
         }
@@ -29,7 +31,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
         importWizard, rules,
         notificationWindow;
 
-    var dateDisplayFormat;
     var isMobile = false;
     var vendors, sources, sourceAccounts, accounts, accountStats; //DataStores
     var filter = {};
@@ -60,9 +61,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
         if (!config.fx) config.fx = new javaxt.dhtml.Effects();
 
 
-      //Set date format
-        dateDisplayFormat = getMomentFormat("M/d/yyyy");
-
+      //Update timezone
+        config.timezone = config.timezone.trim().replace(" ", "_");
 
 
       //Watch for drag and drop events
@@ -398,9 +398,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
             ],
             update: function(row, transaction){
 
-                var m = moment(transaction.date);
-                var date = m.format(dateDisplayFormat);
-                row.set('Date', date);
+                var m = moment.tz(transaction.date, config.timezone);
+                row.set('Date', createCell("date", m, config.dateFormat));
                 row.set('Day', m.format('dddd'));
                 row.set('Description', transaction.description);
                 row.set('Amount', createCell("currency", transaction.amount));
@@ -411,34 +410,10 @@ javaxt.express.finance.Transactions = function(parent, config) {
                     row.set("Account", category.account.name);
                 }
 
-
                 var source = findSource(transaction.sourceID);
-                if (source){
-
-                    var div = document.createElement("div");
-                    div.className = "transaction-grid-source";
-                    if (source.color) div.style.color = source.color;
-
-                    if (source.vendor){
-                        var d = document.createElement("div");
-                        d.innerHTML = source.vendor;
-                        div.appendChild(d);
-                        //if (source.color) d.style.color = source.color;
-                    }
-
-                    if (source.account){
-                        var d = document.createElement("div");
-                        d.innerHTML = source.account;
-                        div.appendChild(d);
-                        if (source.color) d.style.opacity = 0.5;
-                    }
-
-
-                    row.set('Source', div);
-                }
+                row.set('Source', createCell("source", source));
             }
         });
-
 
 
         transactionGrid.onSelectionChange = function(){
