@@ -368,11 +368,10 @@ javaxt.express.finance.Reports = function(parent, config) {
                         }
                     }
                     if (addRecord){
-                        income.push({
-                            name: income2[i].name,
-                            total: 0,
-                            prevYear: income2[i].total
-                        });
+                        var inc = income2[i];
+                        inc.prevYear = inc.total;
+                        inc.total = 0;
+                        income.push(inc);
                     }
                 }
 
@@ -389,11 +388,10 @@ javaxt.express.finance.Reports = function(parent, config) {
                         }
                     }
                     if (addRecord){
-                        expenses.push({
-                            name: expenses2[i].name,
-                            total: 0,
-                            prevYear: expenses2[i].total
-                        });
+                        var expense = expenses2[i];
+                        expense.prevYear = expense.total;
+                        expense.total = 0;
+                        expenses.push(expense);
                     }
                 }
 
@@ -622,7 +620,7 @@ javaxt.express.finance.Reports = function(parent, config) {
             width: "600px",
             height: "640px",
             onClose: function(){
-                console.log("Update charts!");
+                //console.log("Update charts!");
             },
             style: {
                 body: {
@@ -771,7 +769,14 @@ javaxt.express.finance.Reports = function(parent, config) {
 
         if (!category.id){
             if (transactionsPanel) transactionsPanel.hide();
-            if (barGraph) console.log("show all expenses");
+            if (barGraph){
+                var account = accountDetails.account;
+                get("report/MonthlyTotals?accountID=" + account.id + "&year=" + year + "-" + (year-1), {
+                    success: function(text){
+                        barGraph.update(JSON.parse(text));
+                    }
+                });
+            }
             return;
         }
 
@@ -783,7 +788,8 @@ javaxt.express.finance.Reports = function(parent, config) {
         var fields = "id,date,description,amount,categoryID,sourceID";
         var where = "category_id=" + category.id + " and (date>='" + startDate + "' and date<'" + endDate + "')";
         var orderBy = "date desc";
-        var url = "transactions?where=" + encodeURIComponent(where) + "&fields=" + fields + "&orderBy=" + encodeURIComponent(orderBy);
+        var url = "transactions?where=" + encodeURIComponent(where) + "&fields=" + fields +
+            "&orderBy=" + encodeURIComponent(orderBy) + "&limit=100000";
 
         get(url, {
             success: function(text, xml, url, request){
