@@ -15,13 +15,14 @@ javaxt.express.finance.Reports = function(parent, config) {
     var me = this;
     var orgConfig = config;
     var defaultConfig = {
-        style: javaxt.express.finance.style
+        style: javaxt.express.finance.style,
+        dateFormat: "M/d/yyyy",
+        timezone: "America/New_York"
     };
     var mainDiv;
     var reportList, menu;
     var accountDetails, pieChart, barGraph, transactionsPanel; //windows/panels
-    var dateFormat;
-    var timezone; //string
+    var vendors, sources, sourceAccounts; //DataStores
     var spacing = 30; //window spacing
 
 
@@ -50,16 +51,8 @@ javaxt.express.finance.Reports = function(parent, config) {
         if (!config.fx) config.fx = new javaxt.dhtml.Effects();
 
 
-      //Set date format
-        dateFormat = config.dateFormat;
-        if (!dateFormat) dateFormat = getMomentFormat("M/d/yyyy");
-
-
-      //Get timezone
-        timezone = config.timezone;
-        if (timezone==null || typeof timezone != 'string') timezone = "America/New_York";
-        timezone = timezone.trim().replace(" ", "_");
-
+      //Update timezone
+        config.timezone = config.timezone.trim().replace(" ", "_");
 
 
       //Create main div
@@ -81,6 +74,13 @@ javaxt.express.finance.Reports = function(parent, config) {
             config.fx.fadeOut(this, "easeInOutCubic", 600, callback);
         };
 
+
+
+        getSources(orgConfig, function(){
+            vendors = orgConfig.vendors;
+            sources = orgConfig.sources;
+            sourceAccounts = orgConfig.sourceAccounts;
+        });
 
 
       //Get accounts and create reports
@@ -189,8 +189,8 @@ javaxt.express.finance.Reports = function(parent, config) {
   //** getAccountSummary
   //**************************************************************************
     var getAccountSummary = function(account, year, callback){
-        var startDate = moment.tz(year + "-01-01 00:00", timezone).toISOString();
-        var endDate = moment.tz((year+1) + "-01-01 00:00", timezone).toISOString();
+        var startDate = moment.tz(year + "-01-01 00:00", config.timezone).toISOString();
+        var endDate = moment.tz((year+1) + "-01-01 00:00", config.timezone).toISOString();
         get("report/AccountSummary?accountID=" + account.id +
             "&startDate=" + startDate + "&endDate=" + endDate,  {
             success: function(text){
@@ -667,6 +667,10 @@ javaxt.express.finance.Reports = function(parent, config) {
                 align: "right"
             },
             {
+                header: "Source",
+                width: 120
+            },
+            {
                 header: "Desciption",
                 width: "100%"
             },
@@ -676,14 +680,8 @@ javaxt.express.finance.Reports = function(parent, config) {
                 align: "right"
             }
         ];
-        var style = {
-            row: "report-row",
-            selectedRow: "report-row-selected",
-            column: "report-cell"
-        };
-        merge(style, config.style.table);
         var grid = new javaxt.dhtml.Table(td, {
-            style: style,
+            style: config.style.table,
             columns: columns
         });
         grid.onSelectionChange = function(rows){
@@ -698,14 +696,16 @@ javaxt.express.finance.Reports = function(parent, config) {
         };
 
 
-      //Append table
+      //Append table and refactor the update method
         transactionsPanel.update(table);
-        transactionsPanel.clear = function(){
-            grid.clear();
-        };
         transactionsPanel.update = function(arr){
             grid.addRows(arr);
         };
+
+        transactionsPanel.clear = function(){
+            grid.clear();
+        };
+
 
 
       //Add toolbar buttons
@@ -776,33 +776,38 @@ javaxt.express.finance.Reports = function(parent, config) {
         }
 
 
-        var startDate = moment.tz((year-1) + "-01-01 00:00", timezone).toISOString();
-        var endDate = moment.tz((year+1) + "-01-01 00:00", timezone).toISOString();
-        get("report/Transactions?categoryID=" + category.id +
-            "&startDate=" + startDate + "&endDate=" + endDate,  {
-            success: function(text){
+        var startDate = moment.tz((year-1) + "-01-01 00:00", config.timezone).toISOString();
+        var endDate = moment.tz((year+1) + "-01-01 00:00", config.timezone).toISOString();
+
+
+        var fields = "id,date,description,amount,categoryID,sourceID";
+        var where = "category_id=" + category.id + " and (date>='" + startDate + "' and date<'" + endDate + "')";
+        var orderBy = "date desc";
+        var url = "transactions?where=" + encodeURIComponent(where) + "&fields=" + fields + "&orderBy=" + encodeURIComponent(orderBy);
+
+        get(url, {
+            success: function(text, xml, url, request){
                 if (!transactionsPanel) createTransactionPanel(mainDiv);
-
-
                 transactionsPanel.clear();
                 transactionsPanel.setTitle(category.name);
 
                 var records = [];
                 var monthlyTotals = {};
-                var arr = JSON.parse(text);
-                for (var i=0; i<arr.length; i++){
-                    var col = arr[i];
-                    var id = col[0];
-                    var date = col[1];
-                    var desc = col[2];
-                    var amount = col[3];
+                var transactions = normalizeResponse(request);
+                for (var i=0; i<transactions.length; i++){
+                    var transaction = transactions[i];
+                    var id = transaction.id;
+                    var date = transaction.date;
+                    var desc = transaction.description;
+                    var amount = transaction.amount;
+                    var sourceID = transaction.sourceID;
 
-
-                    var m = moment.tz(date, timezone);
+                    var m = moment.tz(date, config.timezone);
                     if (m.year()===year){
                         records.push([
                             id,
-                            m.format(dateFormat),
+                            createCell("date", m, config.dateFormat),
+                            createCell("source", findSource(sourceID)),
                             desc,
                             createCell("currency", amount)
                         ]);
@@ -1074,6 +1079,14 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
   //**************************************************************************
+  //** findSource
+  //**************************************************************************
+    var findSource = function(sourceID){
+        return javaxt.express.finance.utils.findSource(sourceID, vendors, sources, sourceAccounts);
+    };
+
+
+  //**************************************************************************
   //** Utils
   //**************************************************************************
     var get = javaxt.dhtml.utils.get;
@@ -1085,9 +1098,13 @@ javaxt.express.finance.Reports = function(parent, config) {
     var createDoughnut = javaxt.express.finance.utils.createDoughnut;
     var createBargraph = javaxt.express.finance.utils.createBargraph;
     var addLegend = javaxt.express.finance.utils.addLegend;
-    var getAccounts = javaxt.express.finance.utils.getAccounts;
+
     var formatCurrency = javaxt.express.finance.utils.formatCurrency;
     var getMomentFormat = javaxt.express.finance.utils.getMomentFormat;
+
+    var getSources = javaxt.express.finance.utils.getSources;
+    var getAccounts = javaxt.express.finance.utils.getAccounts;
+    var normalizeResponse = javaxt.express.finance.utils.normalizeResponse;
 
     init();
 
