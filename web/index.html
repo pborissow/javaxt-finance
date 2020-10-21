@@ -65,7 +65,10 @@
 //<![CDATA[
 window.onload = function() {
     javaxt.dhtml.utils.updateDOM();
-    new javaxt.express.finance.Application(document.body);
+    new javaxt.express.finance.Application(document.body, {
+        timezone: "America/New_York",
+        dateFormat: "M/d/yyyy"
+    });
 };
 //]]>
 </script>
