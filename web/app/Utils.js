@@ -405,7 +405,7 @@ javaxt.express.finance.utils = {
   //**************************************************************************
   /** Returns account name, vendor name, and color for a given sourceID
    *  associated with a transaction. This information is used to render the
-   *  "Source" field in the transaction tables. 
+   *  "Source" field in the transaction tables.
    *  @param sourceID number
    *  @param vendors DataStore
    *  @param sources DataStore
@@ -623,6 +623,49 @@ javaxt.express.finance.utils = {
             span.innerHTML = amount;
             span.className = "transaction-grid-" + ((amount.indexOf("-")===0) ? "debit" : "credit");
             return span;
+        }
+        else if (type==="source"){
+            var source = val; //response from findSource()
+            if (!source) return null;
+
+            var div = document.createElement("div");
+            div.className = "transaction-grid-source";
+            if (source.color) div.style.color = source.color;
+
+            if (source.vendor){
+                var d = document.createElement("div");
+                d.innerHTML = source.vendor;
+                div.appendChild(d);
+                //if (source.color) d.style.color = source.color;
+            }
+
+            if (source.account){
+                var d = document.createElement("div");
+                d.innerHTML = source.account;
+                div.appendChild(d);
+                if (source.color) d.style.opacity = 0.5;
+            }
+
+            return div;
+        }
+        else if (type==="date"){
+            var date = val;
+            var dateFormat = arguments[2];
+            if (!dateFormat) dateFormat = "M/d/yyyy";
+            var m;
+            if (moment.isMoment(date)){
+                m = date;
+            }
+            else{
+                var timezone = arguments[3];
+                if (timezone){
+                    m = moment.tz(date, timezone);
+                }
+                else{
+                    m = moment(date);
+                }
+            }
+            return m.format(me.getMomentFormat(dateFormat));
         }
     },
 
