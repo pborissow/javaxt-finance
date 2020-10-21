@@ -178,65 +178,126 @@ public class ReportService extends WebService {
 
 
   //**************************************************************************
-  //** getTransactions
+  //** getMonthlyTotals
   //**************************************************************************
-  /** Returns a list of transactions associated with a given account and
-   *  category
-   */
-    public ServiceResponse getTransactions(ServiceRequest request, Database database)
+    public ServiceResponse getMonthlyTotals(ServiceRequest request, Database database)
         throws ServletException, IOException {
 
-      //Get category ID
-        Long categoryID = request.getParameter("categoryID").toLong();
-        if (categoryID==null){
-            Long accountID = getAccountID(request);
-            String categoryName = request.getParameter("category").toString();
+        Long accountID = getAccountID(request);
+        if (accountID==null) new ServiceResponse(400, "Account name or ID is required");
 
-            if (categoryName!=null && accountID!=null){
-                try{
-                    categoryID = Category.find("account_id=", accountID, "name=", categoryName)[0].getID();
+        String years = request.getParameter("year").toString();
+        if (years==null) new ServiceResponse(400, "year is required");
+
+        String timezone = request.getParameter("timezone").toString();
+        if (timezone==null) timezone = "UTC";
+
+
+      //Set start/end dates
+        try{
+            int startYear, endYear;
+            if (years.contains("-")){
+                String[] arr = years.split("-");
+                startYear = Integer.parseInt(arr[0]);
+                endYear = Integer.parseInt(arr[1]);
+                if (endYear<startYear){
+                    int s = startYear;
+                    startYear = endYear;
+                    endYear = s;
                 }
-                catch(Exception e){
-                }
+                endYear += 1;
             }
+            else{
+                startYear = Integer.parseInt(years);
+                endYear = startYear+1;
+            }
+
+            javaxt.utils.Date startDate = new javaxt.utils.Date("1/1/"+startYear);
+            startDate.removeTimeStamp();
+            startDate.setTimeZone(timezone);
+
+            javaxt.utils.Date endDate = startDate.clone();
+            endDate.add(endYear-startYear, "year");
+
+            request.setParameter("startDate", startDate.toISOString());
+            request.setParameter("endDate", endDate.toISOString());
         }
-        if (categoryID==null) new ServiceResponse(400, "Category name or ID is required");
+        catch(Exception e){}
 
 
+      //Compile sql
+        String sql = "select transaction.amount, transaction.date, is_expense " +
+        "from transaction left join category on transaction.category_id=category.id " +
+        "where account_id=" + accountID + " AND " + getDateFilter(request) + " " +
+        "order by date";
 
 
-      //Get date filter
-        String dateFilter = getDateFilter(request);
-        if (dateFilter==null) dateFilter = "";
-        else dateFilter = " AND " + dateFilter + " ";
-
-
-        String sql = "select id, date, description, amount from transaction " +
-        "where category_id=" + categoryID + " " + dateFilter +
-        "order by date desc";
-
-
-        StringBuilder str = new StringBuilder();
-        str.append("[");
+      //Execute query and generate response
         Connection conn = null;
         try{
-            int x = 0;
             conn = database.getConnection();
+
+            HashMap<Integer, TreeMap<Integer, BigDecimal>> income = new HashMap<>();
+            HashMap<Integer, TreeMap<Integer, BigDecimal>> expenses = new HashMap<>();
+
             for (Recordset rs : conn.getRecordset(sql)){
-                if (x>0) str.append(",");
-                JSONArray arr = new JSONArray();
-                arr.add(rs.getValue("id").toLong());
-                arr.add(rs.getValue("date").toDate());
-                arr.add(rs.getValue("description").toString());
-                arr.add(rs.getValue("amount").toBigDecimal());
-                str.append(arr.toString());
-                x++;
+                javaxt.utils.Date date = rs.getValue("date").toDate();
+                BigDecimal amount = rs.getValue("amount").toBigDecimal();
+                boolean isExpense = rs.getValue("is_expense").toBoolean();
+
+                HashMap<Integer, TreeMap<Integer, BigDecimal>> map = isExpense ? expenses : income;
+
+
+                date.setTimeZone(timezone);
+                int year = date.getYear();
+                TreeMap<Integer, BigDecimal> months = map.get(year);
+                if (months==null){
+                    months = new TreeMap<>();
+                    map.put(year, months);
+                }
+
+                int month = date.getMonth();
+                BigDecimal currAmount = months.get(month);
+                if (currAmount==null) currAmount = new BigDecimal(0.0);
+                months.put(month, currAmount.add(amount));
             }
+
             conn.close();
-            str.append("]");
-            ServiceResponse response = new ServiceResponse(str.toString());
-            response.setContentType("application/json");
-            return response;
+
+
+            JSONObject json = new JSONObject();
+            TreeSet<Integer> keys = new TreeSet<>();
+            keys.addAll(income.keySet());
+            keys.addAll(expenses.keySet());
+            Iterator<Integer> it = keys.descendingIterator();
+            while (it.hasNext()){
+                int year = it.next();
+                JSONObject _year = new JSONObject();
+                json.set(year+"", _year);
+
+                JSONArray arr;
+                TreeMap<Integer, BigDecimal> months;
+
+                arr = new JSONArray();
+                months = income.get(year);
+                for (int i=0; i<12; i++){
+                    BigDecimal amount = months==null ? null : months.get(i+1);
+                    if (amount==null) amount = new BigDecimal(0.0);
+                    arr.add(amount);
+                }
+                _year.set("income", arr);
+
+                arr = new JSONArray();
+                months = expenses.get(year);
+                for (int i=0; i<12; i++){
+                    BigDecimal amount = months==null ? null : months.get(i+1);
+                    if (amount==null) amount = new BigDecimal(0.0);
+                    arr.add(amount);
+                }
+                _year.set("expenses", arr);
+            }
+
+            return new ServiceResponse(json);
         }
         catch(Exception e){
             if (conn!=null) conn.close();

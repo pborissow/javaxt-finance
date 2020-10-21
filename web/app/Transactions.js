@@ -16,6 +16,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var orgConfig = config;
     var defaultConfig = {
         style: javaxt.express.finance.style,
+        dateFormat: "M/d/yyyy",
+        timezone: "America/New_York",
         editor: {
             numColumns: 2
         }
@@ -29,7 +31,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
         importWizard, rules,
         notificationWindow;
 
-    var dateDisplayFormat;
     var isMobile = false;
     var vendors, sources, sourceAccounts, accounts, accountStats; //DataStores
     var filter = {};
@@ -60,9 +61,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
         if (!config.fx) config.fx = new javaxt.dhtml.Effects();
 
 
-      //Set date format
-        dateDisplayFormat = getMomentFormat("M/d/yyyy");
-
+      //Update timezone
+        config.timezone = config.timezone.trim().replace(" ", "_");
 
 
       //Watch for drag and drop events
@@ -122,16 +122,41 @@ javaxt.express.finance.Transactions = function(parent, config) {
             accounts = orgConfig.accounts;
 
             accounts.addEventListener("add", function(account){
-                if (accountStats) accountStats.add(account.name);
+                if (accountStats) accountStats.add({name: account.name, count: 0});
             }, me);
 
             accounts.addEventListener("remove", function(account){
-                if (accountStats) accountStats.remove(account.name);
+                if (accountStats){
+
+                    var idx, currCount, na;
+                    for (var i=0; i<accountStats.length; i++){
+                        var record = accountStats.get(i);
+                        if (record.name===account.name){
+                            idx = i;
+                            currCount = record.count;
+                        }
+                        if (record.name==="N/A"){
+                            na = i;
+                        }
+                    }
+
+                    accountStats.removeAt(idx);
+                    var record = accountStats.get(na);
+                    record.count += currCount;
+                    accountStats.set(na, record);
+                }
             }, me);
 
             accounts.addEventListener("update", function(account, orgAccount){
-                if (account.name!=orgAccount.name){
-                    if (accountStats) accountStats.rename(orgAccount.name, account.name);
+                if (account.name!==orgAccount.name && accountStats){
+                    for (var i=0; i<accountStats.length; i++){
+                        var record = accountStats.get(i);
+                        if (record.name===orgAccount.name){
+                            record.name = account.name;
+                            accountStats.set(i, record);
+                            break;
+                        }
+                    }
                 }
             }, me);
 
@@ -147,6 +172,9 @@ javaxt.express.finance.Transactions = function(parent, config) {
     };
 
 
+  //**************************************************************************
+  //** updateAccountStats
+  //**************************************************************************
     var updateAccountStats = function(refresh){
         if (refresh===true) delete orgConfig.stats.accounts;
         getTransactionsPerAccount(orgConfig, function(){
@@ -370,9 +398,8 @@ javaxt.express.finance.Transactions = function(parent, config) {
             ],
             update: function(row, transaction){
 
-                var m = moment(transaction.date);
-                var date = m.format(dateDisplayFormat);
-                row.set('Date', date);
+                var m = moment.tz(transaction.date, config.timezone);
+                row.set('Date', createCell("date", m, config.dateFormat));
                 row.set('Day', m.format('dddd'));
                 row.set('Description', transaction.description);
                 row.set('Amount', createCell("currency", transaction.amount));
@@ -383,34 +410,10 @@ javaxt.express.finance.Transactions = function(parent, config) {
                     row.set("Account", category.account.name);
                 }
 
-
                 var source = findSource(transaction.sourceID);
-                if (source){
-
-                    var div = document.createElement("div");
-                    div.className = "transaction-grid-source";
-                    if (source.color) div.style.color = source.color;
-
-                    if (source.vendor){
-                        var d = document.createElement("div");
-                        d.innerHTML = source.vendor;
-                        div.appendChild(d);
-                        //if (source.color) d.style.color = source.color;
-                    }
-
-                    if (source.account){
-                        var d = document.createElement("div");
-                        d.innerHTML = source.account;
-                        div.appendChild(d);
-                        if (source.color) d.style.opacity = 0.5;
-                    }
-
-
-                    row.set('Source', div);
-                }
+                row.set('Source', createCell("source", source));
             }
         });
-
 
 
         transactionGrid.onSelectionChange = function(){
@@ -418,44 +421,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
             categoryGrid.deselectAll();
         };
 
-    };
-
-
-  //**************************************************************************
-  //** findSource
-  //**************************************************************************
-    var findSource = function(sourceID){
-        if (!isNumber(sourceID)) return null;
-        for (var i=0; i<sources.length; i++){
-            var source = sources.get(i);
-            if (sourceID===source.id){
-                for (var j=0; j<sourceAccounts.length; j++){
-                    var sourceAccount = sourceAccounts.get(j);
-                    if (sourceAccount.id===source.accountID){
-                        var accountName = sourceAccount.accountName;
-                        var vendorName, color;
-                        for (var k=0; k<vendors.length; k++){
-                            var vendor = vendors.get(k);
-                            if (sourceAccount.vendorID===vendor.id){
-                                vendorName = vendor.name;
-                                if (vendor.info) color = vendor.info.color;
-                                break;
-                            }
-                        }
-
-
-                        return {
-                            account: accountName,
-                            vendor: vendorName,
-                            color: color
-                        };
-                    }
-                }
-
-                break;
-            }
-        }
-        return null;
     };
 
 
@@ -775,15 +740,18 @@ javaxt.express.finance.Transactions = function(parent, config) {
                 });
 
 
-
               //Update account stats
-                var currCount = accountStats.get(account.name);
-                accountStats.set(account.name, currCount ? currCount+1 : 1);
-                var unlinkedCount = accountStats.get("N/A");
-                if (isNumber(unlinkedCount)){
-                    accountStats.set("N/A", (unlinkedCount-1));
+                for (var i=0; i<accountStats.length; i++){
+                    var record = accountStats.get(i);
+                    if (record.name===account.name){
+                        record.count += 1;
+                        accountStats.set(i, record);
+                    }
+                    if (record.name==="N/A"){
+                        record.count -= 1;
+                        accountStats.set(i, record);
+                    }
                 }
-
             },
             failure: function(request){
                 alert(request);
@@ -1296,7 +1264,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
             else {
                 delete filter.categoryID;
             }
-            console.log(filter);
             transactionGrid.refresh();
         };
 
@@ -1354,6 +1321,15 @@ javaxt.express.finance.Transactions = function(parent, config) {
             })(file);
             reader.readAsText(file);
         }
+    };
+
+
+
+  //**************************************************************************
+  //** findSource
+  //**************************************************************************
+    var findSource = function(sourceID){
+        return javaxt.express.finance.utils.findSource(sourceID, vendors, sources, sourceAccounts);
     };
 
 

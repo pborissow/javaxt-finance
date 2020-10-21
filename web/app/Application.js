@@ -29,6 +29,17 @@ javaxt.express.finance.Application = function(parent, config) {
         if (!config.fx) config.fx = new javaxt.dhtml.Effects();
 
 
+
+      //Prevent native browser shortcuts (ctrl+a,h,o,p,s,...)
+        document.addEventListener("keydown", function(e){
+            if ((e.keyCode == 65 || e.keyCode == 72 || e.keyCode == 79 || e.keyCode == 80 || e.keyCode == 83) &&
+            (navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey)) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+
+
       //Create main table
         var table = createTable();
         var tbody = table.firstChild;

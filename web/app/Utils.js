@@ -401,6 +401,53 @@ javaxt.express.finance.utils = {
 
 
   //**************************************************************************
+  //** findSource
+  //**************************************************************************
+  /** Returns account name, vendor name, and color for a given sourceID
+   *  associated with a transaction. This information is used to render the
+   *  "Source" field in the transaction tables.
+   *  @param sourceID number
+   *  @param vendors DataStore
+   *  @param sources DataStore
+   *  @param sourceAccounts DataStore
+   */
+    findSource: function(sourceID, vendors, sources, sourceAccounts){
+        var isNumber = javaxt.express.finance.utils.isNumber;
+        if (!isNumber(sourceID)) return null;
+        for (var i=0; i<sources.length; i++){
+            var source = sources.get(i);
+            if (sourceID===source.id){
+                for (var j=0; j<sourceAccounts.length; j++){
+                    var sourceAccount = sourceAccounts.get(j);
+                    if (sourceAccount.id===source.accountID){
+                        var accountName = sourceAccount.accountName;
+                        var vendorName, color;
+                        for (var k=0; k<vendors.length; k++){
+                            var vendor = vendors.get(k);
+                            if (sourceAccount.vendorID===vendor.id){
+                                vendorName = vendor.name;
+                                if (vendor.info) color = vendor.info.color;
+                                break;
+                            }
+                        }
+
+
+                        return {
+                            account: accountName,
+                            vendor: vendorName,
+                            color: color
+                        };
+                    }
+                }
+
+                break;
+            }
+        }
+        return null;
+    },
+
+
+  //**************************************************************************
   //** getAccounts
   //**************************************************************************
   /** Used to get or create a DataStore with accounts and categories. The
@@ -495,14 +542,12 @@ javaxt.express.finance.utils = {
         else{
             config.stats.accounts = "Loading...";
             var get = javaxt.dhtml.utils.get;
-            var isNumber = javaxt.express.finance.utils.isNumber;
             var store = new javaxt.dhtml.DataStore();
+            config.stats.accounts = store;
 
             get("report/TransactionsPerAccount", {
                 success: function(text){
                     var data = JSON.parse(text);
-
-
                     for (var key in data) {
                        if (data.hasOwnProperty(key)){
                            store.add({
@@ -519,83 +564,9 @@ javaxt.express.finance.utils = {
                        });
                     }
 
-
-
-
-                    var _get = store.get;
-                    store.get = function(key){
-                        if (typeof parent === "string"){
-                            for (var i=0; i<store.length; i++){
-                                var record = _get(i);
-                                if (record.name===key) return record.count;
-                            }
-                            return null;
-                        }
-                        else{
-                            return _get(key);
-                        }
-                    };
-
-
-                    var _set = store.set;
-                    store.set = function(accountName, count){
-                        for (var i=0; i<store.length; i++){
-                            if (_get(i).name===accountName){
-                                _set(i, {
-                                    name: accountName,
-                                    count: count
-                                });
-                                return;
-                            }
-                        }
-                    };
-
-
-                    var _add = store.add;
-                    store.add = function(accountName){
-                        _add({
-                            name: accountName,
-                            count: 0
-                        });
-                    };
-
-
-                    store.remove = function(accountName){
-                        for (var i=0; i<store.length; i++){
-                            if (_get(i).name===accountName){
-
-                                var currCount = _get(i).count;
-                                var unlinkedCount = store.get("N/A");
-                                if (!isNumber(unlinkedCount)) unlinkedCount = 0;
-                                store.set("N/A", unlinkedCount+currCount);
-
-
-                                store.removeAt(i);
-                                return;
-                            }
-                        }
-                    };
-
-
-                    store.rename = function(orgName, newName){
-                        for (var i=0; i<store.length; i++){
-                            var record = _get(i);
-                            if (record.name===orgName){
-                                _set(i, {
-                                    name: newName,
-                                    count: record.count
-                                });
-                                break;
-                            }
-                        }
-                    };
-
-
-                    config.stats.accounts = store;
                     if (callback) callback.call();
                 },
                 failure: function(request){
-                    config.stats.accounts = store; //prevent infinite loop
                     alert(request);
                 }
             });
@@ -653,6 +624,49 @@ javaxt.express.finance.utils = {
             span.className = "transaction-grid-" + ((amount.indexOf("-")===0) ? "debit" : "credit");
             return span;
         }
+        else if (type==="source"){
+            var source = val; //response from findSource()
+            if (!source) return null;
+
+            var div = document.createElement("div");
+            div.className = "transaction-grid-source";
+            if (source.color) div.style.color = source.color;
+
+            if (source.vendor){
+                var d = document.createElement("div");
+                d.innerHTML = source.vendor;
+                div.appendChild(d);
+                //if (source.color) d.style.color = source.color;
+            }
+
+            if (source.account){
+                var d = document.createElement("div");
+                d.innerHTML = source.account;
+                div.appendChild(d);
+                if (source.color) d.style.opacity = 0.5;
+            }
+
+            return div;
+        }
+        else if (type==="date"){
+            var date = val;
+            var dateFormat = arguments[2];
+            if (!dateFormat) dateFormat = "M/d/yyyy";
+            var m;
+            if (moment.isMoment(date)){
+                m = date;
+            }
+            else{
+                var timezone = arguments[3];
+                if (timezone){
+                    m = moment.tz(date, timezone);
+                }
+                else{
+                    m = moment(date);
+                }
+            }
+            return m.format(me.getMomentFormat(dateFormat));
+        }
     },
 
 
@@ -703,6 +717,112 @@ javaxt.express.finance.utils = {
         });
 
         return chart;
+    },
+
+
+  //**************************************************************************
+  //** createBargraph
+  //**************************************************************************
+  /** Used to create a bar chart
+   */
+    createBargraph: function(canvas, options){
+        if (!options) options = {};
+
+        var ctx = canvas.getContext('2d');
+
+        var data = {
+            labels: [], //x-axis labels
+            datasets: [ //one or more json objects
+                /*
+                {
+                    label: "Blue",
+                    backgroundColor: "blue",
+                    data: [3,7,4]
+                },
+                {
+                    label: "Red",
+                    backgroundColor: "red",
+                    data: [4,3,5]
+                },
+                {
+                    label: "Green",
+                    backgroundColor: "green",
+                    data: [7,2,6]
+                }
+                */
+            ]
+        };
+
+
+        var chart = new Chart(ctx, {
+            type: 'bar',
+            data: data,
+            options: {
+                barValueSpacing: 20,
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            min: 0
+                        }
+                    }]
+                },
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    enabled: false
+                }
+            }
+        });
+
+        return chart;
+    },
+
+
+  //**************************************************************************
+  //** addLegend
+  //**************************************************************************
+  /** Used to add a custom legend to a canvas
+   */
+    addLegend: function(canvas){
+
+        var legend = document.createElement("div");
+        legend.style.position = "absolute";
+        legend.style.right = "5px";
+        legend.style.top = "7px";
+        canvas.parentNode.parentNode.appendChild(legend);
+
+
+        var table = javaxt.dhtml.utils.createTable();
+        table.style.height = "";
+        legend.appendChild(table);
+        var tbody = table.firstChild;
+        legend.addItem = function(label, backgroundColor, borderColor){
+            var tr, td;
+            tr = document.createElement("tr");
+            tbody.appendChild(tr);
+
+            td = document.createElement("td");
+            tr.appendChild(td);
+            var div = document.createElement("div");
+            div.className = "chart-legend-circle";
+            div.style.backgroundColor = backgroundColor;
+            if (borderColor){
+                div.className += "-outline";
+                div.style.borderColor = borderColor;
+            }
+            td.appendChild(div);
+
+            td = document.createElement("td");
+            td.className = "chart-legend-label noselect";
+            td.innerHTML = label;
+            tr.appendChild(td);
+        };
+        legend.clear = function(){
+            tbody.innerHTML = "";
+        };
+
+        return legend;
     },
 
 
