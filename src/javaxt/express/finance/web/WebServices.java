@@ -277,12 +277,15 @@ public class WebServices extends WebService {
             HashMap<Long, Long> updates = new HashMap<>();
             Recordset rs = new Recordset();
             rs.setFetchSize(1000);
-            rs.open("select id, description from transaction where category_id is null", conn);
+            rs.open("select transaction.id, description, source.account_id " +
+            "from transaction join source on transaction.source_id=source.id " +
+            "where category_id is null", conn);
             while (rs.hasNext()){
                 long id = rs.getValue("id").toLong();
                 String description = rs.getValue("description").toString();
+                long sourceAccountID = rs.getValue("account_id").toLong();
                 for (JSONObject rule : rules){
-                    Long categoryID = getCategoryID(description, rule);
+                    Long categoryID = getCategoryID(rule, sourceAccountID, description);
                     if (categoryID!=null){
                         updates.put(id, categoryID);
                         break;
@@ -330,12 +333,21 @@ public class WebServices extends WebService {
   //**************************************************************************
   //** getCategoryID
   //**************************************************************************
-    private Long getCategoryID(String description, JSONObject rule){
+    private Long getCategoryID(JSONObject rule, long sourceAccountID, String description){
+
+      //Get rule details
         String filter = rule.get("filter").toString();
         String keyword = rule.get("keyword").toString();
         Long categoryID = rule.get("categoryID").toLong();
-        if (filter==null || keyword==null || categoryID==null) return null;
+        Long sourceFilter = rule.get("sourceAccountID").toLong();
 
+
+      //Exit early if we can
+        if (filter==null || keyword==null || categoryID==null) return null;
+        if (sourceFilter!=null) if (sourceAccountID!=sourceFilter) return null;
+
+
+      //Update params
         filter = filter.toLowerCase();
         keyword = keyword.toLowerCase();
         description = description.toLowerCase();
@@ -344,6 +356,7 @@ public class WebServices extends WebService {
         }
 
 
+      //Return category
         if (filter.equals("equals")){
             if (description.equals(keyword)) return categoryID;
         }
