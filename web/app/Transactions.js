@@ -348,7 +348,10 @@ javaxt.express.finance.Transactions = function(parent, config) {
         });
         viewButton.onClick = function(){
             if (!rules) rules = new javaxt.express.finance.Rules(null, {
-                accounts: accounts
+                vendors: vendors,
+                sources: sources,
+                accounts: accounts,
+                sourceAccounts: sourceAccounts
             });
             rules.show();
         };
@@ -1346,8 +1349,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var createButton = javaxt.express.finance.utils.createButton;
 
     var isNumber = javaxt.express.finance.utils.isNumber;
-    var getMomentFormat = javaxt.express.finance.utils.getMomentFormat;
-
     var parseResponse = javaxt.express.finance.utils.normalizeResponse;
     var getSources = javaxt.express.finance.utils.getSources;
     var getAccounts = javaxt.express.finance.utils.getAccounts;

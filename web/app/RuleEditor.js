@@ -19,8 +19,8 @@ javaxt.express.finance.RuleEditor = function(config) {
     };
 
     var form, win;
-    var account, category;
-    var accounts;
+    var field, filter, source, account, category, active; //comboboxes
+    var accounts, sourceAccounts, vendors; //datastores
 
 
   //**************************************************************************
@@ -42,6 +42,8 @@ javaxt.express.finance.RuleEditor = function(config) {
 
 
         accounts = orgConfig.accounts;
+        sourceAccounts = orgConfig.sourceAccounts;
+        vendors = orgConfig.vendors;
 
 
       //Create config for comboboxes
@@ -51,29 +53,14 @@ javaxt.express.finance.RuleEditor = function(config) {
         };
 
 
-      //Create "active" combobox
-        var active = createComboBox(comboboxConfig);
-        active.add("True", true);
-        active.add("False", false);
-        active.setValue(true);
 
-
-      //Create "field" combobox
-        var field = createComboBox(comboboxConfig);
-        field.add("Description");
-
-
-      //Create "filter" combobox
-        var filter = createComboBox(comboboxConfig);
-        filter.add("Contains");
-        filter.add("Starts With");
-        filter.add("Ends With");
-        filter.add("Equals");
-
-
-      //Create "account" and "category" combobox
+      //Create comboboxes
+        field = createComboBox(comboboxConfig);
+        filter = createComboBox(comboboxConfig);
+        source = createComboBox(comboboxConfig);
         account = createComboBox(comboboxConfig);
         category = createComboBox(comboboxConfig);
+        active = createComboBox(comboboxConfig);
 
 
       //Create form
@@ -82,7 +69,7 @@ javaxt.express.finance.RuleEditor = function(config) {
             style: config.style.form,
             items: [
                 {
-                    group: "Basic Info",
+                    group: "Rule",
                     items: [
 
                         {
@@ -107,6 +94,12 @@ javaxt.express.finance.RuleEditor = function(config) {
                 {
                     group: "Trigger",
                     items: [
+                        {
+                            name: "sourceAccountID",
+                            label: "Source",
+                            type: source,
+                            required: true
+                        },
                         {
                             name: "field",
                             label: "Field",
@@ -158,7 +151,7 @@ javaxt.express.finance.RuleEditor = function(config) {
                     }
                 },
                 {
-                    name: "Submit",
+                    name: "Save",
                     onclick: function(){
 
                         var account = form.getData();
@@ -173,6 +166,7 @@ javaxt.express.finance.RuleEditor = function(config) {
             ]
         });
 
+        me.clear();
 
 
 
@@ -180,7 +174,6 @@ javaxt.express.finance.RuleEditor = function(config) {
         var body = document.getElementsByTagName("body")[0];
         win = new javaxt.dhtml.Window(body, {
             width: 450,
-            valign: "top",
             modal: true,
             body: div,
             style: config.style.window
@@ -290,6 +283,26 @@ javaxt.express.finance.RuleEditor = function(config) {
     this.clear = function(){
         form.reset();
 
+
+      //Update active
+        active.add("True", true);
+        active.add("False", false);
+        active.setValue(true);
+
+
+      //Update field
+        field.clear();
+        field.add("Description");
+
+
+      //Update filter
+        filter.clear();
+        filter.add("Contains");
+        filter.add("Starts With");
+        filter.add("Ends With");
+        filter.add("Equals");
+
+
       //Update the "account" and "category" combo boxes
         account.clear();
         category.clear();
@@ -297,6 +310,42 @@ javaxt.express.finance.RuleEditor = function(config) {
             var a = accounts.get(i);
             account.add(a.name, a.id);
         }
+
+      //Update the "source" combobox
+        source.clear();
+        var arr = [];
+        for (var i=0; i<sourceAccounts.length; i++){
+            var sourceAccount = sourceAccounts.get(i);
+            arr.push({
+                name: getName(sourceAccount),
+                id: sourceAccount.id
+            });
+        }
+        arr.sort(function(a, b) {
+           return a.name.localeCompare(b.name);
+        });
+        source.add("Any", null);
+        for (var i=0; i<arr.length; i++){
+            source.add(arr[i].name, arr[i].id);
+        }
+        source.setValue("Any");
+
+
+    };
+
+
+    var getName = function(sourceAccount){
+        if (sourceAccount.id===null) return "Any";
+        var name = sourceAccount.accountName;
+        var vendorID = sourceAccount.vendorID;
+        for (var j=0; j<vendors.length; j++){
+            var vendor = vendors.get(j);
+            if (vendor.id===vendorID){
+                name += " (" + vendor.name + ")";
+                break;
+            }
+        }
+        return name;
     };
 
 

@@ -20,7 +20,7 @@ javaxt.express.finance.Rules = function(parent, config) {
 
     var win, grid, ruleEditor;
     var addButton, editButton, deleteButton;
-    var accounts;
+    var vendors, sources, sourceAccounts, accounts; //DataStores
     var filter = {};
 
 
@@ -41,6 +41,13 @@ javaxt.express.finance.Rules = function(parent, config) {
 
 
         accounts = orgConfig.accounts;
+
+
+        getSources(orgConfig, function(){
+            vendors = orgConfig.vendors;
+            sources = orgConfig.sources;
+            sourceAccounts = orgConfig.sourceAccounts;
+        });
 
 
       //Create main table
@@ -199,7 +206,7 @@ javaxt.express.finance.Rules = function(parent, config) {
     var createBody = function(parent){
 
 
-        filter.orderby = "name desc";
+        filter.orderby = "name";
 
         grid = new javaxt.dhtml.DataGrid(parent, {
             style: config.style.table,
@@ -207,7 +214,8 @@ javaxt.express.finance.Rules = function(parent, config) {
             filter: filter,
             parseResponse: parseResponse,
             columns: [
-                {header: 'Name', width:'90'},
+                {header: 'Name', width:'120'},
+                {header: 'Source', width:'120'},
                 {header: 'Trigger', width:'100%'},
                 {header: 'Assign To', width:'240'}
             ],
@@ -232,6 +240,9 @@ javaxt.express.finance.Rules = function(parent, config) {
                             }
                         }
                     }
+
+                    var source = findSource(info.sourceAccountID);
+                    row.set('Source', createCell("source", source));
                 }
             }
         });
@@ -270,6 +281,8 @@ javaxt.express.finance.Rules = function(parent, config) {
         if (!ruleEditor){
             ruleEditor = new javaxt.express.finance.RuleEditor({
                 accounts: accounts,
+                sourceAccounts: sourceAccounts,
+                vendors: vendors,
                 style: javaxt.express.finance.style
             });
             ruleEditor.onSubmit = function(){
@@ -332,6 +345,39 @@ javaxt.express.finance.Rules = function(parent, config) {
     };
 
 
+
+  //**************************************************************************
+  //** findSource
+  //**************************************************************************
+    var findSource = function(sourceAccountID){
+
+        for (var i=0; i<sourceAccounts.length; i++){
+            var sourceAccount = sourceAccounts.get(i);
+            if (sourceAccount.id===sourceAccountID){
+                var accountName = sourceAccount.accountName;
+
+                var vendorName, color;
+                for (var k=0; k<vendors.length; k++){
+                    var vendor = vendors.get(k);
+                    if (sourceAccount.vendorID===vendor.id){
+                        vendorName = vendor.name;
+                        if (vendor.info) color = vendor.info.color;
+                        break;
+                    }
+                }
+
+                return {
+                    account: accountName,
+                    vendor: vendorName,
+                    color: color
+                };
+            }
+        }
+
+        return null;
+    };
+
+
   //**************************************************************************
   //** Utils
   //**************************************************************************
@@ -340,10 +386,11 @@ javaxt.express.finance.Rules = function(parent, config) {
     var del = javaxt.dhtml.utils.delete;
     var merge = javaxt.dhtml.utils.merge;
     var createTable = javaxt.dhtml.utils.createTable;
+    var createCell = javaxt.express.finance.utils.createCell;
     var createSpacer = javaxt.express.finance.utils.createSpacer;
     var createButton = javaxt.express.finance.utils.createButton;
     var parseResponse = javaxt.express.finance.utils.normalizeResponse;
-
+    var getSources = javaxt.express.finance.utils.getSources;
 
     init();
 };
