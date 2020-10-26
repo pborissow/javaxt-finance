@@ -21,9 +21,10 @@ javaxt.express.finance.Reports = function(parent, config) {
     };
     var mainDiv;
     var reportList, menu;
-    var accountDetails, pieChart, barGraph, transactionsPanel; //windows/panels
-    var vendors, sources, sourceAccounts; //DataStores
-    var spacing = 30; //window spacing
+    var accountDetails, pieChart, barGraph, transactionsPanel; //panels
+    var accounts, vendors, sources, sourceAccounts, accountStats; //DataStores
+    var transactionEditor; //window
+    var spacing = 30; //panel spacing
 
 
   //**************************************************************************
@@ -76,6 +77,7 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
 
+
         getSources(orgConfig, function(){
             vendors = orgConfig.vendors;
             sources = orgConfig.sources;
@@ -85,7 +87,7 @@ javaxt.express.finance.Reports = function(parent, config) {
 
       //Get accounts and create reports
         getAccounts(orgConfig, function(){
-            var accounts = orgConfig.accounts;
+            accounts = orgConfig.accounts;
             for (var i=0; i<accounts.length; i++){
                 var account = accounts.get(i);
                 addReport(account);
@@ -107,6 +109,9 @@ javaxt.express.finance.Reports = function(parent, config) {
                 }
             }, me);
         });
+
+
+        accountStats = orgConfig.stats.accounts;
 
     };
 
@@ -344,6 +349,17 @@ javaxt.express.finance.Reports = function(parent, config) {
             tr.appendChild(td);
             rows.push(tr);
         };
+
+
+        accountDetails.select = function(category){
+            for (var i=0; i<rows.length; i++){
+                if (rows[i].category.id===category.id){
+                    rows[i].click();
+                    break;
+                }
+            }
+        };
+
 
 
         var updatePanels = function(){
@@ -682,12 +698,15 @@ javaxt.express.finance.Reports = function(parent, config) {
             style: config.style.table,
             columns: columns
         });
+        var currSelection = null;
         grid.onSelectionChange = function(rows){
+            currSelection = null;
             for (var i=0; i<rows.length; i++){
                 var row = rows[i];
                 if (row.selected){
+                    editButton.enable();
                     var transactionID = parseInt(row.get(0));
-                    console.log("Edit transaction " + transactionID);
+                    currSelection = transactionID;
                     break;
                 }
             }
@@ -708,6 +727,16 @@ javaxt.express.finance.Reports = function(parent, config) {
 
       //Add toolbar buttons
         var isMobile = false;
+
+        var editButton = createButton(toolbar, {
+            label: "Edit",
+            icon: "editIcon",
+            disabled: true
+        });
+        editButton.onClick = function(){
+            if (currSelection) editTransaction(currSelection);
+        };
+
         var downloadButton = createButton(toolbar, {
             label: "Download",
             icon: "downloadIcon",
@@ -850,6 +879,86 @@ javaxt.express.finance.Reports = function(parent, config) {
             }
         });
     };
+
+
+  //**************************************************************************
+  //** editTransaction
+  //**************************************************************************
+    var editTransaction = function(transactionID){
+
+
+      //Instantiate transaction editor as needed
+        if (!transactionEditor){
+            transactionEditor = new javaxt.express.finance.TransactionEditor({
+                accounts: accounts,
+                style: javaxt.express.finance.style
+            });
+        }
+
+
+      //Clear/reset the form
+        transactionEditor.clear();
+
+
+      //Get transaction and open editor
+        get("transaction/"+transactionID, {
+            success: function(text){
+                var transaction = JSON.parse(text);
+                var category = transaction.category;
+                var account = category.account;
+
+                transactionEditor.setTitle("Edit Transaction");
+                transactionEditor.setValue("id", transaction.id);
+                transactionEditor.setValue("categoryID", category.id);
+                transactionEditor.show();
+
+
+                transactionEditor.onSubmit = function(){
+                    var transaction = transactionEditor.getValues();
+                    transactionEditor.close();
+                    get("linkTransaction/" + transaction.id + "?categoryID="+ transaction.categoryID,  {
+                        success: function(){
+
+                          //Refresh panels
+                            showReport(account);
+
+
+                          //Select category
+                            accountDetails.select(category);
+
+
+                          //Update account stats
+                            if (accountStats){
+
+                                var newAccount;
+                                for (var i=0; i<accounts.length; i++){
+                                    var rec = accounts.get(i);
+                                    if (rec.id===transaction.accountID){
+                                        newAccount = rec;
+                                        break;
+                                    }
+                                }
+
+                                for (var i=0; i<accountStats.length; i++){
+                                    var record = accountStats.get(i);
+                                    if (record.name===newAccount.name){
+                                        record.count += 1;
+                                        accountStats.set(i, record);
+                                    }
+                                    if (record.name===account.name){
+                                        record.count -= 1;
+                                        accountStats.set(i, record);
+                                    }
+                                }
+                            }
+
+                        }
+                    });
+                };
+            }
+        });
+    };
+
 
 
   //**************************************************************************
