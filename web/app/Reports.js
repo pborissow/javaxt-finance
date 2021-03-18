@@ -685,7 +685,7 @@ javaxt.express.finance.Reports = function(parent, config) {
                 width: 120
             },
             {
-                header: "Desciption",
+                header: "Description",
                 width: "100%"
             },
             {
@@ -765,7 +765,9 @@ javaxt.express.finance.Reports = function(parent, config) {
                     if (!(typeof cell === "string")){
                         cell = cell.innerText;
                     }
-                    if (cell.indexOf(",")>-1) cell = "\"" + cell + "\"";
+                    if (cell.indexOf(",")>-1 || cell.indexOf("\n")>-1){
+                        cell = "\"" + cell + "\"";
+                    }
                     cell = cell.replace("#",""); //TODO: find proper way to encode characters like this
                     row += cell;
                 }
