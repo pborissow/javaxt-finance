@@ -397,7 +397,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
                 {header: 'Description', field: 'description', width:'100%'},
                 {header: 'Account', width:'120'},
                 {header: 'Category', width:'120'},
-                {header: 'Amount', field: 'amount', width:'90', align: 'right'}
+                {header: 'Amount', field: 'amount', width:'105', align: 'right'}
             ],
             update: function(row, transaction){
 
