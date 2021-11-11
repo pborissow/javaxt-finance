@@ -314,19 +314,94 @@ javaxt.express.finance.Reports = function(parent, config) {
 
         };
 
+        var updateTotals = function(isExpense){
+            var total = 0;
+            var prevYear = 0;
+            for (var i=0; i<rows.length; i++){
+                var cat = rows[i].category;
+                var idx = rows[i].className.indexOf(" hidden");
+                if (idx===-1){
+                    if (cat.name){
+                        if (isExpense && cat.isExpense){
+                            total+=cat.total;
+                            prevYear+=cat.prevYear;
+                        }
+                        if (!isExpense && !cat.isExpense){
+                            total+=cat.total;
+                            prevYear+=cat.prevYear;
+                        }
+                    }
+                    else{ //found footer
+                        var cols = rows[i].childNodes;
+                        if (isExpense && cat.isExpense){
+                            cols[1].innerHTML = formatCurrency(comparePreviousYear ? prevYear : total/12);
+                            cols[2].innerHTML = formatCurrency(total);
+                        }
+                        if (!isExpense && !cat.isExpense){
+                            cols[1].innerHTML = formatCurrency(comparePreviousYear ? prevYear : total/12);
+                            cols[2].innerHTML = formatCurrency(total);
+                        }
+                    }
+                }
+            }
+        };
+
+
+        var onClick = function(row){
+            row.className += " report-row-selected";
+
+            var excludedCategories = [];
+            for (var i=0; i<rows.length; i++){
+                var idx = rows[i].className.indexOf(" hidden");
+                if (idx>0) excludedCategories.push(rows[i].category.id);
+            }
+
+            showDetails(row.category, account, year, excludedCategories);
+        };
+
+
         var addRow = function(category){
             var isFooter = false;
             if (!category.name) isFooter = true;
             tr = document.createElement("tr");
             tr.className = "report-row" + (isFooter? "-footer" : "");
             tr.category = category;
-            tr.onclick = function(){
+            tr.onclick = function(e){
+
+              //Deselect previous selection
                 for (var i=0; i<rows.length; i++){
                     var idx = rows[i].className.indexOf(" report-row-selected");
                     if (idx>0) rows[i].className = rows[i].className.substring(0, idx);
                 }
-                this.className += " report-row-selected";
-                showDetails(this.category, account, year);
+
+
+              //Process click event
+                if (isFooter){
+                    onClick(this);
+                }
+                else{
+
+                  //Use double click events to show/hide rows
+                    if (e.detail === 2) { //double click
+                        var idx = this.className.indexOf(" hidden");
+                        if (idx>0){
+                            this.className = this.className.substring(0, idx);
+                                if (transactionsPanel) transactionsPanel.hide();
+                                if (barGraph) barGraph.hide();
+                        }
+                        else{
+                            this.className += " hidden";
+                        }
+                        updateTotals(this.category.isExpense);
+                    }
+                    else{ //single click, possibly followed by another click
+                        var row = this;
+                        setTimeout(function(){
+                            var idx = row.className.indexOf(" hidden");
+                            if (idx===-1) onClick(row);
+                        }, 400);
+                    }
+                }
             };
             tbody.appendChild(tr);
 
@@ -362,131 +437,96 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
 
-        var updatePanels = function(){
-            accountDetails.update(table);
-            accountDetails.showAt(spacing, spacing);
-        };
 
+        getAccountSummary(account, year-1, function(income2, expenses2){
 
-        if (comparePreviousYear){
-
-            getAccountSummary(account, year-1, function(income2, expenses2){
-
-              //Update income records
-                for (var i=0; i<income.length; i++){income[i].prevYear=0;}
-                for (var i=0; i<income2.length; i++){
-                    var addRecord = true;
-                    for (var j=0; j<income.length; j++){
-                        if (income[j].name===income2[i].name){
-                            addRecord = false;
-                            income[j].prevYear = income2[i].total;
-                            break;
-                        }
-                    }
-                    if (addRecord){
-                        var inc = income2[i];
-                        inc.prevYear = inc.total;
-                        inc.total = 0;
-                        income.push(inc);
+          //Update income records
+            for (var i=0; i<income.length; i++){income[i].prevYear=0;}
+            for (var i=0; i<income2.length; i++){
+                var addRecord = true;
+                for (var j=0; j<income.length; j++){
+                    if (income[j].name===income2[i].name){
+                        addRecord = false;
+                        income[j].prevYear = income2[i].total;
+                        break;
                     }
                 }
+                if (addRecord){
+                    var inc = income2[i];
+                    inc.prevYear = inc.total;
+                    inc.total = 0;
+                    income.push(inc);
+                }
+            }
 
 
-              //Update expense records
-                for (var i=0; i<expenses.length; i++){expenses[i].prevYear=0;}
-                for (var i=0; i<expenses2.length; i++){
-                    var addRecord = true;
-                    for (var j=0; j<expenses.length; j++){
-                        if (expenses[j].name===expenses2[i].name){
-                            addRecord = false;
-                            expenses[j].prevYear = expenses2[i].total;
-                            break;
-                        }
+          //Update expense records
+            for (var i=0; i<expenses.length; i++){expenses[i].prevYear=0;}
+            for (var i=0; i<expenses2.length; i++){
+                var addRecord = true;
+                for (var j=0; j<expenses.length; j++){
+                    if (expenses[j].name===expenses2[i].name){
+                        addRecord = false;
+                        expenses[j].prevYear = expenses2[i].total;
+                        break;
                     }
-                    if (addRecord){
-                        var expense = expenses2[i];
-                        expense.prevYear = expense.total;
-                        expense.total = 0;
-                        expenses.push(expense);
-                    }
                 }
-
-
-              //Render income
-                addHeader("Income", (year-1), year);
-                var totalIncome = 0;
-                var prevIncome = 0;
-                income.sort(function(a, b){return b.total - a.total;});
-                for (var i=0; i<income.length; i++){
-                    var category = income[i];
-                    totalIncome+=category.total;
-                    prevIncome+=category.prevYear;
-                    addRow(category);
+                if (addRecord){
+                    var expense = expenses2[i];
+                    expense.prevYear = expense.total;
+                    expense.total = 0;
+                    expenses.push(expense);
                 }
-                addRow({
-                    name: false,
-                    total: totalIncome,
-                    prevYear: prevIncome
-                });
+            }
 
-
-              //Render expenses
-                addHeader("Expenses");
-                var totalExpenses = 0;
-                var prevExpenses = 0;
-                for (var i=0; i<expenses.length; i++){
-                    var expense = expenses[i];
-                    totalExpenses+=expense.total;
-                    prevExpenses+=expense.prevYear;
-                    expense.isExpense = true;
-                    addRow(expense);
-                }
-                addRow({
-                    name: false,
-                    total: totalExpenses,
-                    prevYear: prevExpenses,
-                    isExpense: true
-                });
-
-
-                updatePanels();
-
-            });
-
-
-        }
-        else{
 
           //Render income
-            addHeader("Income", "Monthly Avg", "YTD Total");
+            if (comparePreviousYear){
+                addHeader("Income", (year-1), year);
+            }
+            else{
+                addHeader("Income", "Monthly Avg", "YTD Total");
+            }
             var totalIncome = 0;
+            var prevIncome = 0;
             income.sort(function(a, b){return b.total - a.total;});
             for (var i=0; i<income.length; i++){
                 var category = income[i];
                 totalIncome+=category.total;
+                prevIncome+=category.prevYear;
                 addRow(category);
             }
             addRow({
                 name: false,
-                total: totalIncome
+                total: totalIncome,
+                prevYear: prevIncome
             });
 
 
           //Render expenses
             addHeader("Expenses");
             var totalExpenses = 0;
+            var prevExpenses = 0;
             for (var i=0; i<expenses.length; i++){
-                var category = expenses[i];
-                totalExpenses+=category.total;
-                addRow(category);
+                var expense = expenses[i];
+                totalExpenses+=expense.total;
+                prevExpenses+=expense.prevYear;
+                expense.isExpense = true;
+                addRow(expense);
             }
             addRow({
                 name: false,
-                total: totalExpenses
+                total: totalExpenses,
+                prevYear: prevExpenses,
+                isExpense: true
             });
 
-            updatePanels();
-        }
+
+            accountDetails.update(table);
+            accountDetails.showAt(spacing, spacing);
+
+        });
+
     };
 
 
@@ -852,12 +892,16 @@ javaxt.express.finance.Reports = function(parent, config) {
   //**************************************************************************
   //** showDetails
   //**************************************************************************
-    var showDetails = function(category, account, year){
+    var showDetails = function(category, account, year, excludedCategoryIDs){
 
         if (isNaN(category.id)){ //no specific category selected, show summary
 
             if (transactionsPanel) transactionsPanel.hide();
             var url = "report/MonthlyTotals?accountID=" + account.id + "&year=" + year + "-" + (year-1);
+            if (excludedCategoryIDs){
+                excludedCategoryIDs = excludedCategoryIDs.join();
+                if (excludedCategoryIDs.length) url += "&exclude=" + excludedCategoryIDs;
+            }
             get(url, {
                 success: function(text){
                     var monthlyTotals = JSON.parse(text);
