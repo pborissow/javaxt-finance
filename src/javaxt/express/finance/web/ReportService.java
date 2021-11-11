@@ -192,6 +192,12 @@ public class ReportService extends WebService {
         String timezone = request.getParameter("timezone").toString();
         if (timezone==null) timezone = "UTC";
 
+        String exclude = request.getParameter("exclude").toString();
+        if (exclude!=null){
+            exclude = exclude.trim();
+            if (exclude.isEmpty()) exclude = null;
+        }
+
 
       //Set start/end dates
         try{
@@ -229,6 +235,7 @@ public class ReportService extends WebService {
         String sql = "select transaction.amount, transaction.date, is_expense " +
         "from transaction left join category on transaction.category_id=category.id " +
         "where account_id=" + accountID + " AND " + getDateFilter(request) + " " +
+        (exclude==null ? "" : " AND category_id NOT IN (" + exclude + ") ")+
         "order by date";
 
 
