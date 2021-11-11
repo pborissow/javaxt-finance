@@ -172,16 +172,6 @@ javaxt.express.finance.Reports = function(parent, config) {
                         pieChart.update(expenses);
 
 
-                        get("report/MonthlyTotals?accountID=" + account.id + "&year=" + year + "-" + (year-1), {
-                            success: function(text){
-                                var json = JSON.parse(text);
-                                if (!barGraph) createBarGraph(mainDiv);
-                                barGraph.setHeight(280); //(accountDetails.getHeight()/2)-spacing
-                                barGraph.showAt(accountDetails.getWidth()+(spacing*2), pieChart.getHeight()+(spacing*2));
-                                barGraph.update(json);
-                            }
-                        });
-
                     },200);
 
                 });
@@ -226,15 +216,25 @@ javaxt.express.finance.Reports = function(parent, config) {
                     if (barGraph) barGraph.hide();
                     accountDetails.hide();
                     reportList.show();
-                },
-                onSubTitle: function(div, e){
-                    var rect = javaxt.dhtml.utils.getRect(div);
+                }
+            });
+
+            var setSubTitle = accountDetails.setSubTitle;
+            accountDetails.setSubTitle = function(text){
+                setSubTitle("");
+                var subtitle = document.createElement("div");
+                subtitle.className = "report-subtitle";
+                subtitle.style.display = "inline-block";
+                subtitle.onclick = function(e){
+                    var rect = javaxt.dhtml.utils.getRect(this);
                     var x = rect.x + rect.width + 10;
                     var y = rect.y + (rect.height/2);
                     if (!menu) menu = createMenu();
                     menu.showAt(x, y, "right", "middle");
-                }
-            });
+                };
+                subtitle.innerText = text;
+                setSubTitle(subtitle);
+            };
         }
 
 
@@ -326,7 +326,7 @@ javaxt.express.finance.Reports = function(parent, config) {
                     if (idx>0) rows[i].className = rows[i].className.substring(0, idx);
                 }
                 this.className += " report-row-selected";
-                getTransactions(this.category, year);
+                showDetails(this.category, account, year);
             };
             tbody.appendChild(tr);
 
@@ -438,12 +438,14 @@ javaxt.express.finance.Reports = function(parent, config) {
                     var expense = expenses[i];
                     totalExpenses+=expense.total;
                     prevExpenses+=expense.prevYear;
+                    expense.isExpense = true;
                     addRow(expense);
                 }
                 addRow({
                     name: false,
                     total: totalExpenses,
-                    prevYear: prevExpenses
+                    prevYear: prevExpenses,
+                    isExpense: true
                 });
 
 
@@ -497,8 +499,9 @@ javaxt.express.finance.Reports = function(parent, config) {
             closable: false,
             width: "475px"
         });
+        pieChart.getBody().style.padding = "15px 10px 0px 10px";
         var div = document.createElement("div");
-        div.style.padding = "15px";
+        div.style.height = "100%";
         var canvas = createCanvas(div, {
             width: "250px",
             height: "250px"
@@ -551,29 +554,46 @@ javaxt.express.finance.Reports = function(parent, config) {
   //** createBarGraph
   //**************************************************************************
     var createBarGraph = function(parent){
+
+      //Create panel
         barGraph = createPanel(parent, {
             title: "Monthly Expenses",
             closable: false,
-            width: "475px"
+            width: "475px",
+            height: "285px"
         });
-        var div = barGraph.getBody();
-        div.style.minWidth = "450px";
-        div.style.minHeight = "250px";
-        div.style.padding = "10px 5px";
-        var canvas = createCanvas(div);
+
+
+      //Create canvas
+        var canvas = createCanvas(barGraph.getBody());
+        onRender(canvas, function(){
+            barGraph.setHeight(barGraph.getHeight()+5);
+        });
+
+
+      //Create chart
         var chart = createBargraph(canvas, {});
-        var legend = addLegend(canvas);
-        barGraph.update = function(monthlyTotals){
-            legend.clear();
+
+      //Create function to update chart
+        barGraph.update = function(monthlyTotals, category){
+            barGraph.setSubTitle("");
 
           //Create datasets
             var datasets = [];
             for (var key in monthlyTotals) {
                 if (monthlyTotals.hasOwnProperty(key)){
                     var arr = [];
-                    var expenses = monthlyTotals[key].expenses;
-                    for (var i=0; i<expenses.length; i++){
-                        arr.push(-expenses[i]);
+                    if (category.isExpense===true){
+                        var expenses = monthlyTotals[key].expenses;
+                        for (var i=0; i<expenses.length; i++){
+                            arr.push(-expenses[i]);
+                        }
+                    }
+                    else{
+                        var income = monthlyTotals[key].income;
+                        for (var i=0; i<income.length; i++){
+                            arr.push(income[i]);
+                        }
                     }
                     datasets.push({
                         label: key, //year
@@ -583,8 +603,15 @@ javaxt.express.finance.Reports = function(parent, config) {
                 }
             }
 
-          //Update colors
-            var colorRange = ['#ff6364','#fff383','#12b7d3'];
+
+          //Set colors
+            var colorRange = []; //ending with current year
+            if (category.isExpense===true){
+                colorRange = ['#c7baba','#FF3C38']; //redish gray, red
+            }
+            else{
+                colorRange = ['#BEBCC1','#008000']; //gray, green
+            }
             var colorScale = chroma.scale(colorRange);
             var colors = {};
             for (var i=0; i<datasets.length; i++){
@@ -595,14 +622,48 @@ javaxt.express.finance.Reports = function(parent, config) {
             }
 
 
+          //Update subtitle with legend
+            var legend = document.createElement("div");
+            legend.style.display = "inline-block";
+            legend.style.marginTop = "5px";
+            for (var i=0; i<datasets.length; i++){
+                var label = datasets[i].label + "";
+                var color = colors[label];
+                var icon = document.createElement("div");
+                icon.className = "chart-legend-circle noselect";
+                icon.style.width = "10px";
+                icon.style.height = "10px";
+                icon.style.backgroundColor = color;
+                if (i>0) icon.style.marginLeft = "15px";
+                legend.appendChild(icon);
+                var text = document.createElement("div");
+                text.className = "chart-legend-label noselect";
+                text.style.lineHeight = "16px";
+                text.innerText = label;
+                legend.appendChild(text);
+            }
+            barGraph.setSubTitle(legend);
+
+
+
             for (var key in monthlyTotals) {
                 if (monthlyTotals.hasOwnProperty(key)){
                     var arr = [];
-                    var expenses = monthlyTotals[key].expenses;
-                    for (var i=0; i<expenses.length; i++){
-                        var val = -expenses[i];
-                        var prevVal = i>0 ? arr[i-1] : 0;
-                        arr.push(val+prevVal);
+                    if (category.isExpense===true){
+                        var expenses = monthlyTotals[key].expenses;
+                        for (var i=0; i<expenses.length; i++){
+                            var val = -expenses[i];
+                            var prevVal = i>0 ? arr[i-1] : 0;
+                            arr.push(val+prevVal);
+                        }
+                    }
+                    else{
+                        var income = monthlyTotals[key].income;
+                        for (var i=0; i<income.length; i++){
+                            var val = income[i];
+                            var prevVal = i>0 ? arr[i-1] : 0;
+                            arr.push(val+prevVal);
+                        }
                     }
                     datasets.push({
                         label: key, //year
@@ -789,97 +850,138 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
   //**************************************************************************
-  //** getTransactions
+  //** showDetails
   //**************************************************************************
-    var getTransactions = function(category, year){
-        if (transactionsPanel){
-            transactionsPanel.setTitle("");
-            transactionsPanel.clear();
-        }
+    var showDetails = function(category, account, year){
 
+        if (isNaN(category.id)){ //no specific category selected, show summary
 
-        if (!category.id){
             if (transactionsPanel) transactionsPanel.hide();
-            if (barGraph){
-                var account = accountDetails.account;
-                get("report/MonthlyTotals?accountID=" + account.id + "&year=" + year + "-" + (year-1), {
-                    success: function(text){
-                        barGraph.update(JSON.parse(text));
-                    }
-                });
-            }
-            return;
+            var url = "report/MonthlyTotals?accountID=" + account.id + "&year=" + year + "-" + (year-1);
+            get(url, {
+                success: function(text){
+                    var monthlyTotals = JSON.parse(text);
+                    updateBarGraph(category, monthlyTotals);
+
+                },
+                failure: function(request){
+                    alert(request);
+                }
+            });
         }
+        else{ //show details for selected category
 
-
-        var startDate = moment.tz((year-1) + "-01-01 00:00", config.timezone).toISOString();
-        var endDate = moment.tz((year+1) + "-01-01 00:00", config.timezone).toISOString();
-
-
-        var fields = "id,date,description,amount,categoryID,sourceID";
-        var where = "category_id=" + category.id + " and (date>='" + startDate + "' and date<'" + endDate + "')";
-        var orderBy = "date desc";
-        var url = "transactions?where=" + encodeURIComponent(where) + "&fields=" + fields +
-            "&orderBy=" + encodeURIComponent(orderBy) + "&limit=100000";
-
-        get(url, {
-            success: function(text, xml, url, request){
-                if (!transactionsPanel) createTransactionPanel(mainDiv);
+            if (transactionsPanel){
+                transactionsPanel.setTitle("");
                 transactionsPanel.clear();
-                transactionsPanel.setTitle(category.name);
-
-                var records = [];
-                var monthlyTotals = {};
-                var transactions = normalizeResponse(request);
-                for (var i=0; i<transactions.length; i++){
-                    var transaction = transactions[i];
-                    var id = transaction.id;
-                    var date = transaction.date;
-                    var desc = transaction.description;
-                    var amount = transaction.amount;
-                    var sourceID = transaction.sourceID;
-
-                    var m = moment.tz(date, config.timezone);
-                    if (m.year()===year){
-                        records.push([
-                            id,
-                            createCell("date", m, config.dateFormat),
-                            createCell("source", findSource(sourceID)),
-                            desc,
-                            createCell("currency", amount)
-                        ]);
-                    }
-
-                    var key = m.year()+"";
-                    var json = monthlyTotals[key];
-                    if (!json){
-                        json = {
-                            income: [0,0,0,0,0,0,0,0,0,0,0,0],
-                            expenses: [0,0,0,0,0,0,0,0,0,0,0,0]
-                        };
-                        monthlyTotals[key] = json;
-                    }
-
-                  //if (category.isExpense) then merge debits and credits
-                    monthlyTotals[key].expenses[m.month()]+= amount;
-                }
-
-                if (!transactionsPanel.isOpen()){
-                    var x = accountDetails.getWidth()+(spacing*2);
-                    if (pieChart){ //and is pieChart in default position...
-                        x += pieChart.getWidth()+spacing;
-                    }
-                    transactionsPanel.showAt(x, spacing);
-                }
-                transactionsPanel.update(records);
-
-
-                barGraph.update(monthlyTotals);
-            },
-            failure: function(request){
-                alert(request);
             }
-        });
+
+            var startDate = moment.tz((year-1) + "-01-01 00:00", config.timezone).toISOString();
+            var endDate = moment.tz((year+1) + "-01-01 00:00", config.timezone).toISOString();
+
+
+            var fields = "id,date,description,amount,categoryID,sourceID";
+            var where = "category_id=" + category.id + " and (date>='" + startDate + "' and date<'" + endDate + "')";
+            var orderBy = "date desc";
+            var url = "transactions?where=" + encodeURIComponent(where) + "&fields=" + fields +
+                "&orderBy=" + encodeURIComponent(orderBy) + "&limit=100000";
+
+            get(url, {
+                success: function(text, xml, url, request){
+
+                  //Get records and monthly totals
+                    var records = [];
+                    var monthlyTotals = {};
+                    var transactions = normalizeResponse(request);
+                    for (var i=0; i<transactions.length; i++){
+                        var transaction = transactions[i];
+                        var id = transaction.id;
+                        var date = transaction.date;
+                        var desc = transaction.description;
+                        var amount = transaction.amount;
+                        var sourceID = transaction.sourceID;
+
+                        var m = moment.tz(date, config.timezone);
+                        if (m.year()===year){
+                            records.push([
+                                id,
+                                createCell("date", m, config.dateFormat),
+                                createCell("source", findSource(sourceID)),
+                                desc,
+                                createCell("currency", amount)
+                            ]);
+                        }
+
+                        var key = m.year()+"";
+                        var json = monthlyTotals[key];
+                        if (!json){
+                            json = {
+                                income: [0,0,0,0,0,0,0,0,0,0,0,0],
+                                expenses: [0,0,0,0,0,0,0,0,0,0,0,0]
+                            };
+                            monthlyTotals[key] = json;
+                        }
+
+                        if (category.isExpense===true){
+                            monthlyTotals[key].expenses[m.month()]+= amount;
+                        }
+                        else{
+                            monthlyTotals[key].income[m.month()]+= amount;
+                        }
+                    }
+
+
+                  //Update transactionsPanel
+                    if (!transactionsPanel) createTransactionPanel(mainDiv);
+                    transactionsPanel.clear();
+                    transactionsPanel.setTitle(category.name);
+                    transactionsPanel.update(records);
+                    var xOffset = accountDetails.getWidth()+(spacing*2);
+                    if (!transactionsPanel.isOpen()){
+                        var x = xOffset;
+                        if (pieChart){ //and is pieChart in default position...
+                            x += pieChart.getWidth()+spacing;
+                        }
+                        transactionsPanel.showAt(x, spacing);
+                    }
+
+
+                  //Update barGraph
+                    updateBarGraph(category, monthlyTotals, xOffset);
+
+                },
+                failure: function(request){
+                    alert(request);
+                }
+            });
+        }
+    };
+
+
+  //**************************************************************************
+  //** updateBarGraph
+  //**************************************************************************
+    var updateBarGraph = function(category, monthlyTotals, xOffset){
+        if (!barGraph) createBarGraph(mainDiv);
+        var title;
+        if (category.name){
+            title = category.name;
+        }
+        else{
+            if (category.isExpense===true){
+                title = "Total Expenses";
+            }
+            else{
+                title = "Total Revenue";
+            }
+        }
+        barGraph.setTitle(title);
+        barGraph.update(monthlyTotals, category);
+        if (!barGraph.isOpen()){
+            if (isNaN(xOffset)) xOffset = accountDetails.getWidth()+(spacing*2);
+            barGraph.showAt(xOffset, pieChart.getHeight()+(spacing*2));
+            barGraph.show();
+        }
     };
 
 
@@ -1067,23 +1169,28 @@ javaxt.express.finance.Reports = function(parent, config) {
    */
     var createPanel = function(parent, options){
 
-        var div = document.createElement("div");
-        div.style.height = "100%";
-
-        var subtitleDiv = document.createElement("div");
-        subtitleDiv.style.textAlign = "center";
-        div.appendChild(subtitleDiv);
-
-        var subtitle = document.createElement("div");
-        subtitle.onclick = function(e){
-            if (options.onSubTitle) options.onSubTitle(this, e);
-        };
-        subtitleDiv.appendChild(subtitle);
+      //Create table
+        var table = createTable();
+        var tbody = table.firstChild;
+        var tr, td;
 
 
-        var body = document.createElement("div");
-        body.style.height = "100%";
-        div.appendChild(body);
+      //Subtitle
+        tr = document.createElement("tr");
+        tbody.appendChild(tr);
+        td = document.createElement("td");
+        td.style.textAlign = "center";
+        tr.appendChild(td);
+        var subtitle = td;
+
+
+      //Body
+        tr = document.createElement("tr");
+        tbody.appendChild(tr);
+        td = document.createElement("td");
+        td.style.height = "100%";
+        tr.appendChild(td);
+        var body = td;
 
 
         var style = merge({}, config.style.window);
@@ -1099,11 +1206,11 @@ javaxt.express.finance.Reports = function(parent, config) {
 
         var panel = new javaxt.dhtml.Window(parent, {
             title: options.title,
-            body: div,
             width: options.width,
             height: options.height,
             style: style
         });
+        panel.getBody().appendChild(table);
 
         panel.onClose = function(){
             if (options.onClose) options.onClose();
@@ -1115,14 +1222,17 @@ javaxt.express.finance.Reports = function(parent, config) {
             body.innerHTML = "";
         };
 
-        panel.setSubTitle = function(str){
-            subtitle.className = "report-subtitle";
-            subtitle.style.display = "inline-block";
-            subtitle.innerHTML = str;
+        panel.setSubTitle = function(content){
+            if (typeof content === "string"){
+                subtitle.innerHTML = content;
+            }
+            else{
+                subtitle.appendChild(content);
+            }
         };
 
         panel.update = function(content){
-            if (typeof parent === "string"){
+            if (typeof content === "string"){
                 body.innerHTML = content;
             }
             else{
@@ -1208,6 +1318,7 @@ javaxt.express.finance.Reports = function(parent, config) {
   //**************************************************************************
     var get = javaxt.dhtml.utils.get;
     var merge = javaxt.dhtml.utils.merge;
+    var onRender = javaxt.dhtml.utils.onRender;
     var createTable = javaxt.dhtml.utils.createTable;
     var createCell = javaxt.express.finance.utils.createCell;
     var createButton = javaxt.express.finance.utils.createButton;
