@@ -781,6 +781,15 @@
     border: 0 none;
 }
 
+.report-row.hidden .report-cell {
+    color: #fff;
+    font-style: italic;
+}
+
+.report-row.hidden .report-cell:first-child {
+    color: #d3d3d3;
+}
+
 
 /**************************************************************************/
 /** Callout
