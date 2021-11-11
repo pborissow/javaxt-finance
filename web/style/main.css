@@ -817,6 +817,7 @@
     height: 16px;
     border-radius: 50%;
     margin: 2px 4px 2px 0;
+    float: left;
 }
 
 .chart-legend-circle-outline {
@@ -828,6 +829,9 @@
 .chart-legend-label {
     color: #404040;
     font-size: 12px;
+    display: inline-block;
+    line-height: 20px;
+    float: left;
 }
 
 
