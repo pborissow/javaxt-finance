@@ -22,22 +22,32 @@ javaxt.dhtml.style.default = {
     },
 
 
+    callout : {
+        panel: "callout-panel",
+        arrow: "callout-arrow"
+    },
+
+
     form : {
-        label: "form-label",
+        label: "form-label noselect",
         input: "form-input",
         icon: {
             padding: "0 8px 6px 0"
         },
-        button: "form-button",
-        radio: "form-radio"
+        button: "form-button noselect",
+        radio: "form-radio noselect",
+        checkbox: "form-checkbox",
+        groupbox: "form-groupbox",
+        grouplabel: "form-grouplabel noselect"
     },
 
 
-    combobox : { //style is also used by URLField
+    combobox : {
         input: "form-input form-input-with-button",
         button: "form-button form-input-button pulldown-button-icon",
         menu: "form-input-menu",
-        option: "form-input-menu-item"
+        option: "form-input-menu-item",
+        newOption: "form-input-menu-item form-input-menu-item-new"
     },
 
 
@@ -83,7 +93,12 @@ javaxt.dhtml.style.default = {
         selectedRow: "table-row-selected",
         resizeHandle: "table-resizeHandle",
         ascendingSortIcon: "table-icon-sort-asc",
-        descendingSortIcon: "table-icon-sort-desc"
+        descendingSortIcon: "table-icon-sort-desc",
+        iscroll: {
+            horizontalScrollbar: "iScrollHorizontalScrollbar",
+            verticalScrollbar: "iScrollVerticalScrollbar",
+            indicator: "iScrollIndicator"
+        }
     },
 
     tabPanel: {

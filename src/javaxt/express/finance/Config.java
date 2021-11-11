@@ -4,7 +4,18 @@ import javaxt.json.*;
 import javaxt.sql.*;
 
 
-public class Config extends javaxt.express.Config {
+//******************************************************************************
+//**  Config Class
+//******************************************************************************
+/**
+ *   Provides thread-safe, static methods used to get and set application
+ *   variables.
+ *
+ ******************************************************************************/
+
+public class Config {
+
+    private static javaxt.express.Config config = new javaxt.express.Config();
 
     private Config(){}
 
@@ -16,11 +27,11 @@ public class Config extends javaxt.express.Config {
    */
     public static void init(javaxt.io.File configFile, javaxt.io.Jar jar) throws Exception {
 
-        JSONObject config = new JSONObject(configFile.getText());
+        JSONObject json = new JSONObject(configFile.getText());
 
 
       //Update relative paths in the database config (H2 only)
-        JSONObject dbConfig = config.get("database").toJSONObject();
+        JSONObject dbConfig = json.get("database").toJSONObject();
         if (dbConfig.has("path")){
             updateFile("path", dbConfig, configFile);
             String path = dbConfig.get("path").toString().replace("\\", "/");
@@ -31,14 +42,14 @@ public class Config extends javaxt.express.Config {
 
 
       //Update relative paths in the schema config
-        JSONObject schemaConfig = config.get("schema").toJSONObject();
+        JSONObject schemaConfig = json.get("schema").toJSONObject();
         updateFile("path", schemaConfig, configFile);
         updateFile("updates", schemaConfig, configFile);
 
 
 
       //Update relative paths in the web config
-        JSONObject webConfig = config.get("webserver").toJSONObject();
+        JSONObject webConfig = json.get("webserver").toJSONObject();
         updateDir("webDir", webConfig, configFile, false);
         updateDir("logDir", webConfig, configFile, true);
         updateDir("jobDir", webConfig, configFile, true);
@@ -47,7 +58,7 @@ public class Config extends javaxt.express.Config {
 
 
       //Load config
-        Config.init(config);
+        config.init(json);
 
 
       //Get database connection info
@@ -122,6 +133,34 @@ public class Config extends javaxt.express.Config {
                 }
             }
         }
+    }
+
+
+  //**************************************************************************
+  //** has
+  //**************************************************************************
+  /** Returns true if the config has a given key.
+   */
+    public static boolean has(String key){
+        return config.has(key);
+    }
+
+
+  //**************************************************************************
+  //** get
+  //**************************************************************************
+  /** Returns the value for a given key.
+   */
+    public static JSONValue get(String key){
+        return config.get(key);
+    }
+
+
+  //**************************************************************************
+  //** getDatabase
+  //**************************************************************************
+    public static javaxt.sql.Database getDatabase(){
+        return config.getDatabase();
     }
 
 
