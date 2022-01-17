@@ -367,8 +367,21 @@ javaxt.express.finance.ImportWizard = function(config) {
             items: [
                 {
                     name: "name",
-                    label: "Name",
-                    type: "text"
+                    label: "Source/Vendor",
+                    type: "text",
+                    placeholder: "Wells Fargo, AMEX, etc"
+                },
+                {
+                    name: "accountName",
+                    label: "Account",
+                    type: "text",
+                    placeholder: "Business Checking, Platinum Card, etc"
+                },
+                {
+                    name: "accountNumber",
+                    label: "Account Number",
+                    type: "text",
+                    placeholder: "1111-1111-1111-1111"
                 },
                 {
                     name: "description",
@@ -399,6 +412,15 @@ javaxt.express.finance.ImportWizard = function(config) {
                     return false;
                 }
 
+
+                var accountName = values.accountName;
+                if (accountName) accountName = accountName.trim();
+                if (accountName==null || accountName==="") {
+                    warn("Account is required", form.findField("accountName"));
+                    return false;
+                }
+
+
                 var isNameUnique = function(){
                     for (var i=0; i<sources.length; i++){
                         if (name.toLowerCase()==sources[i].toLowerCase()){
@@ -409,10 +431,18 @@ javaxt.express.finance.ImportWizard = function(config) {
                     return true;
                 };
 
+
+
               //Create source
                 vendor = {
                     name: name,
                     description: values.description,
+                    active: true
+                };
+
+                account = {
+                    accountName: accountName,
+                    accountNumber: values.accountNumber,
                     active: true
                 };
 
@@ -646,7 +676,9 @@ javaxt.express.finance.ImportWizard = function(config) {
       //Return panel
         return {
             title: "Preview",
-            isLast: true,
+            isLast: function(){
+                return vendor.id>0;
+            },
             el: parent,
             init: function(){
 
@@ -734,38 +766,13 @@ javaxt.express.finance.ImportWizard = function(config) {
 
                 grid.load(arr);
             },
-            getNextPanel: function(){
+            getNextPanel: function(){ //only called if not isLast (ie. account is null)
 
-                var callback = function(source){
-                    win.close();
-                    me.onEnd(source);
-                };
+              //Return next panel
+                var panel = getPanel("Save Template", saveTemplate);
+                panel.init();
+                return panel;
 
-
-                if (vendor.id){
-                    saveSource(callback);
-                }
-                else{
-                    save("vendor", JSON.stringify(vendor), {
-                        success: function(id){
-                            get("vendor/"+id, {
-                                success: function(text){
-                                    vendor = JSON.parse(text);
-                                    saveSource(callback);
-                                },
-                                failure: function(request){
-                                    alert(request);
-                                }
-                            });
-                        },
-                        failure: function(request){
-                            alert(request);
-                        }
-                    });
-                }
-
-
-                return null;
             },
             reset: function(){
                 grid.clear();
@@ -1328,7 +1335,9 @@ javaxt.express.finance.ImportWizard = function(config) {
 
 
               //Return next panel
-                return getPanel("Save Template", createTemplate2);
+                var panel = getPanel("Preview", createPreview);
+                panel.init();
+                return panel;
 
             },
             setValue: function(name, value){
@@ -1603,9 +1612,9 @@ javaxt.express.finance.ImportWizard = function(config) {
 
 
   //**************************************************************************
-  //** createTemplate2
+  //** saveTemplate
   //**************************************************************************
-    var createTemplate2 = function(){
+    var saveTemplate = function(){
 
 
       //Create form
@@ -1633,8 +1642,14 @@ javaxt.express.finance.ImportWizard = function(config) {
         return {
             title: "Save Template",
             el: parent,
+            isLast: function(){
+                return isNaN(vendor.id);
+            },
             init: function(){
                 form.clear();
+                if (isNaN(vendor.id)){
+                    form.findField("name").setValue(vendor.name);
+                }
             },
             validate: function(callback){
                 var values = form.getData();
@@ -1644,6 +1659,9 @@ javaxt.express.finance.ImportWizard = function(config) {
                     warn("Name is required", form.findField("name"));
                     return false;
                 }
+
+                //TODO: Check if template name is unique
+
                 if (callback) callback.apply(me, []);
             },
             getNextPanel: function(){
@@ -1658,10 +1676,41 @@ javaxt.express.finance.ImportWizard = function(config) {
                 template.name = name;
                 template.description = description;
 
+                if (vendor.id){
 
-                var panel = getPanel("Select Account", selectAccount);
-                panel.init();
-                return panel;
+                  //Prompt user to associate an account with the template
+                    var panel = getPanel("Select Account", selectAccount);
+                    panel.init();
+                    return panel;
+
+                }
+                else{
+
+                  //Save vendor and source (inc template and account)
+                    save("vendor", JSON.stringify(vendor), {
+                        success: function(id){
+                            get("vendor/"+id, {
+                                success: function(text){
+                                    vendor = JSON.parse(text);
+                                    saveSource(function(source){
+                                        win.close();
+                                        me.onEnd(source);
+                                    });
+                                },
+                                failure: function(request){
+                                    alert(request);
+                                }
+                            });
+                        },
+                        failure: function(request){
+                            alert(request);
+                        }
+                    });
+
+
+
+                    return null;
+                }
             },
             reset: function(){
                 form.clear();
@@ -1695,7 +1744,9 @@ javaxt.express.finance.ImportWizard = function(config) {
 
 
       //Update next button
-        if (panel.isLast===true){
+        var isLast = false;
+        if (panel.isLast) isLast = panel.isLast();
+        if (isLast===true){
             nextButton.value = "Done";
         }
         else{
