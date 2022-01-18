@@ -869,7 +869,7 @@ javaxt.express.finance.Reports = function(parent, config) {
                     if (cell.indexOf(",")>-1 || cell.indexOf("\n")>-1){
                         cell = "\"" + cell + "\"";
                     }
-                    cell = cell.replace("#",""); //TODO: find proper way to encode characters like this
+                    cell = cell.replaceAll("#",""); //TODO: find proper way to encode characters like this
                     row += cell;
                 }
                 csvContent += row + "\r\n";
