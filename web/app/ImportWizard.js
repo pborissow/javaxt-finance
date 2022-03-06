@@ -182,7 +182,7 @@ javaxt.express.finance.ImportWizard = function(config) {
   //**************************************************************************
   //** onEnd
   //**************************************************************************
-    this.onEnd = function(source, data){};
+    this.onEnd = function(source){};
 
 
   //**************************************************************************
@@ -375,7 +375,7 @@ javaxt.express.finance.ImportWizard = function(config) {
                     name: "accountName",
                     label: "Account",
                     type: "text",
-                    placeholder: "Business Checking, Platinum Card, etc"
+                    placeholder: "Peter's Platinum Card, etc"
                 },
                 {
                     name: "accountNumber",
@@ -768,10 +768,28 @@ javaxt.express.finance.ImportWizard = function(config) {
             },
             getNextPanel: function(){ //only called if not isLast (ie. account is null)
 
-              //Return next panel
-                var panel = getPanel("Save Template", saveTemplate);
-                panel.init();
-                return panel;
+
+                if (this.isLast()){
+
+                    get("source/?account_id="+ account.id + "&template_id=" + template.id, {
+                        success: function(text){
+                            var source = JSON.parse(text);
+                            win.close();
+                            me.onEnd(source);
+                        },
+                        failure: function(request){
+                            alert(request);
+                        }
+                    });
+
+                }
+                else{
+
+                  //Return next panel
+                    var panel = getPanel("Save Template", saveTemplate);
+                    panel.init();
+                    return panel;
+                }
 
             },
             reset: function(){
@@ -780,6 +798,10 @@ javaxt.express.finance.ImportWizard = function(config) {
         };
     };
 
+
+  //**************************************************************************
+  //** saveSource
+  //**************************************************************************
     var saveSource = function(callback){
 
         var source = {
@@ -2079,6 +2101,7 @@ javaxt.express.finance.ImportWizard = function(config) {
     var save = javaxt.dhtml.utils.post;
     var merge = javaxt.dhtml.utils.merge;
     var setStyle = javaxt.dhtml.utils.setStyle;
+    var addShowHide = javaxt.dhtml.utils.addShowHide;
 
     var warn = javaxt.express.finance.utils.warn;
     var isNumber = javaxt.express.finance.utils.isNumber;
