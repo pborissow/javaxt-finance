@@ -250,6 +250,20 @@ javaxt.express.finance.Reports = function(parent, config) {
         accountDetails.setSubTitle( (comparePreviousYear?((year-1)+"-") : "") + year);
 
 
+
+      //Calculate numMonths (used for monthly averages)
+        var numMonths = 12;
+        var currDate = new Date();
+        if (accountDetails.year===currDate.getFullYear()){
+            var currMonth = currDate.getMonth()+1;
+            numMonths = currMonth-1;
+            var currDay = currDate.getDate();
+            var numDays = new Date(year, currMonth, 0).getDate();
+            numMonths += currDay/numDays;
+        }
+
+
+
       //Create table
         var table = createTable();
         table.style.height = "";
@@ -314,9 +328,20 @@ javaxt.express.finance.Reports = function(parent, config) {
 
         };
 
+
+
+      //Function used to update totals when a user hides/unhides a row
         var updateTotals = function(isExpense){
             var total = 0;
             var prevYear = 0;
+
+            var totalIncome = 0;
+            var totalExpenses = 0;
+            var prevIncome = 0;
+            var prevExpenses = 0;
+
+
+
             for (var i=0; i<rows.length; i++){
                 var cat = rows[i].category;
                 var idx = rows[i].className.indexOf(" hidden");
@@ -330,16 +355,34 @@ javaxt.express.finance.Reports = function(parent, config) {
                             total+=cat.total;
                             prevYear+=cat.prevYear;
                         }
+
+
+                        if (cat.isExpense){
+                            totalExpenses+=cat.total;
+                            prevExpenses+=cat.prevYear;
+                        }
+                        if (!cat.isExpense){
+                            totalIncome+=cat.total;
+                            prevIncome+=cat.prevYear;
+                        }
                     }
                     else{ //found footer
                         var cols = rows[i].childNodes;
-                        if (isExpense && cat.isExpense){
-                            cols[1].innerHTML = formatCurrency(comparePreviousYear ? prevYear : total/12);
-                            cols[2].innerHTML = formatCurrency(total);
+
+                        if (cat.isExpense && cat.isRevenue){ //show net revenue (income-expenses)
+                            var net = totalIncome+totalExpenses;
+                            cols[1].innerHTML = formatCurrency(comparePreviousYear ? prevIncome+prevExpenses : net/numMonths);
+                            cols[2].innerHTML = formatCurrency(net);
                         }
-                        if (!isExpense && !cat.isExpense){
-                            cols[1].innerHTML = formatCurrency(comparePreviousYear ? prevYear : total/12);
-                            cols[2].innerHTML = formatCurrency(total);
+                        else{
+                            if (isExpense && cat.isExpense){
+                                cols[1].innerHTML = formatCurrency(comparePreviousYear ? prevYear : total/numMonths);
+                                cols[2].innerHTML = formatCurrency(total);
+                            }
+                            if (!isExpense && !cat.isExpense){
+                                cols[1].innerHTML = formatCurrency(comparePreviousYear ? prevYear : total/numMonths);
+                                cols[2].innerHTML = formatCurrency(total);
+                            }
                         }
                     }
                 }
@@ -414,7 +457,7 @@ javaxt.express.finance.Reports = function(parent, config) {
             td = document.createElement("td");
             td.className = cls;
             td.style.textAlign = "right";
-            td.innerHTML = formatCurrency(comparePreviousYear ? category.prevYear : category.total/12);
+            td.innerHTML = formatCurrency(comparePreviousYear ? category.prevYear : category.total/numMonths);
             tr.appendChild(td);
 
             td = document.createElement("td");
@@ -519,6 +562,17 @@ javaxt.express.finance.Reports = function(parent, config) {
                 total: totalExpenses,
                 prevYear: prevExpenses,
                 isExpense: true
+            });
+
+
+          //Render income-expenses
+            addHeader("Bottom Line");
+            addRow({
+                name: false,
+                total: totalIncome+totalExpenses,
+                prevYear: prevIncome+prevExpenses,
+                isExpense: true,
+                isRevenue: true
             });
 
 
