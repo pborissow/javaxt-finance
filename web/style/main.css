@@ -754,6 +754,18 @@
     color: #797979;
 }
 
+.report-section-header.report-column-header .fas  { /*download*/
+    color: #00a915;
+    position: absolute;
+    right: 19px;
+    top: 0;
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+
 .report-row, .report-cell,
 .report-row-footer, .report-cell-footer{
     height: 22px;
@@ -799,6 +811,26 @@
 
 .report-row.hidden .report-cell:first-child {
     color: #d3d3d3;
+}
+
+
+.report-settings {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    font-size: 15px;
+    color: #bdbdbd;
+    cursor: pointer;
+    z-index: 2;
+    width: 32px;
+    height: 24px;
+    text-align: center;
+    padding-top: 8px;
+}
+
+.report-settings:hover {
+    color: #2c7cba;
+    transition: 0.4s;
 }
 
 
