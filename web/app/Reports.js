@@ -216,7 +216,8 @@ javaxt.express.finance.Reports = function(parent, config) {
                     if (barGraph) barGraph.hide();
                     accountDetails.hide();
                     reportList.show();
-                }
+                },
+                settings: true
             });
 
             var setSubTitle = accountDetails.setSubTitle;
@@ -225,15 +226,16 @@ javaxt.express.finance.Reports = function(parent, config) {
                 var subtitle = document.createElement("div");
                 subtitle.className = "report-subtitle";
                 subtitle.style.display = "inline-block";
-                subtitle.onclick = function(e){
-                    var rect = javaxt.dhtml.utils.getRect(this);
-                    var x = rect.x + rect.width + 10;
-                    var y = rect.y + (rect.height/2);
-                    if (!menu) menu = createMenu();
-                    menu.showAt(x, y, "right", "middle");
-                };
                 subtitle.innerText = text;
                 setSubTitle(subtitle);
+            };
+
+            accountDetails.settings.onclick = function(e){
+                var rect = javaxt.dhtml.utils.getRect(this);
+                var x = rect.x + rect.width-5;
+                var y = rect.y + (rect.height/2);
+                if (!menu) menu = createMenu();
+                menu.showAt(x, y, "right", "middle");
             };
         }
 
@@ -323,7 +325,68 @@ javaxt.express.finance.Reports = function(parent, config) {
 
             td = document.createElement("td");
             td.className = "report-section-header report-column-header";
-            if (col2) td.innerHTML = col2;
+            if (col2){
+                if (isNaN(col2)){
+                    td.innerHTML = col2;
+                }
+                else{
+                    td.innerHTML = "";
+                    var div = document.createElement("div");
+                    div.style.position = "relative";
+                    div.innerHTML = col2;
+                    td.appendChild(div);
+
+                    var btn = document.createElement("div");
+                    btn.className = "fas fa-arrow-down";
+                    btn.style.position = "absolute";
+                    btn.style.opacity = 0;
+                    div.appendChild(btn);
+
+                    div.onmouseover = function(){
+                        btn.style.opacity = 1;
+                    };
+                    div.onmouseout = function(){
+                        btn.style.opacity = 0;
+                    };
+
+                    var link;
+
+                    btn.onclick = function(){
+
+                      //Create csv
+                        var csvContent = "data:text/csv;charset=utf-8,";
+                        csvContent += "key,val";
+
+                        for (var i=0; i<tbody.childNodes.length; i++){
+                            var row = tbody.childNodes[i];
+                            if (row.className==="report-row"){
+                                var col = row.childNodes;
+                                var key = col[0].innerText;
+                                var val = col[2].innerText;
+
+                                if (val!=="$0.00"){
+
+                                    csvContent += "\r\n";
+                                    csvContent += "\"" + key + "\",";
+                                    csvContent += "\"" + val + "\"";
+                                }
+                            }
+                        }
+
+
+                        var encodedUri = encodeURI(csvContent);
+                        if (!link){
+                            link = document.createElement("a");
+                            document.body.appendChild(link);
+                        }
+                        var title = account.name + " " + col2;
+                        link.setAttribute("href", encodedUri);
+                        link.setAttribute("download", title + ".csv");
+                        link.click();
+
+                    };
+                }
+            }
             tr.appendChild(td);
 
         };
@@ -528,7 +591,8 @@ javaxt.express.finance.Reports = function(parent, config) {
                 addHeader("Income", (year-1), year);
             }
             else{
-                addHeader("Income", "Monthly Avg", "YTD Total");
+                addHeader("Income", "Monthly Avg",
+                accountDetails.year===currDate.getFullYear() ? "YTD Total" : accountDetails.year);
             }
             var totalIncome = 0;
             var prevIncome = 0;
@@ -1302,6 +1366,8 @@ javaxt.express.finance.Reports = function(parent, config) {
             }
         }
 
+
+      //Create "panel" (actually a window)
         var panel = new javaxt.dhtml.Window(parent, {
             title: options.title,
             width: options.width,
@@ -1309,6 +1375,18 @@ javaxt.express.finance.Reports = function(parent, config) {
             style: style
         });
         panel.getBody().appendChild(table);
+
+
+
+      //Add settings
+        if (options.settings===true){
+            var settings = document.createElement("div");
+            settings.className = "report-settings noselect";
+            settings.innerHTML = '<i class="fas fa-cog"></i>';
+            panel.getBody().appendChild(settings);
+            panel.settings = settings;
+        }
+
 
         panel.onClose = function(){
             if (options.onClose) options.onClose();
