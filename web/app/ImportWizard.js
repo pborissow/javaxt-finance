@@ -766,22 +766,39 @@ javaxt.express.finance.ImportWizard = function(config) {
 
                 grid.load(arr);
             },
-            getNextPanel: function(){ //only called if not isLast (ie. account is null)
-
+            getNextPanel: function(){
 
                 if (this.isLast()){
 
-                    get("source/?account_id="+ account.id + "&template_id=" + template.id, {
-                        success: function(text){
-                            var source = JSON.parse(text);
-                            win.close();
-                            me.onEnd(source);
-                        },
-                        failure: function(request){
-                            alert(request);
-                        }
-                    });
+                    if (isNaN(account.id)){
 
+                        var sourceAccount = merge({ vendor: vendor }, account);
+                        save("SourceAccount", JSON.stringify(sourceAccount), {
+                            success: function(text){
+                                account.id = parseInt(text);
+                                saveSource(function(source){
+                                    win.close();
+                                    me.onEnd(source);
+                                });
+                            },
+                            failure: function(request){
+                                alert(request);
+                            }
+                        });
+                    }
+                    else{
+
+                        get("source/?account_id="+ account.id + "&template_id=" + template.id, {
+                            success: function(text){
+                                var source = JSON.parse(text);
+                                win.close();
+                                me.onEnd(source);
+                            },
+                            failure: function(request){
+                                alert(request);
+                            }
+                        });
+                    }
                 }
                 else{
 
