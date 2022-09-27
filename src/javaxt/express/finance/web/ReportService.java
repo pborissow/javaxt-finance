@@ -355,6 +355,38 @@ public class ReportService extends WebService {
 
 
   //**************************************************************************
+  //** getTransactionsPerYear
+  //**************************************************************************
+  /** Returns the total number of transactions per year. Note that this method
+   *  currently does not account for timezones with may yield unexpected
+   *  results.
+   */
+    public ServiceResponse getTransactionsPerYear(ServiceRequest request, Database database)
+        throws ServletException {
+
+        String sql = "select year(date) as year, count(id) as num_transactions " +
+        "from TRANSACTION group by year order by year desc";
+
+        Connection conn = null;
+        try{
+            conn = database.getConnection();
+            JSONObject json = new JSONObject();
+            for (Recordset rs : conn.getRecordset(sql)){
+                Integer key = rs.getValue(0).toInteger();
+                Integer val = rs.getValue(1).toInteger();
+                json.set(key+"", val);
+            }
+            conn.close();
+            return new ServiceResponse(json);
+        }
+        catch(Exception e){
+            if (conn!=null) conn.close();
+            return new ServiceResponse(e);
+        }
+    }
+
+
+  //**************************************************************************
   //** getAccountID
   //**************************************************************************
     private Long getAccountID(ServiceRequest request){
