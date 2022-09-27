@@ -237,6 +237,73 @@ javaxt.express.finance.Reports = function(parent, config) {
                 if (!menu) menu = createMenu();
                 menu.showAt(x, y, "right", "middle");
             };
+
+
+            var download = document.createElement("div");
+            download.className = "report-download noselect";
+            download.innerHTML = '<i class="fas fa-long-arrow-alt-down"></i>';
+            accountDetails.settings.parentNode.appendChild(download);
+            var link;
+            download.onclick = function(){
+
+              //Get income and expenses as seperate arrays
+                var incomeRows = [];
+                var expenseRows;
+                var rows = accountDetails.getBody().getElementsByTagName("tr");
+                for (var i=0; i<rows.length; i++){
+                    var row = rows[i];
+                    if (row.className==="report-row"){
+                        if (expenseRows) expenseRows.push(row);
+                        else incomeRows.push(row);
+                    }
+                    if (row.className==="report-row-footer"){
+                        if (expenseRows) break;
+                        else expenseRows = [];
+                    }
+                }
+                var data = {
+                    "income": incomeRows,
+                    "expenses": expenseRows
+                };
+
+
+              //Create csv
+                var csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "type,key,val";
+                for (var t in data) {
+                    if (data.hasOwnProperty(t)){
+                        var rows = data[t];
+
+                        for (var i=0; i<rows.length; i++){
+                            var row = rows[i];
+
+                            var col = row.childNodes;
+                            var key = col[0].innerText;
+                            var val = col[2].innerText;
+
+                            if (val!=="$0.00"){
+
+                                csvContent += "\r\n";
+                                csvContent += "\"" + t + "\",";
+                                csvContent += "\"" + key + "\",";
+                                csvContent += "\"" + val + "\"";
+                            }
+
+                        }
+                    }
+                }
+
+                var encodedUri = encodeURI(csvContent);
+                if (!link){
+                    link = document.createElement("a");
+                    document.body.appendChild(link);
+                }
+                var title = "Income and Expenses";
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", title + ".csv");
+                link.click();
+
+            };
         }
 
 
