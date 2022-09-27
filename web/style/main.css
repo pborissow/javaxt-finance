@@ -828,9 +828,24 @@
     padding-top: 8px;
 }
 
+.report-download:hover,
 .report-settings:hover {
     color: #2c7cba;
     transition: 0.4s;
+}
+
+
+.report-download {
+    position: absolute;
+    top: 7px;
+    right: 26px;
+    font-size: 17px;
+    color: #bdbdbd;
+    cursor: pointer;
+    z-index: 2;
+    width: 20px;
+    height: 24px;
+    text-align: center;
 }
 
 
