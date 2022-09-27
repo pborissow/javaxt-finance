@@ -27,7 +27,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var transactionGrid, transactionEditor,
         accountGrid, accountEditor,
         categoryGrid, categoryEditor,
-        facetPanel, accountsFacet,
+        facetPanel, accountsFacet, yearsFacet,
         importWizard, rules,
         notificationWindow;
 
@@ -109,7 +109,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
         parent.appendChild(table);
         me.el = table;
 
-
+      //Get or create DataStores for vendors, sources, and sourceAccounts
         getSources(orgConfig, function(){
             vendors = orgConfig.vendors;
             sources = orgConfig.sources;
@@ -165,6 +165,14 @@ javaxt.express.finance.Transactions = function(parent, config) {
             transactionGrid.load();
         });
 
+
+      //Get years (lazy - not using data store)
+        get("report/TransactionsPerYear", {
+            success: function(text){
+                var data = JSON.parse(text);
+                yearsFacet.update(data);
+            }
+        });
 
 
       //Get stats and update the facet panel
@@ -1266,6 +1274,30 @@ javaxt.express.finance.Transactions = function(parent, config) {
             }
             else {
                 delete filter.categoryID;
+            }
+            transactionGrid.refresh();
+        };
+
+
+
+      //Create accounts facet
+        yearsFacet = new javaxt.express.Facet(innerDiv, {
+            title: "Year",
+            style: config.style.facet,
+            sort: false
+        });
+        yearsFacet.onChange = function(val){
+            if (val){
+                var arr = val.split(",");
+                if (arr.length===0 || arr.length===yearsFacet.getNumOptions()){
+                    delete filter.year;
+                }
+                else{
+                    filter["year(date)"] = val;
+                }
+            }
+            else {
+                delete filter.year;
             }
             transactionGrid.refresh();
         };
