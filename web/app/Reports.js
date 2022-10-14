@@ -673,7 +673,9 @@ javaxt.express.finance.Reports = function(parent, config) {
             addRow({
                 name: false,
                 total: totalIncome,
-                prevYear: prevIncome
+                prevYear: prevIncome,
+                isExpense: false,
+                isRevenue: true
             });
 
 
@@ -805,26 +807,43 @@ javaxt.express.finance.Reports = function(parent, config) {
 
           //Create datasets
             var datasets = [];
-            for (var key in monthlyTotals) {
-                if (monthlyTotals.hasOwnProperty(key)){
-                    var arr = [];
-                    if (category.isExpense===true){
-                        var expenses = monthlyTotals[key].expenses;
-                        for (var i=0; i<expenses.length; i++){
-                            arr.push(-expenses[i]);
+            if (category.isRevenue===true && category.isExpense===true){ //render income vs expenses for the year
+
+              //Create pseudo-datasets for the legend
+                datasets.push({
+                    label: "Expenses",
+                    backgroundColor: "#c7baba"
+                });
+                datasets.push({
+                    label: "Revenue",
+                    backgroundColor: "#008000"
+                });
+
+            }
+            else{ //show income or expense for current year vs prev year
+
+              //Create datasets for the bar charts
+                for (var key in monthlyTotals) {
+                    if (monthlyTotals.hasOwnProperty(key)){
+                        var arr = [];
+                        if (category.isExpense===true){
+                            var expenses = monthlyTotals[key].expenses;
+                            for (var i=0; i<expenses.length; i++){
+                                arr.push(-expenses[i]);
+                            }
                         }
-                    }
-                    else{
-                        var income = monthlyTotals[key].income;
-                        for (var i=0; i<income.length; i++){
-                            arr.push(income[i]);
+                        else{
+                            var income = monthlyTotals[key].income;
+                            for (var i=0; i<income.length; i++){
+                                arr.push(income[i]);
+                            }
                         }
+                        datasets.push({
+                            label: key, //year
+                            backgroundColor: "blue",
+                            data: arr
+                        });
                     }
-                    datasets.push({
-                        label: key, //year
-                        backgroundColor: "blue",
-                        data: arr
-                    });
                 }
             }
 
@@ -834,9 +853,13 @@ javaxt.express.finance.Reports = function(parent, config) {
             if (category.isExpense===true){
                 colorRange = ['#c7baba','#FF3C38']; //redish gray, red
             }
-            else{
+            if (category.isRevenue===true){
                 colorRange = ['#BEBCC1','#008000']; //gray, green
             }
+            if (category.isExpense===true && category.isRevenue===true){
+                colorRange = ['#c7baba','#008000']; //redish gray, green
+            }
+
             var colorScale = chroma.scale(colorRange);
             var colors = {};
             for (var i=0; i<datasets.length; i++){
@@ -871,37 +894,73 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
 
-            for (var key in monthlyTotals) {
-                if (monthlyTotals.hasOwnProperty(key)){
+          //Create line data
+            if (category.isRevenue===true && category.isExpense===true){
+
+
+              //Get most recent year in the monthlyTotals
+                var year = 0;
+                for (var key in monthlyTotals) {
+                    if (monthlyTotals.hasOwnProperty(key)){
+                        year = Math.max(year, parseInt(key));
+                    }
+                }
+
+
+              //Create data for 2 lines representing income and expenses for the year
+                datasets = []; //clear datasets to remove barchart
+                ["expenses", "income"].forEach((key, idx)=>{
                     var arr = [];
-                    if (category.isExpense===true){
-                        var expenses = monthlyTotals[key].expenses;
-                        for (var i=0; i<expenses.length; i++){
-                            var val = -expenses[i];
-                            var prevVal = i>0 ? arr[i-1] : 0;
-                            arr.push(val+prevVal);
-                        }
+                    var values = monthlyTotals[year][key];
+                    for (var i=0; i<values.length; i++){
+                        var val = values[i];
+                        if (key==="expenses") val = -val;
+                        var prevVal = i>0 ? arr[i-1] : 0;
+                        arr.push(val+prevVal);
                     }
-                    else{
-                        var income = monthlyTotals[key].income;
-                        for (var i=0; i<income.length; i++){
-                            var val = income[i];
-                            var prevVal = i>0 ? arr[i-1] : 0;
-                            arr.push(val+prevVal);
-                        }
-                    }
+
                     datasets.push({
-                        label: key, //year
+                        label: key,
                         data: arr,
                         type: 'line',
                         fill: false,
-                        borderColor: colors[key],
-                        // this dataset is drawn on top
-                        order: 2
+                        borderColor: colorRange[idx]
                     });
+                });
+
+            }
+            else{
+
+              //Create data for 2 lines representing current year and previous year
+                for (var key in monthlyTotals) {
+                    if (monthlyTotals.hasOwnProperty(key)){
+                        var arr = [];
+                        if (category.isExpense===true){
+                            var expenses = monthlyTotals[key].expenses;
+                            for (var i=0; i<expenses.length; i++){
+                                var val = -expenses[i];
+                                var prevVal = i>0 ? arr[i-1] : 0;
+                                arr.push(val+prevVal);
+                            }
+                        }
+                        else{
+                            var income = monthlyTotals[key].income;
+                            for (var i=0; i<income.length; i++){
+                                var val = income[i];
+                                var prevVal = i>0 ? arr[i-1] : 0;
+                                arr.push(val+prevVal);
+                            }
+                        }
+                        datasets.push({
+                            label: key, //year
+                            data: arr,
+                            type: 'line',
+                            fill: false,
+                            borderColor: colors[key]
+                        });
+                    }
                 }
             }
-
 
 
           //Update chart
@@ -1200,8 +1259,11 @@ javaxt.express.finance.Reports = function(parent, config) {
             if (category.isExpense===true){
                 title = "Total Expenses";
             }
-            else{
+            if (category.isRevenue===true){
                 title = "Total Revenue";
+            }
+            if (category.isExpense===true && category.isRevenue===true){
+                title = "Revenue vs Expenses";
             }
         }
         barGraph.setTitle(title);
