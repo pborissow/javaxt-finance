@@ -677,7 +677,7 @@ javaxt.express.finance.ImportWizard = function(config) {
         return {
             title: "Preview",
             isLast: function(){
-                return vendor.id>0;
+                return (vendor.id>0 && account!==null);
             },
             el: parent,
             init: function(){
@@ -768,9 +768,10 @@ javaxt.express.finance.ImportWizard = function(config) {
             },
             getNextPanel: function(){
 
-                if (this.isLast()){
 
-                    if (isNaN(account.id)){
+                if (this.isLast()===true){
+
+                    if (isNaN(parseInt(account.id))){
 
                         var sourceAccount = merge({ vendor: vendor }, account);
                         save("SourceAccount", JSON.stringify(sourceAccount), {
@@ -788,16 +789,27 @@ javaxt.express.finance.ImportWizard = function(config) {
                     }
                     else{
 
-                        get("source/?account_id="+ account.id + "&template_id=" + template.id, {
-                            success: function(text){
-                                var source = JSON.parse(text);
+
+                        if (isNaN(parseInt(template.id))){
+                            saveSource(function(source){
                                 win.close();
                                 me.onEnd(source);
-                            },
-                            failure: function(request){
-                                alert(request);
-                            }
-                        });
+                            });
+
+                        }
+                        else{
+
+                            get("source/?account_id="+ account.id + "&template_id=" + template.id, {
+                                success: function(text){
+                                    var source = JSON.parse(text);
+                                    win.close();
+                                    me.onEnd(source);
+                                },
+                                failure: function(request){
+                                    alert(request);
+                                }
+                            });
+                        }
                     }
                 }
                 else{
