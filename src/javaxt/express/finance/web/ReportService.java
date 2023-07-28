@@ -36,21 +36,18 @@ public class ReportService extends WebService {
         String sql2 = "select 'unlinked' as name, count(id) as count from TRANSACTION where category_id is null";
         String sql = sql1 + "\n union \n" + sql2;
 
-        Connection conn = null;
-        try{
+        try (Connection conn = database.getConnection()){
             JSONObject json = new JSONObject();
-            conn = database.getConnection();
-            for (Recordset rs : conn.getRecordset(sql)){
-                String name = rs.getValue("name").toString();
-                Long count = rs.getValue("count").toLong();
+
+            for (javaxt.sql.Record record : conn.getRecords(sql)){
+                String name = record.get("name").toString();
+                Long count = record.get("count").toLong();
                 json.set(name, count);
             }
-            conn.close();
 
             return new ServiceResponse(json);
         }
         catch(Exception e){
-            if (conn!=null) conn.close();
             return new ServiceResponse(e);
         }
     }
@@ -62,40 +59,33 @@ public class ReportService extends WebService {
   /** Returns the total number of transactions for each account.
    */
     public ServiceResponse getTransactionsPerAccount(ServiceRequest request, Database database)
-        throws ServletException, IOException {
+        throws Exception {
 
         String sql = "select account.name, count(transaction.id) as count " +
         "from transaction left join category on transaction.category_id=category.id left join account on category.account_id=account.id " +
         "group by account.name";
 
 
-        Connection conn = null;
-        try{
-            conn = database.getConnection();
+        try (Connection conn = database.getConnection()){
 
           //Generate list of accounts
             JSONObject json = new JSONObject();
-            for (Recordset rs : conn.getRecordset("select name from account order by id")){
-                json.set(rs.getValue(0).toString(), 0);
+            for (javaxt.sql.Record record : conn.getRecords("select name from account order by id")){
+                json.set(record.get(0).toString(), 0);
             }
             json.set("N/A", 0);
 
 
           //Update counts
-            for (Recordset rs : conn.getRecordset(sql)){
-                String name = rs.getValue("name").toString();
-                Long count = rs.getValue("count").toLong();
+            for (javaxt.sql.Record record : conn.getRecords(sql)){
+                String name = record.get("name").toString();
+                Long count = record.get("count").toLong();
                 if (name==null) name = "N/A";
                 json.set(name, count);
             }
 
-          //Close connection and return response
-            conn.close();
+          //Return response
             return new ServiceResponse(json);
-        }
-        catch(Exception e){
-            if (conn!=null) conn.close();
-            return new ServiceResponse(e);
         }
     }
 
@@ -106,7 +96,7 @@ public class ReportService extends WebService {
   /** Used to sum all the transactions by category for a given account
    */
     public ServiceResponse getAccountSummary(ServiceRequest request, Database database)
-        throws ServletException, IOException {
+        throws Exception {
 
         Long accountID = getAccountID(request);
         if (accountID==null) new ServiceResponse(400, "Account name or ID is required");
@@ -124,20 +114,19 @@ public class ReportService extends WebService {
 
 
 
-        Connection conn = null;
-        try{
-            conn = database.getConnection();
+        try (Connection conn = database.getConnection()){
 
 
           //Generate a list of income and expense categories
             HashMap<Long, JSONObject> income = new HashMap<>();
             HashMap<Long, JSONObject> expenses = new HashMap<>();
-            for (Recordset rs : conn.getRecordset("select id, name, is_expense from category where account_id="+accountID)){
+            for (javaxt.sql.Record record : conn.getRecords(
+            "select id, name, is_expense from category where account_id="+accountID)){
                 JSONObject json = new JSONObject();
-                long id = rs.getValue("id").toLong();
-                boolean isExpense = rs.getValue("is_expense").toBoolean();
+                long id = record.get("id").toLong();
+                boolean isExpense = record.get("is_expense").toBoolean();
                 json.set("id", id);
-                json.set("name", rs.getValue(1).toString());
+                json.set("name", record.get(1).toString());
                 if (isExpense) expenses.put(id, json);
                 else income.put(id, json);
             }
@@ -147,9 +136,9 @@ public class ReportService extends WebService {
           //Execute query
             JSONArray a = new JSONArray();
             JSONArray b = new JSONArray();
-            for (Recordset rs : conn.getRecordset(sql)){
-                long id = rs.getValue("id").toLong();
-                BigDecimal total = rs.getValue("total").toBigDecimal();
+            for (javaxt.sql.Record record : conn.getRecords(sql)){
+                long id = record.get("id").toLong();
+                BigDecimal total = record.get("total").toBigDecimal();
 
                 if (expenses.containsKey(id)){
                     JSONObject expense = expenses.get(id);
@@ -163,16 +152,11 @@ public class ReportService extends WebService {
                 }
             }
 
-            conn.close();
 
             JSONObject json = new JSONObject();
             json.set("income", a);
             json.set("expenses", b);
             return new ServiceResponse(json);
-        }
-        catch(Exception e){
-            if (conn!=null) conn.close();
-            return new ServiceResponse(e);
         }
     }
 
@@ -181,7 +165,7 @@ public class ReportService extends WebService {
   //** getMonthlyTotals
   //**************************************************************************
     public ServiceResponse getMonthlyTotals(ServiceRequest request, Database database)
-        throws ServletException, IOException {
+        throws Exception {
 
         Long accountID = getAccountID(request);
         if (accountID==null) new ServiceResponse(400, "Account name or ID is required");
@@ -240,17 +224,14 @@ public class ReportService extends WebService {
 
 
       //Execute query and generate response
-        Connection conn = null;
-        try{
-            conn = database.getConnection();
+        HashMap<Integer, TreeMap<Integer, BigDecimal>> income = new HashMap<>();
+        HashMap<Integer, TreeMap<Integer, BigDecimal>> expenses = new HashMap<>();
 
-            HashMap<Integer, TreeMap<Integer, BigDecimal>> income = new HashMap<>();
-            HashMap<Integer, TreeMap<Integer, BigDecimal>> expenses = new HashMap<>();
-
-            for (Recordset rs : conn.getRecordset(sql)){
-                javaxt.utils.Date date = rs.getValue("date").toDate();
-                BigDecimal amount = rs.getValue("amount").toBigDecimal();
-                boolean isExpense = rs.getValue("is_expense").toBoolean();
+        try (Connection conn = database.getConnection()){
+            for (javaxt.sql.Record record : conn.getRecords(sql)){
+                javaxt.utils.Date date = record.get("date").toDate();
+                BigDecimal amount = record.get("amount").toBigDecimal();
+                boolean isExpense = record.get("is_expense").toBoolean();
 
                 HashMap<Integer, TreeMap<Integer, BigDecimal>> map = isExpense ? expenses : income;
 
@@ -268,48 +249,42 @@ public class ReportService extends WebService {
                 if (currAmount==null) currAmount = new BigDecimal(0.0);
                 months.put(month, currAmount.add(amount));
             }
+        }
 
-            conn.close();
 
+        JSONObject json = new JSONObject();
+        TreeSet<Integer> keys = new TreeSet<>();
+        keys.addAll(income.keySet());
+        keys.addAll(expenses.keySet());
+        Iterator<Integer> it = keys.descendingIterator();
+        while (it.hasNext()){
+            int year = it.next();
+            JSONObject _year = new JSONObject();
+            json.set(year+"", _year);
 
-            JSONObject json = new JSONObject();
-            TreeSet<Integer> keys = new TreeSet<>();
-            keys.addAll(income.keySet());
-            keys.addAll(expenses.keySet());
-            Iterator<Integer> it = keys.descendingIterator();
-            while (it.hasNext()){
-                int year = it.next();
-                JSONObject _year = new JSONObject();
-                json.set(year+"", _year);
+            JSONArray arr;
+            TreeMap<Integer, BigDecimal> months;
 
-                JSONArray arr;
-                TreeMap<Integer, BigDecimal> months;
-
-                arr = new JSONArray();
-                months = income.get(year);
-                for (int i=0; i<12; i++){
-                    BigDecimal amount = months==null ? null : months.get(i+1);
-                    if (amount==null) amount = new BigDecimal(0.0);
-                    arr.add(amount);
-                }
-                _year.set("income", arr);
-
-                arr = new JSONArray();
-                months = expenses.get(year);
-                for (int i=0; i<12; i++){
-                    BigDecimal amount = months==null ? null : months.get(i+1);
-                    if (amount==null) amount = new BigDecimal(0.0);
-                    arr.add(amount);
-                }
-                _year.set("expenses", arr);
+            arr = new JSONArray();
+            months = income.get(year);
+            for (int i=0; i<12; i++){
+                BigDecimal amount = months==null ? null : months.get(i+1);
+                if (amount==null) amount = new BigDecimal(0.0);
+                arr.add(amount);
             }
+            _year.set("income", arr);
 
-            return new ServiceResponse(json);
+            arr = new JSONArray();
+            months = expenses.get(year);
+            for (int i=0; i<12; i++){
+                BigDecimal amount = months==null ? null : months.get(i+1);
+                if (amount==null) amount = new BigDecimal(0.0);
+                arr.add(amount);
+            }
+            _year.set("expenses", arr);
         }
-        catch(Exception e){
-            if (conn!=null) conn.close();
-            return new ServiceResponse(e);
-        }
+
+        return new ServiceResponse(json);
     }
 
 
@@ -322,7 +297,7 @@ public class ReportService extends WebService {
    *  results.
    */
     public ServiceResponse getDistinctYears(ServiceRequest request, Database database)
-        throws ServletException, IOException {
+        throws Exception {
 
         Long accountID = getAccountID(request);
 
@@ -337,20 +312,13 @@ public class ReportService extends WebService {
         sql += " order by year desc";
 
 
-        Connection conn = null;
-        try{
-            conn = database.getConnection();
-            JSONArray arr = new JSONArray();
-            for (Recordset rs : conn.getRecordset(sql)){
-                arr.add(rs.getValue(0).toInteger());
+        JSONArray arr = new JSONArray();
+        try (Connection conn = database.getConnection()){
+            for (javaxt.sql.Record record : conn.getRecords(sql)){
+                arr.add(record.get(0).toInteger());
             }
-            conn.close();
-            return new ServiceResponse(arr);
         }
-        catch(Exception e){
-            if (conn!=null) conn.close();
-            return new ServiceResponse(e);
-        }
+        return new ServiceResponse(arr);
     }
 
 
@@ -362,27 +330,21 @@ public class ReportService extends WebService {
    *  results.
    */
     public ServiceResponse getTransactionsPerYear(ServiceRequest request, Database database)
-        throws ServletException {
+        throws Exception {
 
         String sql = "select year(date) as year, count(id) as num_transactions " +
         "from TRANSACTION group by year order by year desc";
 
-        Connection conn = null;
-        try{
-            conn = database.getConnection();
-            JSONObject json = new JSONObject();
-            for (Recordset rs : conn.getRecordset(sql)){
-                Integer key = rs.getValue(0).toInteger();
-                Integer val = rs.getValue(1).toInteger();
+
+        JSONObject json = new JSONObject();
+        try (Connection conn = database.getConnection()){
+            for (javaxt.sql.Record record : conn.getRecords(sql)){
+                Integer key = record.get(0).toInteger();
+                Integer val = record.get(1).toInteger();
                 json.set(key+"", val);
             }
-            conn.close();
-            return new ServiceResponse(json);
         }
-        catch(Exception e){
-            if (conn!=null) conn.close();
-            return new ServiceResponse(e);
-        }
+        return new ServiceResponse(json);
     }
 
 
