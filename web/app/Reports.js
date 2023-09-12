@@ -294,10 +294,8 @@ javaxt.express.finance.Reports = function(parent, config) {
                 }
 
                 var encodedUri = encodeURI(csvContent);
-                if (!link){
-                    link = document.createElement("a");
-                    document.body.appendChild(link);
-                }
+                if (!link) link = createElement("a", document.body);
+
                 var title = "Income and Expenses";
                 link.setAttribute("href", encodedUri);
                 link.setAttribute("download", title + ".csv");
@@ -442,10 +440,7 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
                         var encodedUri = encodeURI(csvContent);
-                        if (!link){
-                            link = document.createElement("a");
-                            document.body.appendChild(link);
-                        }
+                        if (!link) link = createElement("a", document.body);
                         var title = account.name + " " + col2;
                         link.setAttribute("href", encodedUri);
                         link.setAttribute("download", title + ".csv");
@@ -666,6 +661,8 @@ javaxt.express.finance.Reports = function(parent, config) {
             income.sort(function(a, b){return b.total - a.total;});
             for (var i=0; i<income.length; i++){
                 var category = income[i];
+                category.isRevenue = true;
+                category.isExpense = false;
                 totalIncome+=category.total;
                 prevIncome+=category.prevYear;
                 addRow(category);
@@ -685,6 +682,8 @@ javaxt.express.finance.Reports = function(parent, config) {
             var prevExpenses = 0;
             for (var i=0; i<expenses.length; i++){
                 var expense = expenses[i];
+                expense.isRevenue = false;
+                expense.isExpense = true;
                 totalExpenses+=expense.total;
                 prevExpenses+=expense.prevYear;
                 expense.isExpense = true;
@@ -727,7 +726,7 @@ javaxt.express.finance.Reports = function(parent, config) {
             width: "475px"
         });
         pieChart.getBody().style.padding = "15px 10px 0px 10px";
-        var div = document.createElement("div");
+        var div = createElement("div");
         div.style.height = "100%";
         var canvas = createCanvas(div, {
             width: "250px",
@@ -737,6 +736,7 @@ javaxt.express.finance.Reports = function(parent, config) {
         var legend = addLegend(canvas);
         pieChart.update(div);
         pieChart.update = function(expenses){
+            if (!expenses) return;
             legend.clear();
 
             var dataset = chart.data.datasets[0];
@@ -803,6 +803,7 @@ javaxt.express.finance.Reports = function(parent, config) {
 
       //Create function to update chart
         barGraph.update = function(monthlyTotals, category){
+            if (!category) return;
             barGraph.setSubTitle("");
 
           //Create datasets
@@ -865,30 +866,28 @@ javaxt.express.finance.Reports = function(parent, config) {
             for (var i=0; i<datasets.length; i++){
                 var p = i/(datasets.length-1);
                 var color = colorScale(p).css();
+
                 datasets[i].backgroundColor = color;
                 colors[datasets[i].label + ""] = color;
             }
 
 
           //Update subtitle with legend
-            var legend = document.createElement("div");
+            var legend = createElement("div");
             legend.style.display = "inline-block";
             legend.style.marginTop = "5px";
             for (var i=0; i<datasets.length; i++){
                 var label = datasets[i].label + "";
                 var color = colors[label];
-                var icon = document.createElement("div");
-                icon.className = "chart-legend-circle noselect";
+                var icon = createElement("div", legend, "chart-legend-circle noselect");
                 icon.style.width = "10px";
                 icon.style.height = "10px";
                 icon.style.backgroundColor = color;
                 if (i>0) icon.style.marginLeft = "15px";
-                legend.appendChild(icon);
-                var text = document.createElement("div");
-                text.className = "chart-legend-label noselect";
+
+                var text = createElement("div", legend, "chart-legend-label noselect");
                 text.style.lineHeight = "16px";
                 text.innerText = label;
-                legend.appendChild(text);
             }
             barGraph.setSubTitle(legend);
 
@@ -1107,13 +1106,18 @@ javaxt.express.finance.Reports = function(parent, config) {
                 for (var i=0; i<content.length; i++){
                     if (i>0) row += ",";
                     var cell = content[i];
-                    if (!(typeof cell === "string")){
-                        cell = cell.innerText;
+                    if (cell){
+                        if (!(typeof cell === "string")){
+                            cell = cell.innerText;
+                        }
+                        if (cell.indexOf(",")>-1 || cell.indexOf("\n")>-1){
+                            cell = "\"" + cell + "\"";
+                        }
+                        cell = cell.replaceAll("#",""); //TODO: find proper way to encode characters like this
                     }
-                    if (cell.indexOf(",")>-1 || cell.indexOf("\n")>-1){
-                        cell = "\"" + cell + "\"";
+                    else{
+                        cell = "";
                     }
-                    cell = cell.replaceAll("#",""); //TODO: find proper way to encode characters like this
                     row += cell;
                 }
                 csvContent += row + "\r\n";
@@ -1121,10 +1125,8 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
             var encodedUri = encodeURI(csvContent);
-            if (!link){
-                link = document.createElement("a");
-                document.body.appendChild(link);
-            }
+            if (!link) link = createElement("a", document.body);
+
             var title = transactionsPanel.getTitle();
             link.setAttribute("href", encodedUri);
             link.setAttribute("download", title + ".csv");
@@ -1460,27 +1462,35 @@ javaxt.express.finance.Reports = function(parent, config) {
    */
     var createPanel = function(parent, options){
 
+
+      //Create "panel" (actually a window)
+        var panel = new javaxt.dhtml.Window(parent, {
+            title: options.title,
+            width: options.width,
+            height: options.height,
+            style: style
+        });
+        var div = createElement("div", panel.getBody(), {
+            width: "100%",
+            height: "100%",
+            position: "relative"
+        });
+
+
       //Create table
-        var table = createTable();
-        var tbody = table.firstChild;
-        var tr, td;
+        var table = createTable(div);
+        var td;
 
 
       //Subtitle
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
+        td = table.addRow().addColumn();
         td.style.textAlign = "center";
-        tr.appendChild(td);
         var subtitle = td;
 
 
       //Body
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
+        td = table.addRow().addColumn();
         td.style.height = "100%";
-        tr.appendChild(td);
         var body = td;
 
 
@@ -1496,23 +1506,11 @@ javaxt.express.finance.Reports = function(parent, config) {
         }
 
 
-      //Create "panel" (actually a window)
-        var panel = new javaxt.dhtml.Window(parent, {
-            title: options.title,
-            width: options.width,
-            height: options.height,
-            style: style
-        });
-        panel.getBody().appendChild(table);
-
-
 
       //Add settings
         if (options.settings===true){
-            var settings = document.createElement("div");
-            settings.className = "report-settings noselect";
+            var settings = createElement("div", div, "report-settings noselect");
             settings.innerHTML = '<i class="fas fa-cog"></i>';
-            panel.getBody().appendChild(settings);
             panel.settings = settings;
         }
 
@@ -1537,6 +1535,7 @@ javaxt.express.finance.Reports = function(parent, config) {
         };
 
         panel.update = function(content){
+            if (!content) return;
             if (typeof content === "string"){
                 body.innerHTML = content;
             }
@@ -1557,7 +1556,7 @@ javaxt.express.finance.Reports = function(parent, config) {
   //** createComboBox
   //**************************************************************************
     var createComboBox = function(comboboxConfig){
-        return new javaxt.dhtml.ComboBox(document.createElement("div"), comboboxConfig);
+        return new javaxt.dhtml.ComboBox(createElement("div"), comboboxConfig);
     };
 
 
@@ -1573,12 +1572,11 @@ javaxt.express.finance.Reports = function(parent, config) {
         }
 
       //Create main div
-        var outerDiv = document.createElement("div");
+        var outerDiv = createElement("div", parent);
         outerDiv.style.position = "relative";
         outerDiv.style.width = "100%";
         outerDiv.style.height = "100%";
         outerDiv.style.overflow = "hidden";
-        parent.appendChild(outerDiv);
 
 
       //Create inner div
@@ -1625,6 +1623,7 @@ javaxt.express.finance.Reports = function(parent, config) {
     var merge = javaxt.dhtml.utils.merge;
     var onRender = javaxt.dhtml.utils.onRender;
     var createTable = javaxt.dhtml.utils.createTable;
+    var createElement = javaxt.dhtml.utils.createElement;
     var createCell = javaxt.express.finance.utils.createCell;
     var createButton = javaxt.express.finance.utils.createButton;
 
