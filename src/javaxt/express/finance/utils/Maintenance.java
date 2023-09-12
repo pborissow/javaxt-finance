@@ -32,7 +32,7 @@ public class Maintenance {
 
         javaxt.io.File file = new javaxt.io.File(csvFile);
         String[] data = file.getText().split("\n");
-        Connection conn = null;
+
         javaxt.express.finance.utils.Parser parser = null;
         Long vendorID = null;
         SourceAccount account = null;
@@ -48,21 +48,17 @@ public class Maintenance {
         );
         int x = 1;
         HashMap<Integer, Integer> map = new HashMap<>();
-        try{
-            conn = database.getConnection();
-            for (Recordset rs: conn.getRecordset("select id, name from source_template order by name")){
-                Integer id = rs.getValue("id").toInteger();
-                String name = rs.getValue("name").toString();
+        try (Connection conn = database.getConnection()){
+            for (javaxt.sql.Record record : conn.getRecords(
+            "select id, name from source_template order by name")){
+                Integer id = record.get("id").toInteger();
+                String name = record.get("name").toString();
                 options.append("  " + x + ". " + name + "\r\n");
                 map.put(x, id);
                 x++;
             }
-            conn.close();
         }
-        catch(Exception e){
-            if (conn!=null) conn.close();
-            throw e;
-        }
+
 
         System.out.print(options);
         while (true){
@@ -96,21 +92,18 @@ public class Maintenance {
         );
         x = 1;
         map = new HashMap<>();
-        try{
-            conn = database.getConnection();
-            for (Recordset rs: conn.getRecordset("select id, account_name from source_account where vendor_id=" + vendorID + " order by account_name")){
-                Integer id = rs.getValue("id").toInteger();
-                String name = rs.getValue("account_name").toString();
+        try (Connection conn = database.getConnection()){
+            for (javaxt.sql.Record record : conn.getRecords(
+            "select id, account_name from source_account where vendor_id=" + vendorID +
+            " order by account_name")){
+                Integer id = record.get("id").toInteger();
+                String name = record.get("account_name").toString();
                 options.append("  " + x + ". " + name + "\r\n");
                 map.put(x, id);
                 x++;
             }
-            conn.close();
         }
-        catch(Exception e){
-            if (conn!=null) conn.close();
-            throw e;
-        }
+
 
         System.out.print(options);
         while (true){
@@ -182,16 +175,14 @@ public class Maintenance {
         DbUtils.copyTable("rule", null, sourceDB, database, 1000, 1);
 
 
-        Connection conn = null;
-        try{
-            conn = sourceDB.getConnection();
+        try (Connection conn = database.getConnection()){
 
 
             HashMap<Long, Source> sources = new HashMap<>();
-            for (Recordset rs : conn.getRecordset("select id, name, info from source")){
-                long sourceID = rs.getValue("id").toLong();
-                String name = rs.getValue("name").toString().trim();
-                JSONObject template = new JSONObject(rs.getValue("info").toString()).get("template").toJSONObject();
+            for (javaxt.sql.Record record : conn.getRecords("select id, name, info from source")){
+                long sourceID = record.get("id").toLong();
+                String name = record.get("name").toString().trim();
+                JSONObject template = new JSONObject(record.get("info").toString()).get("template").toJSONObject();
 
                 String vendorName = name;
                 if (vendorName.endsWith("2")) vendorName = vendorName.substring(0, vendorName.length()-1).trim();
@@ -235,8 +226,8 @@ public class Maintenance {
 
 
 
-            for (Recordset rs : conn.getRecordset("select * from transaction")){
-                JSONObject json = DbUtils.getJson(rs);
+            for (javaxt.sql.Record record : conn.getRecords("select * from transaction")){
+                JSONObject json = DbUtils.getJson(record);
                 Long sourceID = json.get("sourceID").toLong();
                 Source source = sources.get(sourceID);
                 json.set("sourceID", null);
@@ -246,14 +237,10 @@ public class Maintenance {
                 tx.save();
             }
 
-            conn.close();
         }
         catch(Exception e){
-            if (conn!=null) conn.close();
             e.printStackTrace();
         }
-
-
     }
 
 }

@@ -44,7 +44,7 @@ public class WebServices extends WebService {
                 name = name.substring(0, name.length()-6).replace("/", ".");
                 Class c = Class.forName(name);
                 if (javaxt.sql.Model.class.isAssignableFrom(c)){
-                    addClass(c);
+                    addModel(c);
                 }
             }
         }
@@ -122,7 +122,7 @@ public class WebServices extends WebService {
   /** Maps a ServiceRequest to a WebService. Returns a ServiceResponse object
    *  to send back to the client.
    */
-    private ServiceResponse getServiceResponse(ServiceRequest request)
+    public ServiceResponse getServiceResponse(ServiceRequest request)
         throws ServletException {
 
 
@@ -180,15 +180,11 @@ public class WebServices extends WebService {
         if (id==null) new ServiceResponse(400, "Missing id. Transaction ID is required");
         if (categoryID==null) new ServiceResponse(400, "Missing categoryID. Category ID is required");
 
-        Connection conn = null;
-        try{
-            conn = database.getConnection();
+        try (Connection conn = database.getConnection()){
             conn.execute("update transaction set category_id=" + categoryID + " where id="+id);
-            conn.close();
             return new ServiceResponse(200);
         }
         catch(Exception e){
-            if (conn!=null) conn.close();
             return new ServiceResponse(e);
         }
     }
@@ -250,22 +246,20 @@ public class WebServices extends WebService {
     public ServiceResponse runRules(ServiceRequest request)
         throws ServletException {
 
-        Connection conn = null;
-        try{
-            conn = database.getConnection();
+        try (Connection conn = database.getConnection()){
 
 
           //Fetch valid category IDs
             HashSet<Long> categoryIDs = new HashSet<>();
-            for (Recordset rs : conn.getRecordset("select id from category")){
-                categoryIDs.add(rs.getValue(0).toLong());
+            for (javaxt.sql.Record record : conn.getRecords("select id from category")){
+                categoryIDs.add(record.get(0).toLong());
             }
 
 
           //Fetch active rules
             ArrayList<JSONObject> rules = new ArrayList<>();
-            for (Recordset rs : conn.getRecordset("select info from rule where active=true order by name desc")){
-                JSONObject rule = new JSONObject(rs.getValue(0).toString());
+            for (javaxt.sql.Record record : conn.getRecords("select info from rule where active=true order by name desc")){
+                JSONObject rule = new JSONObject(record.get(0).toString());
                 Long categoryID = rule.get("categoryID").toLong();
                 if (categoryID!=null){
                     if (categoryIDs.contains(categoryID)) rules.add(rule);
@@ -275,15 +269,14 @@ public class WebServices extends WebService {
 
           //Match rules to transactions
             HashMap<Long, Long> updates = new HashMap<>();
-            Recordset rs = new Recordset();
-            rs.setFetchSize(1000);
-            rs.open("select transaction.id, description, source.account_id " +
+            for (javaxt.sql.Record record : conn.getRecords(
+            "select transaction.id, description, source.account_id " +
             "from transaction join source on transaction.source_id=source.id " +
-            "where category_id is null", conn);
-            while (rs.hasNext()){
-                long id = rs.getValue("id").toLong();
-                String description = rs.getValue("description").toString();
-                long sourceAccountID = rs.getValue("account_id").toLong();
+            "where category_id is null")){
+
+                long id = record.get("id").toLong();
+                String description = record.get("description").toString();
+                long sourceAccountID = record.get("account_id").toLong();
                 for (JSONObject rule : rules){
                     Long categoryID = getCategoryID(rule, sourceAccountID, description);
                     if (categoryID!=null){
@@ -291,9 +284,7 @@ public class WebServices extends WebService {
                         break;
                     }
                 }
-                rs.moveNext();
             }
-            rs.close();
 
 
           //Execute updates and generate response
@@ -305,6 +296,7 @@ public class WebServices extends WebService {
 
               //Execute update
                 conn.execute("update transaction set category_id=" + categoryID + " where id=" + transactionID);
+
 
               //Update response
                 str.append("[");
@@ -318,13 +310,11 @@ public class WebServices extends WebService {
 
 
           //Close connection and return response
-            conn.close();
             ServiceResponse response = new ServiceResponse(str.toString());
             response.setContentType("application/json");
             return response;
         }
         catch(Exception e){
-            if (conn!=null) conn.close();
             return new ServiceResponse(e);
         }
     }

@@ -7,7 +7,7 @@ import java.util.*;
 import javaxt.express.*;
 import javaxt.http.servlet.*;
 import javaxt.json.*;
-import javaxt.utils.Console;
+import static javaxt.utils.Console.*;
 
 public class WebApp extends HttpServlet {
 
@@ -16,7 +16,6 @@ public class WebApp extends HttpServlet {
     private ArrayList<InetSocketAddress> addresses;
     private FileManager fileManager;
     private WebServices ws;
-    private Console console = new Console();
     private Logger logger;
 
   //**************************************************************************
