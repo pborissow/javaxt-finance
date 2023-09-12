@@ -642,7 +642,7 @@ javaxt.express.finance.ImportWizard = function(config) {
   //**************************************************************************
     var createPreview = function(){
 
-        var parent = document.createElement("div");
+        var parent = createElement("div");
         parent.setAttribute("desc", "preview");
         setStyle(parent, config.style.grid.container);
         parent.style.height = "500px";
@@ -806,7 +806,12 @@ javaxt.express.finance.ImportWizard = function(config) {
                                     me.onEnd(source);
                                 },
                                 failure: function(request){
-                                    alert(request);
+                                    if (request.status===404){
+                                        saveSource(function(source){
+                                            win.close();
+                                            me.onEnd(source);
+                                        });
+                                    }
                                 }
                             });
                         }
@@ -2131,6 +2136,7 @@ javaxt.express.finance.ImportWizard = function(config) {
     var merge = javaxt.dhtml.utils.merge;
     var setStyle = javaxt.dhtml.utils.setStyle;
     var addShowHide = javaxt.dhtml.utils.addShowHide;
+    var createElement = javaxt.dhtml.utils.createElement;
 
     var warn = javaxt.express.finance.utils.warn;
     var isNumber = javaxt.express.finance.utils.isNumber;
