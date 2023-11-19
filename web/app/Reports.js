@@ -25,6 +25,7 @@ javaxt.express.finance.Reports = function(parent, config) {
     var accounts, vendors, sources, sourceAccounts, accountStats; //DataStores
     var transactionEditor; //window
     var spacing = 30; //panel spacing
+    var link;
 
 
   //**************************************************************************
@@ -57,17 +58,15 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
       //Create main div
-        mainDiv = document.createElement("div");
+        mainDiv = createElement("div", parent);
         mainDiv.style.height = "100%";
-        parent.appendChild(mainDiv);
         me.el = mainDiv;
 
 
 
       //Create container for reports
-        reportList = document.createElement("div");
+        reportList = createElement("div", mainDiv);
         reportList.style.height = "100%";
-        mainDiv.appendChild(reportList);
         reportList.show = function(callback){
             config.fx.fadeIn(this, "easeInOutCubic", 600, callback);
         };
@@ -134,7 +133,7 @@ javaxt.express.finance.Reports = function(parent, config) {
   //** addReport
   //**************************************************************************
     var addReport = function(account){
-        var div = document.createElement("div");
+        var div = createElement("div", reportList);
         div.className = "report-preview";
         div.innerHTML = account.name + " Account";
         div.account = account;
@@ -144,7 +143,6 @@ javaxt.express.finance.Reports = function(parent, config) {
                 showReport(account);
             });
         };
-        reportList.appendChild(div);
     };
 
 
@@ -223,7 +221,7 @@ javaxt.express.finance.Reports = function(parent, config) {
             var setSubTitle = accountDetails.setSubTitle;
             accountDetails.setSubTitle = function(text){
                 setSubTitle("");
-                var subtitle = document.createElement("div");
+                var subtitle = createElement("div");
                 subtitle.className = "report-subtitle";
                 subtitle.style.display = "inline-block";
                 subtitle.innerText = text;
@@ -239,11 +237,10 @@ javaxt.express.finance.Reports = function(parent, config) {
             };
 
 
-            var download = document.createElement("div");
+            var download = createElement("div", accountDetails.settings.parentNode);
             download.className = "report-download noselect";
             download.innerHTML = '<i class="fas fa-long-arrow-alt-down"></i>';
-            accountDetails.settings.parentNode.appendChild(download);
-            var link;
+
             download.onclick = function(){
 
               //Get income and expenses as seperate arrays
@@ -268,8 +265,7 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
               //Create csv
-                var csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "type,key,val";
+                var csvContent = "type,key,val";
                 for (var t in data) {
                     if (data.hasOwnProperty(t)){
                         var rows = data[t];
@@ -293,14 +289,9 @@ javaxt.express.finance.Reports = function(parent, config) {
                     }
                 }
 
-                var encodedUri = encodeURI(csvContent);
-                if (!link) link = createElement("a", document.body);
 
-                var title = "Income and Expenses";
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", title + ".csv");
-                link.click();
-
+              //Download csv
+                downloadCSV(csvContent, "Income and Expenses");
             };
         }
 
@@ -361,51 +352,41 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
       //Create "phantom" header row to set up spacing
-        tr = document.createElement("tr");
+        tr = table.addRow();
         tr.style.height = "1px";
-        tbody.appendChild(tr);
         var numColumns = 3;
         for (var i=0; i<numColumns; i++){
-            td = document.createElement("td");
+            td = tr.addColumn();
             td.style.width = "125px";
-            tr.appendChild(td);
         }
         tr.childNodes[0].style.width = "100%";
 
 
         var addHeader = function(title, col1, col2){
-            tr = document.createElement("tr");
-            tbody.appendChild(tr);
-            td = document.createElement("td");
-            td.className = "report-section-header";
+            tr = table.addRow();
+            td = tr.addColumn("report-section-header");
             //if (!addColHeader) td.colSpan = numColumns;
             td.innerHTML = title;
-            tr.appendChild(td);
 
 
-            td = document.createElement("td");
-            td.className = "report-section-header report-column-header";
+            td = tr.addColumn("report-section-header report-column-header");
             if (col1) td.innerHTML = col1;
-            tr.appendChild(td);
 
-            td = document.createElement("td");
-            td.className = "report-section-header report-column-header";
+
+            td = tr.addColumn("report-section-header report-column-header");
             if (col2){
                 if (isNaN(col2)){
                     td.innerHTML = col2;
                 }
                 else{
                     td.innerHTML = "";
-                    var div = document.createElement("div");
+                    var div = createElement("div", td);
                     div.style.position = "relative";
                     div.innerHTML = col2;
-                    td.appendChild(div);
 
-                    var btn = document.createElement("div");
-                    btn.className = "fas fa-arrow-down";
+                    var btn = createElement("div", div, "fas fa-arrow-down");
                     btn.style.position = "absolute";
                     btn.style.opacity = 0;
-                    div.appendChild(btn);
 
                     div.onmouseover = function(){
                         btn.style.opacity = 1;
@@ -414,14 +395,12 @@ javaxt.express.finance.Reports = function(parent, config) {
                         btn.style.opacity = 0;
                     };
 
-                    var link;
+
 
                     btn.onclick = function(){
 
                       //Create csv
-                        var csvContent = "data:text/csv;charset=utf-8,";
-                        csvContent += "key,val";
-
+                        var csvContent = "key,val";
                         for (var i=0; i<tbody.childNodes.length; i++){
                             var row = tbody.childNodes[i];
                             if (row.className==="report-row"){
@@ -439,17 +418,14 @@ javaxt.express.finance.Reports = function(parent, config) {
                         }
 
 
-                        var encodedUri = encodeURI(csvContent);
-                        if (!link) link = createElement("a", document.body);
+
+                      //Download csv
                         var title = account.name + " " + col2;
-                        link.setAttribute("href", encodedUri);
-                        link.setAttribute("download", title + ".csv");
-                        link.click();
+                        downloadCSV(csvContent, title);
 
                     };
                 }
             }
-            tr.appendChild(td);
 
         };
 
@@ -531,8 +507,7 @@ javaxt.express.finance.Reports = function(parent, config) {
         var addRow = function(category){
             var isFooter = false;
             if (!category.name) isFooter = true;
-            tr = document.createElement("tr");
-            tr.className = "report-row" + (isFooter? "-footer" : "");
+            tr = table.addRow("report-row" + (isFooter? "-footer" : ""));
             tr.category = category;
             tr.onclick = function(e){
 
@@ -571,25 +546,21 @@ javaxt.express.finance.Reports = function(parent, config) {
                     }
                 }
             };
-            tbody.appendChild(tr);
+
 
             var cls = "report-cell" + (isFooter? "-footer" : "");
-            td = document.createElement("td");
-            td.className = cls;
+            td = tr.addColumn(cls);
             if (!isFooter) td.innerHTML = category.name;
-            tr.appendChild(td);
 
-            td = document.createElement("td");
-            td.className = cls;
+            td = tr.addColumn(cls);
             td.style.textAlign = "right";
             td.innerHTML = formatCurrency(comparePreviousYear ? category.prevYear : category.total/numMonths);
-            tr.appendChild(td);
 
-            td = document.createElement("td");
-            td.className = cls;
+
+            td = tr.addColumn(cls);
             td.style.textAlign = "right";
             td.innerHTML = formatCurrency(category.total);
-            tr.appendChild(td);
+
             rows.push(tr);
         };
 
@@ -993,24 +964,15 @@ javaxt.express.finance.Reports = function(parent, config) {
 
       //Create table with 2 rows
         var table = createTable();
-        var tbody = table.firstChild;
-        var tr, td;
+        var td;
 
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
+        td = table.addRow().addColumn("panel-toolbar");
         td.style.width = "100%";
-        td.className = "panel-toolbar";
-        tr.appendChild(td);
-        var toolbar = document.createElement('div');
-        td.appendChild(toolbar);
+        var toolbar = createElement('div', td);
 
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
+        td = table.addRow().addColumn();
         td.style.width = "100%";
         td.style.height = "100%";
-        tr.appendChild(td);
 
 
       //Create data table/grid
@@ -1086,16 +1048,20 @@ javaxt.express.finance.Reports = function(parent, config) {
             icon: "downloadIcon",
             hidden: isMobile
         });
-        var link;
+
         downloadButton.onClick = function(){
 
           //Create csv
-            var csvContent = "data:text/csv;charset=utf-8,";
+            var csvContent = "";
 
           //Add csv header
+            var numColumns = 0;
             for (var i=0; i<columns.length; i++){
+                var header = columns[i].header;
+                if (header.length===0) break;
                 if (i>0) csvContent += ",";
-                csvContent += columns[i].header;
+                csvContent += header;
+                numColumns++;
             }
             csvContent += "\r\n";
 
@@ -1103,7 +1069,7 @@ javaxt.express.finance.Reports = function(parent, config) {
           //Add csv data
             grid.forEachRow(function (row, content) {
                 var row = "";
-                for (var i=0; i<content.length; i++){
+                for (var i=0; i<numColumns; i++){
                     if (i>0) row += ",";
                     var cell = content[i];
                     if (cell){
@@ -1124,13 +1090,8 @@ javaxt.express.finance.Reports = function(parent, config) {
             });
 
 
-            var encodedUri = encodeURI(csvContent);
-            if (!link) link = createElement("a", document.body);
-
-            var title = transactionsPanel.getTitle();
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", title + ".csv");
-            link.click();
+          //Download csv
+            downloadCSV(csvContent, transactionsPanel.getTitle());
         };
     };
 
@@ -1362,8 +1323,7 @@ javaxt.express.finance.Reports = function(parent, config) {
   //** createMenu
   //**************************************************************************
     var createMenu = function(){
-        var body = document.getElementsByTagName("body")[0];
-        var callout = new javaxt.dhtml.Callout(body, {
+        var callout = new javaxt.dhtml.Callout(document.body, {
             style: {
                 panel: "callout-panel",
                 arrow: "callout-arrow"
@@ -1371,9 +1331,8 @@ javaxt.express.finance.Reports = function(parent, config) {
         });
 
         var innerDiv = callout.getInnerDiv();
-        var contentDiv = document.createElement("div");
+        var contentDiv = createElement("div", innerDiv);
         contentDiv.style.padding = "5px";
-        innerDiv.appendChild(contentDiv);
 
 
         var form = new javaxt.dhtml.Form(contentDiv, {
@@ -1580,15 +1539,14 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
       //Create inner div
-        var innerDiv = document.createElement("div");
+        var innerDiv = createElement("div", outerDiv);
         innerDiv.style.position = "absolute";
         innerDiv.style.width = width ? width : "100%";
         innerDiv.style.height = height ? height : "100%";
-        outerDiv.appendChild(innerDiv);
 
 
       //Create canvas
-        var canvas = document.createElement('canvas');
+        var canvas = createElement('canvas', innerDiv);
         if (width && height){
             var w = parseInt(width);
             var h = parseInt(height);
@@ -1601,10 +1559,34 @@ javaxt.express.finance.Reports = function(parent, config) {
             var ctx = this.getContext('2d');
             ctx.clearRect(0, 0, this.width, this.height);
         };
-        innerDiv.appendChild(canvas);
 
 
         return canvas;
+    };
+
+
+  //**************************************************************************
+  //** downloadCSV
+  //**************************************************************************
+    var downloadCSV = function(csvContent, title){
+        if (!link) link = createElement("a", document.body, {
+            display: "none"
+        });
+
+        var href;
+        if (1>0){
+            var blob = new Blob([csvContent], {type: "text/csv"});
+            href = window.URL.createObjectURL(blob);
+        }
+        else{
+            href = encodeURI("data:text/csv;charset=utf-8,"+csvContent);
+        }
+
+
+
+        link.setAttribute("href", href);
+        link.setAttribute("download", title + ".csv");
+        link.click();
     };
 
 
