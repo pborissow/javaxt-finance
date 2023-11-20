@@ -33,6 +33,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
     var isMobile = false;
     var vendors, sources, sourceAccounts, accounts, accountStats; //DataStores
+    var searchBar;
     var filter = {};
 
 
@@ -84,30 +85,29 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
 
       //Create main table
-        var table = createTable();
-        var tbody = table.firstChild;
-        var tr = document.createElement("tr");
-        tbody.appendChild(tr);
+        var table = createTable(parent);
+        var tr = table.addRow();
         var td;
 
 
       //Create facet panel
-        td = document.createElement("td");
-        td.style.height = "100%";
-        tr.appendChild(td);
+        td = tr.addColumn({
+            height: "100%"
+        });
         createFacetPanel(td);
 
 
       //Create main panel
-        td = document.createElement("td");
-        td.style.width = "100%";
-        td.style.height = "100%";
-        td.style.backgroundColor = "#f8f8f8";
-        tr.appendChild(td);
+        td = tr.addColumn({
+            width: "100%",
+            height: "100%",
+            backgroundColor: "#f8f8f8"
+        });
         createMainPanel(td);
 
-        parent.appendChild(table);
+
         me.el = table;
+
 
       //Get or create DataStores for vendors, sources, and sourceAccounts
         getSources(orgConfig, function(){
@@ -214,35 +214,30 @@ javaxt.express.finance.Transactions = function(parent, config) {
   //**************************************************************************
     var createMainPanel = function(parent){
 
-        var table = createTable();
-        var tbody = table.firstChild;
+        var table = createTable(parent);
         var tr, td;
 
       //Row 1
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
+        tr = table.addRow();
+        td = tr.addColumn("panel-toolbar");
         td.colSpan = 2;
         td.style.width = "100%";
-        td.className = "panel-toolbar";
-        tr.appendChild(td);
         createToolbar(td);
 
 
       //Row 2
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        td.style.width = "100%";
-        td.style.height = "100%";
-        tr.appendChild(td);
+        tr = table.addRow();
+        td = tr.addColumn({
+            width: "100%",
+            height: "100%"
+        });
         createTransactionGrid(td);
-        td = document.createElement("td");
-        td.style.height = "100%";
-        tr.appendChild(td);
+
+        td = tr.addColumn({
+            height: "100%"
+        });
         createTransactionEditor(td);
 
-        parent.appendChild(table);
     };
 
 
@@ -250,9 +245,16 @@ javaxt.express.finance.Transactions = function(parent, config) {
   //** createToolbar
   //**************************************************************************
     var createToolbar = function(parent){
-        var toolbar = document.createElement('div');
+        var toolbar = createElement('div', parent);
 
 
+        searchBar = createSearchBar(toolbar);
+        searchBar.onSearch = function(q){
+            filter.q = q;
+            transactionGrid.refresh();
+        };
+
+/*
       //Add button
         var addButton = createButton(toolbar, {
             label: "Add",
@@ -284,6 +286,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
 
         };
 
+*/
 
         createSpacer(toolbar);
 
@@ -380,7 +383,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
         };
 
 
-        parent.appendChild(toolbar);
     };
 
 
@@ -465,44 +467,39 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var createTransactionEditor = function(parent){
 
       //Create panel
-        var div = document.createElement("div");
+        var div = createElement("div", parent);
         div.style.width = "0px";
         div.style.height = "100%";
         div.style.position = "relative";
         div.style.backgroundColor = "#fff";
         config.fx.setTransition(div, "easeInOutCubic", 600);
-        parent.appendChild(div);
 
 
         var numColumns = config.editor.numColumns;
         var width = numColumns===2 ? 420 : 200;
 
 
-        var innerDiv = document.createElement("div");
+        var innerDiv = createElement("div", div);
         innerDiv.style.width = width + "px";
         innerDiv.style.height = "100%";
         innerDiv.style.position = "absolute";
-        div.appendChild(innerDiv);
 
 
-      //Add table with 2 rows
-        var table = createTable();
-        var tbody = table.firstChild;
-        var tr, td;
+      //Add table with 2 columns
+        var table = createTable(innerDiv);
+        var tr = table.addRow();
+        var td;
 
 
-      //Row 1
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        td.style.width = "100%";
-        td.style.height = "100%";
-        tr.appendChild(td);
+      //Column 1
+        td = tr.addColumn({
+            width: "100%",
+            height: "100%"
+        });
         if (numColumns===2){
-            var d = document.createElement("div");
+            var d = createElement("div", td);
             d.style.width = (width/2) + "px";
             d.style.height = "100%";
-            td.appendChild(d);
             createAccountPanel(d, numColumns);
         }
         else{
@@ -510,25 +507,20 @@ javaxt.express.finance.Transactions = function(parent, config) {
         }
 
 
-      //Row 2
-        //tr = document.createElement("tr");
-        //tbody.appendChild(tr);
-        td = document.createElement("td");
-        td.style.width = "100%";
-        td.style.height = "100%";
-        tr.appendChild(td);
+      //Column 2
+        td = tr.addColumn({
+            width: "100%",
+            height: "100%"
+        });
         if (numColumns===2){
-            var d = document.createElement("div");
+            var d = createElement("div", td);
             d.style.width = (width/2) + "px";
             d.style.height = "100%";
-            td.appendChild(d);
             createCategoryPanel(d, numColumns);
         }
         else{
             createCategoryPanel(td);
         }
-
-        innerDiv.appendChild(table);
 
 
 
@@ -1089,11 +1081,9 @@ javaxt.express.finance.Transactions = function(parent, config) {
   //**************************************************************************
     var notify = function(msg){
         if (!notificationWindow){
-            var body = document.getElementsByTagName("body")[0];
-            var contentDiv = document.createElement("div");
-            var buttonDiv = document.createElement("div");
-            buttonDiv.className = "button-div";
-            notificationWindow = new javaxt.dhtml.Window(body, {
+            var contentDiv = createElement("div");
+            var buttonDiv = createElement("div", "button-div");
+            notificationWindow = new javaxt.dhtml.Window(document.body, {
                 width: 450,
                 valign: "top",
                 modal: false,
@@ -1102,12 +1092,10 @@ javaxt.express.finance.Transactions = function(parent, config) {
                 style: config.style.window
             });
 
-            var button = document.createElement("input");
+            var button = createElement("input", buttonDiv, "form-button");
             button.type = "button";
             button.name = button.value = "OK";
-            button.className = "form-button";
             button.onclick = notificationWindow.hide;
-            buttonDiv.appendChild(button);
 
             notificationWindow.setMessage = function(str){
                 contentDiv.innerHTML = str;
@@ -1124,37 +1112,26 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var createPanel = function(parent, centerAlign){
 
         var panel = {};
-        var table = createTable();
-        var tbody = table.firstChild;
-        var tr, td;
+        var table = createTable(parent);
         panel.table = table;
-        parent.appendChild(table);
 
 
       //Row 1
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        td.style.height = "100%";
-        tr.appendChild(td);
-        panel.body = td;
+        panel.body = table.addRow().addColumn({
+            height: "100%"
+        });
 
 
 
       //Row 2
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        tr.appendChild(td);
-        panel.toolbar = td;
-
-        var outerDiv = document.createElement("div");
+        panel.toolbar = table.addRow().addColumn();
+        var outerDiv = createElement("div", panel.toolbar);
         outerDiv.style.position = "relative";
         outerDiv.style.width = "100%";
         outerDiv.style.height = "100%";
-        td.appendChild(outerDiv);
 
-        var innerDiv = document.createElement("div");
+
+        var innerDiv = createElement("div", outerDiv);
         if (centerAlign===true){
             outerDiv.style.textAlign = "center";
         }
@@ -1164,7 +1141,6 @@ javaxt.express.finance.Transactions = function(parent, config) {
             innerDiv.style.top = 0;
         }
         innerDiv.style.height = "100%";
-        outerDiv.appendChild(innerDiv);
 
 
 
@@ -1213,23 +1189,21 @@ javaxt.express.finance.Transactions = function(parent, config) {
         var horizontalPadding = 15;
 
       //Create panel
-        var div = document.createElement("div");
+        var div = createElement("div", parent);
         div.style.width = "0px";
         div.style.height = "100%";
         div.style.position = "relative";
         div.style.overflow = "hidden";
         div.style.borderRight = "1px solid #dcdcdc";
         config.fx.setTransition(div, "easeInOutCubic", 600);
-        parent.appendChild(div);
 
 
       //Create overflow div
-        var innerDiv = document.createElement("div");
+        var innerDiv = createElement("div", div);
         innerDiv.style.width = (width-(horizontalPadding*2)) + "px";
         innerDiv.style.height = "100%";
         innerDiv.style.position = "absolute";
         innerDiv.style.padding = "20px " + horizontalPadding + "px";
-        div.appendChild(innerDiv);
 
 
       //Create accounts facet
@@ -1376,9 +1350,11 @@ javaxt.express.finance.Transactions = function(parent, config) {
     var del = javaxt.dhtml.utils.delete;
     var merge = javaxt.dhtml.utils.merge;
     var createTable = javaxt.dhtml.utils.createTable;
+    var createElement = javaxt.dhtml.utils.createElement;
     var createCell = javaxt.express.finance.utils.createCell;
     var createSpacer = javaxt.express.finance.utils.createSpacer;
     var createButton = javaxt.express.finance.utils.createButton;
+    var createSearchBar = javaxt.express.finance.utils.createSearchBar;
 
     var isNumber = javaxt.express.finance.utils.isNumber;
     var parseResponse = javaxt.express.finance.utils.normalizeResponse;
