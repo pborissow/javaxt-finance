@@ -14,6 +14,12 @@ import java.util.*;
 import java.io.IOException;
 import java.sql.SQLException;
 
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.statement.select.*;
+import net.sf.jsqlparser.expression.operators.relational.*;
+import net.sf.jsqlparser.util.deparser.*;
+
+
 //******************************************************************************
 //**  WebServices
 //******************************************************************************
@@ -163,6 +169,60 @@ public class WebServices extends WebService {
         else{
             return getServiceResponse(request, database);
         }
+    }
+
+
+  //**************************************************************************
+  //** getRecordset
+  //**************************************************************************
+  /** Used to apply custom filters
+   */
+    protected Recordset getRecordset(ServiceRequest request, String op, Class c,
+        String sql, Connection conn) throws Exception {
+
+        if (c.equals(Transaction.class)){
+            if (op.equals("list")){
+                String q = request.getParameter("q").toString();
+                if (q!=null && !q.isBlank()){
+
+
+                    Select select = (Select) CCJSqlParserUtil.parse(sql);
+                    PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
+
+                    StringBuilder buffer = new StringBuilder();
+                    SelectDeParser selectDeParser = new SelectDeParser();
+                    selectDeParser.setExpressionVisitor(new ExpressionDeParser(null, buffer) {
+                        public void visit(EqualsTo equalsTo) {
+
+                            if (equalsTo.getLeftExpression().toString().equalsIgnoreCase("q")){
+
+                                String q = request.getParameter("q").toString().toLowerCase();
+                                try{
+                                    LikeExpression like = (LikeExpression) CCJSqlParserUtil.parseCondExpression(
+                                    "lower(description) like '" + q + "%'");
+                                    super.visit(like);
+                                }
+                                catch(Exception e){
+                                    super.visit(equalsTo);
+                                }
+                            }
+                            else{
+                                super.visit(equalsTo);
+                            }
+                        }
+                    });
+                    selectDeParser.setBuffer(buffer);
+                    plainSelect.accept(selectDeParser);
+
+                    sql = buffer.toString();
+                    System.out.println(sql);
+
+                }
+                request.setParameter("q", null);
+            }
+        }
+
+        return super.getRecordset(request, op, c, sql, conn);
     }
 
 
