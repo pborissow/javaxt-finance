@@ -410,6 +410,96 @@
 }
 
 
+
+
+/**************************************************************************/
+/** Search Bar
+/**************************************************************************/
+
+.search-bar {
+    height: 37px;
+    padding: 5px 0 0 0;
+}
+
+.search-bar-icon {
+    position: absolute;
+    top: 12px;
+    left: 6px;
+    color: #b9b9b9;
+    font-size: 16px;
+    transition: all 0.2s cubic-bezier(0.39, 0.575, 0.565, 1);
+}
+
+.search-bar-cancel {
+    top: 12px;
+    right: 6px;
+    position: absolute;
+    font-size: 16px;
+    color: #b11818; /*red - same color as fa-times in the toolbar*/
+    width: 18px;
+    height: 18px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.search-bar-input {
+    border-radius: 4px;
+    color: #363636;
+    display: inline-block;
+    font-size: 14px;
+    height: 32px;
+    line-height: 32px;
+    padding: 2px 4px 2px 26px;
+    vertical-align: middle;
+    transition: border 0.2s linear 0s, box-shadow 0.2s linear 0s;
+    -webkit-transition: all 0.20s ease-in-out;
+    -moz-transition: all 0.20s ease-in-out;
+    -ms-transition: all 0.20s ease-in-out;
+    -o-transition: all 0.20s ease-in-out;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset;
+    box-sizing: border-box;
+}
+
+.search-bar-input:focus {
+    border-color: rgba(82, 168, 236, 0.8);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset, 0 0 8px rgba(82, 168, 236, 0.6);
+    outline: 0 none;
+    transition: all 0.2s cubic-bezier(0.39, 0.575, 0.565, 1);
+}
+
+
+.search-bar-input::placeholder {
+    color: #b9b9b9;
+    font-size: 14px;
+}
+
+
+/**************************************************************************/
+/** Search Bar Overrides for toolbar
+/**************************************************************************/
+
+.panel-toolbar .search-bar {
+    position: relative;
+    width: 250px;
+    display: inline-block;
+    float: left;
+    padding: 4px 0 0 0;
+    height: 30px;
+}
+
+.panel-toolbar .search-bar-input {
+    height: 28px;
+    line-height: 28px;
+}
+
+.panel-toolbar .search-bar-icon,
+.panel-toolbar .search-bar-cancel {
+    top: 10px
+}
+
+
 /**************************************************************************/
 /** menu-item-checkmark - unused!
 /**************************************************************************/
