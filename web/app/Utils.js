@@ -785,41 +785,34 @@ javaxt.express.finance.utils = {
   /** Used to add a custom legend to a canvas
    */
     addLegend: function(canvas){
+        var createElement = javaxt.dhtml.utils.createElement;
 
-        var legend = document.createElement("div");
-        legend.style.position = "absolute";
-        legend.style.right = "5px";
-        legend.style.top = "7px";
-        canvas.parentNode.parentNode.appendChild(legend);
+        var legend = createElement("div", canvas.parentNode.parentNode, {
+            position: "absolute",
+            right: "5px",
+            top: "7px"
+        });
 
-
-        var table = javaxt.dhtml.utils.createTable();
+        var table = javaxt.dhtml.utils.createTable(legend);
         table.style.height = "";
-        legend.appendChild(table);
-        var tbody = table.firstChild;
+
         legend.addItem = function(label, backgroundColor, borderColor){
             var tr, td;
-            tr = document.createElement("tr");
-            tbody.appendChild(tr);
+            tr = table.addRow();
 
-            td = document.createElement("td");
-            tr.appendChild(td);
-            var div = document.createElement("div");
-            div.className = "chart-legend-circle";
+            td = tr.addColumn();
+            var div = createElement("div", td, "chart-legend-circle");
             div.style.backgroundColor = backgroundColor;
             if (borderColor){
                 div.className += "-outline";
                 div.style.borderColor = borderColor;
             }
-            td.appendChild(div);
 
-            td = document.createElement("td");
-            td.className = "chart-legend-label noselect";
+            td = tr.addColumn("chart-legend-label noselect");
             td.innerHTML = label;
-            tr.appendChild(td);
         };
         legend.clear = function(){
-            tbody.innerHTML = "";
+            table.clear();
         };
 
         return legend;
@@ -832,8 +825,7 @@ javaxt.express.finance.utils = {
   /** Inserts a mask with a spinner. Assumes the parent is a relative div
    */
     createWaitMask : function(parent){
-        var waitMask = document.createElement('div');
-        waitMask.className = "waitmask";
+        var waitMask = javaxt.dhtml.utils.createElement('div', "waitmask");
         waitMask.show = function(){
             waitMask.style.display = "";
             waitMask.style.opacity = "";
@@ -904,5 +896,103 @@ javaxt.express.finance.utils = {
         var x = rect.x + (rect.width/2);
         var y = rect.y;
         callout.showAt(x, y, "above", "center");
+    },
+
+
+  //**************************************************************************
+  //** createSearchBar
+  //**************************************************************************
+    createSearchBar: function(parent){
+        var createElement = javaxt.dhtml.utils.createElement;
+
+        var searchBar = {};
+
+      //Create outer div
+        var div = createElement("div", parent, "search-bar");
+        div.style.position = "relative";
+        searchBar.el = div;
+
+
+      //Create search icon
+        var searchIcon = createElement("div", div, "search-bar-icon noselect");
+        searchIcon.innerHTML = '<i class="fas fa-search"></i>';
+        searchIcon.show = function(){
+            this.style.opacity = "";
+            input.style.paddingLeft = "26px";
+        };
+        searchIcon.hide = function(){
+            this.style.opacity = 0;
+            input.style.paddingLeft = "8px";
+        };
+
+
+      //Create input
+        var input = createElement("input", div, "search-bar-input");
+        input.type = "text";
+        input.style.width = "100%";
+        input.placeholder = "Search";
+        input.setAttribute("spellcheck", "false");
+
+        var timer;
+        input.oninput = function(e){
+            var q = searchBar.getValue();
+            if (q){
+                searchIcon.hide();
+                cancelButton.show();
+            }
+            else{
+                searchIcon.show();
+                cancelButton.hide();
+            }
+            searchBar.onChange(q);
+
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(function(){
+                var q = searchBar.getValue();
+                searchBar.onSearch(q);
+            }, 500);
+
+        };
+        input.onkeydown = function(event){
+            var key = event.keyCode;
+            if (key === 9 || key === 13) {
+                input.oninput();
+                input.blur();
+                var q = searchBar.getValue();
+                searchBar.onSearch(q);
+            }
+        };
+
+
+      //Cancel button
+        var cancelButton = createElement("div", div, "search-bar-cancel noselect");
+        cancelButton.innerHTML = '<i class="fas fa-times"></i>';
+        javaxt.dhtml.utils.addShowHide(cancelButton);
+        cancelButton.hide();
+        cancelButton.onclick = function(){
+            searchBar.clear();
+        };
+
+        searchBar.clear = function(){
+            input.value = "";
+            cancelButton.hide();
+            searchIcon.show();
+            searchBar.onClear();
+        };
+
+        searchBar.getValue = function(){
+            var q = input.value;
+            if (q){
+                q = q.trim();
+                if (q.length===0) q = null;
+            }
+            return q;
+        };
+
+        searchBar.onSearch = function(q){};
+        searchBar.onChange = function(q){};
+        searchBar.onClear = function(){};
+
+        return searchBar;
     }
 };
