@@ -24,7 +24,7 @@ javaxt.express.finance.ImportWizard = function(config) {
     var dateDisplayFormat;
     var datePopup;
     var data, vendor, template, account;
-    var columnEditor;
+    var columnEditor, _data;
 
 
     var defaultConfig = {
@@ -65,12 +65,11 @@ javaxt.express.finance.ImportWizard = function(config) {
         dateDisplayFormat = getMomentFormat("M/d/yyyy");
 
 
-        mainDiv = document.createElement("div");
+        mainDiv = createElement("div");
         mainDiv.setAttribute("desc", "mainDiv");
 
 
-        var buttonDiv = document.createElement("div");
-        buttonDiv.className = "button-div";
+        var buttonDiv = createElement("div", "button-div");
 
         nextButton = createButton("Next", next);
         backButton = createButton("Back", back);
@@ -81,10 +80,10 @@ javaxt.express.finance.ImportWizard = function(config) {
 
 
       //Advanced button
-        var leftButtonDiv = document.createElement("div");
-        leftButtonDiv.style.position = "absolute";
-        leftButtonDiv.style.top = 0;
-        buttonDiv.appendChild(leftButtonDiv);
+        var leftButtonDiv = createElement("div", buttonDiv, {
+            position: "absolute",
+            top: 0
+        });
         advancedButton = createButton("Advanced...", parseColumns);
         advancedButton.style.width = "100px";
         advancedButton.style.marginLeft = "2px";
@@ -191,7 +190,7 @@ javaxt.express.finance.ImportWizard = function(config) {
     var selectSource = function(){
 
       //Create form
-        var parent = document.createElement("div");
+        var parent = createElement("div");
         parent.setAttribute("desc", "selectSource");
         var form = new javaxt.dhtml.Form(parent, {
             style: config.style.form,
@@ -223,34 +222,9 @@ javaxt.express.finance.ImportWizard = function(config) {
         });
 
 
-
       //Add custom combobox under the "Existing Source" radio button
         var sourceType = form.findField("sourceType");
-        var tbody = sourceType.row.childNodes[2].childNodes[0].childNodes[0];
-        var tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        var td = document.createElement("td");
-        td.style.padding = "5px 0 0 22px";
-        tr.appendChild(td);
-
-        var div = document.createElement("div");
-        div.style.maxWidth = "350px";
-        td.appendChild(div);
-
-        var sourceList = new javaxt.dhtml.ComboBox(div, {
-            maxVisibleRows: 5,
-            style: config.style.combobox
-        });
-
-        sourceList.show = function(){
-            tr.style.visibility = '';
-            tr.style.display = '';
-        };
-        sourceList.hide = function(){
-            tr.style.visibility = 'hidden';
-            tr.style.display = 'none';
-        };
-
+        var sourceList = addComboBox(sourceType);
 
 
 
@@ -360,7 +334,7 @@ javaxt.express.finance.ImportWizard = function(config) {
     var createSource = function(){
 
       //Create form
-        var parent = document.createElement("div");
+        var parent = createElement("div");
         parent.setAttribute("desc", "New Source");
         var form = new javaxt.dhtml.Form(parent, {
             style: config.style.form,
@@ -488,7 +462,7 @@ javaxt.express.finance.ImportWizard = function(config) {
     var selectTemplate = function(){
 
       //Create form
-        var parent = document.createElement("div");
+        var parent = createElement("div");
         parent.setAttribute("desc", "Template");
         var form = new javaxt.dhtml.Form(parent, {
             style: config.style.form,
@@ -523,32 +497,7 @@ javaxt.express.finance.ImportWizard = function(config) {
 
       //Add custom combobox under the "Existing Template" radio button
         var templateType = form.findField("templateType");
-        var tbody = templateType.row.childNodes[2].childNodes[0].childNodes[0];
-        var tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        var td = document.createElement("td");
-        td.style.padding = "5px 0 0 22px";
-        tr.appendChild(td);
-
-        var div = document.createElement("div");
-        div.style.maxWidth = "350px";
-        td.appendChild(div);
-
-        var templateList = new javaxt.dhtml.ComboBox(div, {
-            maxVisibleRows: 5,
-            style: config.style.combobox
-        });
-
-        templateList.show = function(){
-            tr.style.visibility = '';
-            tr.style.display = '';
-        };
-        templateList.hide = function(){
-            tr.style.visibility = 'hidden';
-            tr.style.display = 'none';
-        };
-
-
+        var templateList = addComboBox(templateType);
 
 
       //Show/hide the combobox when the radio button changes
@@ -882,7 +831,7 @@ javaxt.express.finance.ImportWizard = function(config) {
 
 
       //Create form
-        var parent = document.createElement("div");
+        var parent = createElement("div");
         parent.setAttribute("desc", "template");
         var form = new javaxt.dhtml.Form(parent, {
             style: config.style.form,
@@ -899,9 +848,7 @@ javaxt.express.finance.ImportWizard = function(config) {
                         {
                             name: "containsHeader",
                             label: "Contains Header",
-                            type: new javaxt.dhtml.Checkbox(
-                                document.createElement("div")
-                            )
+                            type: createCheckBox()
                         },
                         {
                             name: "columnParser",
@@ -915,47 +862,23 @@ javaxt.express.finance.ImportWizard = function(config) {
                         {
                             name: "dateColumn",
                             label: "Date",
-                            type: new javaxt.dhtml.ComboBox(
-                                document.createElement("div"),
-                                {
-                                    maxVisibleRows: 5,
-                                    style: config.style.combobox
-                                }
-                            )
+                            type: createComboBox()
                         },
 
                         {
                             name: "descColumn",
                             label: "Description",
-                            type: new javaxt.dhtml.ComboBox(
-                                document.createElement("div"),
-                                {
-                                    maxVisibleRows: 5,
-                                    style: config.style.combobox
-                                }
-                            )
+                            type: createComboBox()
                         },
                         {
                             name: "debitColumn",
                             label: "Debit",
-                            type: new javaxt.dhtml.ComboBox(
-                                document.createElement("div"),
-                                {
-                                    maxVisibleRows: 5,
-                                    style: config.style.combobox
-                                }
-                            )
+                            type: createComboBox()
                         },
                         {
                             name: "creditColumn",
                             label: "Credit",
-                            type: new javaxt.dhtml.ComboBox(
-                                document.createElement("div"),
-                                {
-                                    maxVisibleRows: 5,
-                                    style: config.style.combobox
-                                }
-                            )
+                            type: createComboBox()
                         }
                     ]
                 },
@@ -965,7 +888,7 @@ javaxt.express.finance.ImportWizard = function(config) {
                         name: "preview",
                         label: "",
                         type:{
-                            el: document.createElement("div"),
+                            el: createElement("div"),
                             getValue: function(){},
                             setValue: function(){}
                         }
@@ -982,24 +905,24 @@ javaxt.express.finance.ImportWizard = function(config) {
         var preview = form.findField("preview");
         var tr = preview.row;
         tr.innerHTML = "";
-        var td = document.createElement("td");
-        td.colSpan = 3;
-        td.style.height = "150px";
-        td.style.padding = "0 7px";
-        tr.appendChild(td);
-        var outerDiv = document.createElement("div");
-        setStyle(outerDiv, config.style.grid.container);
-        outerDiv.style.height = "100%";
-        outerDiv.style.position = "relative";
-        td.appendChild(outerDiv);
+        var gridContainer = createElement("td", tr, {
+            height: "150px",
+            padding: "0 7px"
+        });
+        gridContainer.colSpan = 3;
+        var outerDiv = createElement("div", gridContainer, {
+            height: "100%",
+            position: "relative"
+        });
+        outerDiv.className = config.style.grid.container;
+        var innerDiv = createElement("div", outerDiv, {
+            width: "100%",
+            height: "100%",
+            position: "absolute",
+            overflow: "hidden",
+            overflowX: "auto"
+        });
 
-        var innerDiv = document.createElement("div");
-        innerDiv.style.width = "100%";
-        innerDiv.style.height = "100%";
-        innerDiv.style.position = "absolute";
-        innerDiv.style.overflow = "hidden";
-        innerDiv.style.overflowX = "auto";
-        outerDiv.appendChild(innerDiv);
 
 
 
@@ -1050,6 +973,7 @@ javaxt.express.finance.ImportWizard = function(config) {
 
         var updateColumns = function(){
 
+
             columns.length = 0;
 
           //Get offset
@@ -1062,7 +986,7 @@ javaxt.express.finance.ImportWizard = function(config) {
             var numColumns = firstRow.length;
 
             var header;
-            if (values.containsHeader==true){
+            if (values.containsHeader==true && !values.columnParser){
                 header = firstRow;
             }
             else{
@@ -1136,18 +1060,25 @@ javaxt.express.finance.ImportWizard = function(config) {
             if (values.dateFormat!=null) momentFormat = getMomentFormat(values.dateFormat);
 
 
-          //Generate data for the grid
-            var arr = [];
+          //Get offset
             var offset = parseInt(values.startRow);
             if (isNaN(offset) || offset<1) offset = 0;
             else offset = offset-1;
             if (values.containsHeader==true) offset++;
 
+
+          //Generate data for the columnEditor
+            _data = data.slice(offset, data.length);
+
+
+          //Generate data for the grid
             var len = data.length;
             var endAt = offset+50;
             if (endAt>len) endAt=len;
             var sampleData = data.slice(offset, len>endAt ? endAt : len);
 
+
+          //Run parser script as needed
             if (values.columnParser){
                 (function (script) {
                     try{
@@ -1164,6 +1095,7 @@ javaxt.express.finance.ImportWizard = function(config) {
             }
 
 
+            var arr = [];
             for (var i=0; i<sampleData.length; i++){
                 var row = sampleData[i];
                 var cols = row.slice(0, row.length);
@@ -1426,7 +1358,7 @@ javaxt.express.finance.ImportWizard = function(config) {
 
 
         columnEditor.reset();
-        columnEditor.loadData(data);
+        columnEditor.loadData(_data);
         var script = getPanel("New Template").getValues().columnParser;
         if (script) columnEditor.setValue(script);
         columnEditor.show();
@@ -1439,7 +1371,7 @@ javaxt.express.finance.ImportWizard = function(config) {
     var selectAccount = function(){
 
       //Create form
-        var parent = document.createElement("div");
+        var parent = createElement("div");
         parent.setAttribute("desc", "Account");
         var form = new javaxt.dhtml.Form(parent, {
             style: config.style.form,
@@ -1473,32 +1405,7 @@ javaxt.express.finance.ImportWizard = function(config) {
 
       //Add custom combobox under the "Existing Template" radio button
         var accountType = form.findField("accountType");
-        var tbody = accountType.row.childNodes[2].childNodes[0].childNodes[0];
-        var tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        var td = document.createElement("td");
-        td.style.padding = "5px 0 0 22px";
-        tr.appendChild(td);
-
-        var div = document.createElement("div");
-        div.style.maxWidth = "350px";
-        td.appendChild(div);
-
-        var accountList = new javaxt.dhtml.ComboBox(div, {
-            maxVisibleRows: 5,
-            style: config.style.combobox
-        });
-
-        accountList.show = function(){
-            tr.style.visibility = '';
-            tr.style.display = '';
-        };
-        accountList.hide = function(){
-            tr.style.visibility = 'hidden';
-            tr.style.display = 'none';
-        };
-
-
+        var accountList = addComboBox(accountType);
 
 
       //Show/hide the combobox when the radio button changes
@@ -1605,7 +1512,7 @@ javaxt.express.finance.ImportWizard = function(config) {
     var createAccount = function(){
 
       //Create form
-        var parent = document.createElement("div");
+        var parent = createElement("div");
         parent.setAttribute("desc", "createAccount");
         var form = new javaxt.dhtml.Form(parent, {
             style: config.style.form,
@@ -1674,7 +1581,7 @@ javaxt.express.finance.ImportWizard = function(config) {
 
 
       //Create form
-        var parent = document.createElement("div");
+        var parent = createElement("div");
         parent.setAttribute("desc", "saveTemplate");
         var form = new javaxt.dhtml.Form(parent, {
             style: config.style.form,
@@ -1865,20 +1772,68 @@ javaxt.express.finance.ImportWizard = function(config) {
   //** createButton
   //**************************************************************************
     var createButton = function(text, onClick){
-        var input = document.createElement("input");
+        var input = createElement("input", "form-button");
         input.type = "button";
         input.name = input.value = text;
-        input.className = "form-button";
-        input.show = function(){
-            input.style.display = "";
-            input.style.visibility = "";
-        };
-        input.hide = function(){
-            input.style.display = "none";
-            input.style.visibility = "hidden";
-        };
+        addShowHide(input);
         input.onclick = onClick;
         return input;
+    };
+
+
+  //**************************************************************************
+  //** createCheckBox
+  //**************************************************************************
+    var createCheckBox = function(parent){
+        if (!parent) parent = createElement("div");
+        var checkbox = new javaxt.dhtml.Checkbox(parent, {
+            style: config.style.checkbox
+        });
+        checkbox.setValue = function(value, silent){
+            var b = getBoolean(value);
+            if (b===true) checkbox.select(silent);
+            else checkbox.deselect(silent);
+        };
+        return checkbox;
+    };
+
+
+  //**************************************************************************
+  //** createComboBox
+  //**************************************************************************
+    var createComboBox = function(parent){
+        if (!parent) parent = createElement("div");
+        return new javaxt.dhtml.ComboBox(parent, {
+            maxVisibleRows: 5,
+            style: config.style.combobox
+        });
+    };
+
+
+  //**************************************************************************
+  //** addComboBox
+  //**************************************************************************
+  /** Used to add a combobox under a radio field
+   */
+    var addComboBox = function(sourceType){
+        var tbody = sourceType.row.childNodes[2].childNodes[0].childNodes[0];
+        var tr = createElement("tr", tbody);
+        var td = createElement("td", tr, {
+            padding: "5px 0 0 22px"
+        });
+        var div = createElement("div", td, {
+            maxWidth: "350px"
+        });
+        var sourceList = createComboBox(div);
+        sourceList.show = function(){
+            tr.style.visibility = '';
+            tr.style.display = '';
+        };
+        sourceList.hide = function(){
+            tr.style.visibility = 'hidden';
+            tr.style.display = 'none';
+        };
+        return sourceList;
     };
 
 
@@ -1893,14 +1848,13 @@ javaxt.express.finance.ImportWizard = function(config) {
     var getDateFormat = function(colID, offset, currFormat, callback){
         var popup = datePopup;
         if (!popup){
-            var div = document.createElement("div");
-            var info = document.createElement("div");
+            var div = createElement("div");
+            var info = createElement("div", div);
             info.style.padding = "7px";
             info.innerHTML =
             "The column you have selected contains an unknown date format. " +
             "You will need to define the format using string tokens representing " +
             "day, month, year, etc (e.g. \"M/d/yyyy\").";
-            div.appendChild(info);
 
             var form = new javaxt.dhtml.Form(div, {
                 style: config.style.form,
@@ -1920,7 +1874,7 @@ javaxt.express.finance.ImportWizard = function(config) {
                             name: "preview",
                             label: "",
                             type:{
-                                el: document.createElement("div"),
+                                el: createElement("div"),
                                 getValue: function(){},
                                 setValue: function(){}
                             }
@@ -1930,8 +1884,8 @@ javaxt.express.finance.ImportWizard = function(config) {
 
             });
 
-            var buttonDiv = document.createElement("div");
-            buttonDiv.className = "button-div";
+            var buttonDiv = createElement("div", "button-div");
+
 
             popup = new javaxt.dhtml.Window(body, {
                 title: "Unknown Date Format",
@@ -1944,22 +1898,23 @@ javaxt.express.finance.ImportWizard = function(config) {
             });
 
 
-          //Create grid
+          //Add overflow divs to the preview
             var preview = form.findField("preview");
             var tr = preview.row;
             tr.innerHTML = "";
-            var td = document.createElement("td");
-            td.colSpan = 3;
-            td.style.height = "150px";
-            td.style.padding = "0 7px";
-            tr.appendChild(td);
+            var gridContainer = createElement("td", tr, {
+                height: "150px",
+                padding: "0 7px"
+            });
+            gridContainer.colSpan = 3;
+            var outerDiv = createElement("div", gridContainer, {
+                height: "100%",
+                position: "relative",
+                border: "1px solid #e2e2e2"
+            });
 
-            var outerDiv = document.createElement("div");
-            outerDiv.style.height = "100%";
-            outerDiv.style.position = "relative";
-            outerDiv.style.border = "1px solid #e2e2e2";
-            td.appendChild(outerDiv);
 
+          //Create grid
             var grid = new javaxt.dhtml.DataGrid(outerDiv, {
                 style: config.style.grid,
                 columns: [
@@ -2126,6 +2081,26 @@ javaxt.express.finance.ImportWizard = function(config) {
         return false;
     };
 
+
+  //**************************************************************************
+  //** getInt
+  //**************************************************************************
+    var getInt = function(value){
+        var i = parseInt(value+"");
+        //if (isNaN(i)) return null;
+        return i;
+    };
+
+
+  //**************************************************************************
+  //** getBoolean
+  //**************************************************************************
+    var getBoolean = function(value){
+        var b = (value+"").toLowerCase();
+        if (b==="true" || b==="t") return true;
+        else if (b==="false" || b==="f") return false;
+        return null;
+    };
 
 
   //**************************************************************************
