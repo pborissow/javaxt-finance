@@ -1,13 +1,19 @@
 package javaxt.express.finance.web;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.security.KeyStore;
+
 import java.util.*;
+import java.io.IOException;
+import java.security.KeyStore;
+import java.net.InetSocketAddress;
 
 import javaxt.express.*;
+import javaxt.express.notification.*;
+import javaxt.express.Authenticator;
+
 import javaxt.http.servlet.*;
+
 import javaxt.json.*;
 import static javaxt.utils.Console.*;
+
 
 public class WebApp extends HttpServlet {
 
@@ -64,7 +70,33 @@ public class WebApp extends HttpServlet {
 
 
       //Instantiate authenticator
-        setAuthenticator(new Authenticator());
+        setAuthenticator(new Authenticator(){
+            public java.security.Principal getPrinciple(){
+
+                User user = (User) getUser();
+                if (user!=null) return user;
+
+                try{
+                    /*
+                    //TODO: Authenticate the user
+                    String[] credentials = getCredentials();
+                    String username = credentials[0];
+                    String password = credentials[1];
+
+                    if (username!=null && password!=null){
+
+                    }
+                    */
+
+                    user = new User(); //admin user
+                }
+                catch(Exception e){
+                }
+
+                setUser(user);
+                return user;
+            }
+        });
 
 
 
@@ -155,53 +187,9 @@ public class WebApp extends HttpServlet {
         if (service.contains("/")) service = service.substring(0, service.indexOf("/"));
 
 
-
-      //Get credentials
-        String[] credentials = request.getCredentials();
-
-
       //Generate response
-        if (service.equals("login")){
-            if (credentials==null){
-                response.setStatus(401, "Access Denied");
-                response.setHeader("WWW-Authenticate", "Basic realm=\"Access Denied\""); //<--Prompt the user for thier credentials
-                response.setContentType("text/plain");
-                response.write("Unauthorized");
-            }
-            else{
-                try{
-                    request.authenticate();
-                    //response.setContentType("application/json");
-                    //response.write(((User) request.getUserPrincipal()).toJson().toString());
-                    response.write(request.getUserPrincipal().getName());
-                }
-                catch(Exception e){
-                    response.setStatus(403, "Not Authorized");
-                    response.setContentType("text/plain");
-                    response.write("Unauthorized");
-                }
-            }
-        }
-        else if (service.equals("logoff") || service.equalsIgnoreCase("logout")){
-            response.setStatus(401, "Access Denied");
-            Boolean prompt = new javaxt.utils.Value(request.getParameter("prompt")).toBoolean(); //<--Hack for Firefox
-            if (prompt!=null && prompt==true){
-                response.setHeader("WWW-Authenticate", "Basic realm=\"" +
-                "This site is restricted. Please enter your username and password.\"");
-            }
-            response.setContentType("text/plain");
-            response.write("Unauthorized");
-        }
-        else if (service.equals("whoami")){
-            String username = (credentials!=null) ? credentials[0] : null;
-            if (username==null || username.equals("logout")) throw new ServletException(400);
-            else{
-                response.setContentType("text/plain");
-                response.write(username);
-            }
-        }
-        else{
-
+        Authenticator authenticator = (Authenticator) getAuthenticator(request);
+        if (!authenticator.handleRequest(service, response)){
 
 
           //Send static file if we can
@@ -213,11 +201,8 @@ public class WebApp extends HttpServlet {
             }
             else{
 
-              //Check if the service matches a file or folder in the web directory.
-              //If so, send the static file as requested. Note that the current
-              //implementation searches the web directory for each http request,
-              //which is terribly inefficient. We need some sort of caching with
-              //a file watcher...
+              //Check if the service matches a file or folder in the web
+              //directory. If so, send the static file as requested.
                 for (Object obj : web.getChildren()){
                     String name = null;
                     if (obj instanceof javaxt.io.File){
