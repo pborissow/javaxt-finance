@@ -4,8 +4,7 @@ import javaxt.express.finance.*;
 
 import javaxt.sql.*;
 import javaxt.json.*;
-import javaxt.utils.Console;
-import javaxt.utils.ThreadPool;
+import static javaxt.utils.Console.console;
 
 import java.util.*;
 import java.io.BufferedReader;
@@ -21,6 +20,102 @@ import java.io.InputStreamReader;
  ******************************************************************************/
 
 public class Maintenance {
+
+    public static void parseArgs(String[] inputs, Database database) throws Exception {
+        HashMap<String, String> args = console.parseArgs(inputs);
+
+        String script = args.get("-maintenance");
+
+        if (script.equalsIgnoreCase("deleteDuplicates")){
+            deleteDuplicates(database);
+        }
+        else if (script.equalsIgnoreCase("updateSources")){
+            updateSources(inputs[inputs.length-1], database);
+        }
+
+    }
+
+
+  //**************************************************************************
+  //** deleteDuplicates
+  //**************************************************************************
+  /** Used to identify potentially duplicate transactions and provides the
+   *  option to delete the duplicates.
+   */
+    public static void deleteDuplicates(Database database) throws Exception {
+
+
+        HashSet<Integer> duplicates = new HashSet<>();
+        try (Connection conn = database.getConnection()){
+
+            //ALTER TABLE TRANSACTION ADD UNIQUE (DATE, SOURCE_ID, AMOUNT, DESCRIPTION);
+
+
+            String query = "";
+            query = "select TRANSACTION.ID, DATE, ACCOUNT_ID, AMOUNT, DESCRIPTION, RAW_DATA " +
+            "from TRANSACTION JOIN SOURCE ON TRANSACTION.SOURCE_ID=SOURCE.ID " +
+            //" where ACCOUNT_ID<>12 " +
+            "ORDER BY TRANSACTION.ID";
+            //query = "select DATE, SOURCE_ID, AMOUNT, DESCRIPTION from TRANSACTION";
+
+            HashMap<String, Integer> uniqueTransactions = new HashMap<>();
+            HashMap<Integer, String> raw = new HashMap<>();
+
+            for (Record record : conn.getRecords(query)){
+                Integer id = record.get("id").toInteger();
+                javaxt.utils.Date date = record.get("date").toDate();
+                String sourceID = record.get("account_id").toString();
+                String amount = record.get("amount").toString();
+                String description = record.get("description").toString();
+                String transaction = date+"|"+sourceID+"|"+amount+"|"+description;
+
+                raw.put(id, record.get("RAW_DATA").toString());
+
+                if (uniqueTransactions.containsKey(transaction)){
+                    int dupID = uniqueTransactions.get(transaction);
+                    int d = Math.abs(id-dupID);
+                    boolean del = d>25;
+
+                    console.log(dupID, transaction, "[" + raw.get(dupID) + "]");
+                    console.log(id, transaction, "[" + record.get("RAW_DATA") + "]", del ? "<----del" : "");
+                    System.out.println();
+
+                    if (del){
+                        duplicates.add(id);
+                    }
+                }
+                else{
+                    uniqueTransactions.put(transaction, id);
+                }
+
+            }
+        }
+
+        if (duplicates.isEmpty()){
+            System.out.println("No duplicates found");
+            return;
+        }
+
+        System.out.println("Found " + duplicates.size() + " duplicates.");
+
+
+
+      //Prompt user
+        Boolean answer = new Value(console.getInput(
+        "\nDo you want to delete these records? [Y/n] ")).toBoolean();
+        if (answer==null || answer==false) return;
+
+
+
+        try (Connection conn = database.getConnection()){
+            for (Integer id : duplicates){
+                conn.execute("delete from transaction where id=" + id);
+            }
+        }
+
+        System.out.println("Successfully deleted " + duplicates.size() + " duplicates.");
+    }
+
 
   //**************************************************************************
   //** updateSources
