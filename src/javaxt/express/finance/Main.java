@@ -1,7 +1,11 @@
 package javaxt.express.finance;
+
 import javaxt.express.finance.web.WebApp;
 import javaxt.express.finance.utils.*;
-import javaxt.utils.Console;
+
+import static javaxt.utils.Console.console;
+import static javaxt.express.ConfigFile.*;
+
 import javaxt.io.Jar;
 import javaxt.json.*;
 import javaxt.sql.*;
@@ -19,16 +23,21 @@ import java.util.*;
 
 public class Main {
 
-    private static Console console = new Console();
-
-
   //**************************************************************************
   //** Main
   //**************************************************************************
   /** Entry point for the application.
    */
-    public static void main(String[] arr) throws Exception {
-        HashMap<String, String> args = Console.parseArgs(arr);
+    public static void main(String[] inputs) throws Exception {
+        HashMap<String, String> args = console.parseArgs(inputs);
+
+
+      //Check Java version
+        int javaVersion = javaxt.utils.Java.getVersion();
+        if (javaVersion!=11){
+            System.out.println("Invalid Java Version: " + javaVersion);
+            return;
+        }
 
 
       //Get jar file and schema
@@ -38,7 +47,7 @@ public class Main {
 
       //Get config file
         javaxt.io.File configFile = (args.containsKey("-config")) ?
-            Config.getFile(args.get("-config"), jarFile) :
+            getFile(args.get("-config"), jarFile) :
             new javaxt.io.File(jar.getFile().getParentFile(), "config.json");
 
         if (!configFile.exists()) {
@@ -56,18 +65,10 @@ public class Main {
 
       //Process command line arguments
         if (args.containsKey("-test")){
-            Connection conn = null;
-            try{
-                //conn = database.getConnection();
-                //conn.close();
-            }
-            catch(Exception e){
-                if (conn!=null) conn.close();
-                e.printStackTrace();
-            }
+
         }
-        else if (args.containsKey("-updateSources")){
-            Maintenance.updateSources(arr[arr.length-1], database);
+        else if (args.containsKey("-maintenance")){
+            Maintenance.parseArgs(inputs, database);
         }
         else{
             try{
