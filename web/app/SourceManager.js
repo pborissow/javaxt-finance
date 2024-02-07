@@ -57,10 +57,10 @@ javaxt.express.finance.SourceManager = function(parent, config) {
 
 
       //Create main div
-        var div = document.createElement("div");
-        div.style.position = "relative";
-        div.style.height = "100%";
-        parent.appendChild(div);
+        var div = createElement("div", parent, {
+            position: "relative",
+            height: "100%"
+        });
         me.el = div;
 
 
@@ -69,33 +69,23 @@ javaxt.express.finance.SourceManager = function(parent, config) {
 
 
       //Create main table
-        var table = createTable();
-        var tbody = table.firstChild;
+        var table = createTable(div);
         var tr, td;
 
 
 
       //Row 1
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
+        td = table.addRow().addColumn("panel-toolbar");
         td.style.width = "100%";
-        td.className = "panel-toolbar";
-        tr.appendChild(td);
         createToolbar(td);
 
 
       //Row 2
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        td.style.width = "100%";
-        td.style.height = "100%";
-        tr.appendChild(td);
+        td = table.addRow().addColumn({
+            width: "100%",
+            height: "100%"
+        });
         createPanels(td);
-
-
-        div.appendChild(table);
 
 
 
@@ -123,7 +113,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
   //** createToolbar
   //**************************************************************************
     var createToolbar = function(parent){
-        var toolbar = document.createElement('div');
+        var toolbar = createElement('div', parent);
 
 
       //Add button
@@ -174,8 +164,6 @@ javaxt.express.finance.SourceManager = function(parent, config) {
             grid.deselectAll();
         };
 
-
-        parent.appendChild(toolbar);
     };
 
 
@@ -183,10 +171,8 @@ javaxt.express.finance.SourceManager = function(parent, config) {
   //** createPanels
   //**************************************************************************
     var createPanels = function(parent){
-        var table = createTable();
-        var tbody = table.firstChild;
-        var tr = document.createElement("tr");
-        tbody.appendChild(tr);
+        var table = createTable(parent);
+        var tr = table.addRow();
         var td;
 
 
@@ -195,8 +181,8 @@ javaxt.express.finance.SourceManager = function(parent, config) {
         }, config.style.table);
 
 
-        td = document.createElement("td");
-        tr.appendChild(td);
+      //Left column
+        td = tr.addColumn();
         grid = new javaxt.dhtml.DataGrid(td, {
             style: style,
             columns: [
@@ -253,10 +239,12 @@ javaxt.express.finance.SourceManager = function(parent, config) {
             }
         };
 
-        td = document.createElement("td");
-        td.style.borderLeft =
-        td.style.borderRight = config.style.border;
-        tr.appendChild(td);
+
+      //Center column
+        td = tr.addColumn({
+            borderLeft: config.style.border,
+            borderRight: config.style.border
+        });
         grid2 = new javaxt.dhtml.DataGrid(td, {
             style: style,
             columns: [
@@ -307,13 +295,12 @@ javaxt.express.finance.SourceManager = function(parent, config) {
             }
         };
 
-        td = document.createElement("td");
-        td.style.width = "34%";
-        tr.appendChild(td);
+
+      //Right column
+        td = tr.addColumn({
+            width: "34%"
+        });
         createEditor(td);
-
-
-        parent.appendChild(table);
     };
 
 
@@ -372,35 +359,23 @@ javaxt.express.finance.SourceManager = function(parent, config) {
   //** createEditor
   //**************************************************************************
     var createEditor = function(parent){
-        var table = createTable();
-        var tbody = table.firstChild;
+        var table = createTable(parent);
         var tr, td;
 
 
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        tr.className = "table-header";
-        td = document.createElement("td");
-        td.className = "table-header-col no-border noselect";
+        tr = table.addRow("table-header");
+        td = tr.addColumn("table-header-col no-border noselect");
         td.innerHTML = "Editor";
-        tr.appendChild(td);
         var header = td;
 
 
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        td.style.height = "100%";
-        td.style.verticalAlign = "top";
-        tr.appendChild(td);
-
-
-        var body = document.createElement("div");
+        td = table.addRow().addColumn({
+            height: "100%",
+            verticalAlign: "top"
+        });
+        var body = createElement("div", td);
         setStyle(body, config.style.form);
-        td.appendChild(body);
 
-
-        parent.appendChild(table);
 
 
         editor = {
@@ -442,7 +417,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                     name: "color",
                     label: "Color",
                     type: new javaxt.dhtml.ComboBox(
-                        document.createElement("div"),{
+                        createElement("div"),{
                             style: config.style.combobox
                         }
                     )
@@ -550,7 +525,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
             vendorField = "text";
         }
         else{
-            var div = document.createElement("div");
+            var div = createElement("div");
             vendorField = new javaxt.dhtml.ComboBox(div, {
                 maxVisibleRows: 5,
                 style: config.style.combobox
@@ -579,7 +554,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                     name: "color",
                     label: "Color",
                     type: new javaxt.dhtml.ComboBox(
-                        document.createElement("div"),{
+                        createElement("div"),{
                             style: config.style.combobox
                         }
                     )
@@ -736,7 +711,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                     name: "color",
                     label: "Color",
                     type: new javaxt.dhtml.ComboBox(
-                        document.createElement("div"),{
+                        createElement("div"),{
                             style: config.style.combobox
                         }
                     )
@@ -889,9 +864,6 @@ javaxt.express.finance.SourceManager = function(parent, config) {
     };
 
 
-
-
-
   //**************************************************************************
   //** createColorPicker
   //**************************************************************************
@@ -900,7 +872,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
     var createColorPicker = function(){
 
       //Create popup
-        var body = document.getElementsByTagName("body")[0];
+        var body = document.body;
         var popup = new javaxt.dhtml.Callout(body,{
             style: config.style.callout
         });
@@ -909,29 +881,21 @@ javaxt.express.finance.SourceManager = function(parent, config) {
 
       //Create title div
         var title = "Select Color";
-        var titleDiv = document.createElement("div");
-        titleDiv.className = "window-header";
+        var titleDiv = createElement("div", innerDiv, "window-header");
         titleDiv.innerHTML = "<div class=\"window-title\">" + title + "</div>";
-        innerDiv.appendChild(titleDiv);
+
 
 
       //Create content div
-        var contentDiv = document.createElement("div");
-        contentDiv.style.padding = "15px";
-        contentDiv.style.fontSize = "12px";
-        innerDiv.appendChild(contentDiv);
+        var contentDiv = createElement("div", innerDiv, {
+            padding: "15px",
+            fontSize: "12px"
+        });
 
 
-        var table = createTable();
-        var tbody = table.firstChild;
-        var tr = document.createElement('tr');
-        tbody.appendChild(tr);
-        var td = document.createElement('td');
-        tr.appendChild(td);
-        contentDiv.appendChild(table);
 
 
-        var cp = new iro.ColorPicker(td, {
+        var cp = new iro.ColorPicker(contentDiv, {
           width: 320,
           height: 320,
           anticlockwise: true,
@@ -972,7 +936,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
     var getColor = function(color){
 
       //Get rgba color
-        var canvas = document.createElement('canvas');
+        var canvas = createElement('canvas');
         canvas.height = 1;
         canvas.width = 1;
         var ctx = canvas.getContext('2d');
@@ -1002,6 +966,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
     var merge = javaxt.dhtml.utils.merge;
     var setStyle = javaxt.dhtml.utils.setStyle;
     var createTable = javaxt.dhtml.utils.createTable;
+    var createElement = javaxt.dhtml.utils.createElement;
 
     var warn = javaxt.express.finance.utils.warn;
     var createSpacer = javaxt.express.finance.utils.createSpacer;
