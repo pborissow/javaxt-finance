@@ -992,6 +992,117 @@
 }
 
 
+
+
+
+/**************************************************************************/
+/** Admin Panel
+/**************************************************************************/
+
+.admin-panel {
+    width: 100%;
+    height: 100%;
+}
+
+.admin-sidebar {
+    width: 65px;
+    background-color: #777f85;
+}
+
+.admin-sidebar .fas {
+    color: #fff;
+    height: 65px;
+    width: 65px;
+    text-align: center;
+    font-size: 30px;
+    line-height: 65px;
+    cursor: pointer;
+    opacity: 0.85;
+}
+
+.admin-sidebar .fas:hover{
+    background-color: #9aa8b1;
+}
+
+.admin-sidebar .selected {
+    background-color: #9aa8b1
+}
+
+.admin-landing-page {
+    text-align: center;
+    font-size: 200px;
+    color: #e6e6e6;
+}
+
+.admin-header {
+    font-size: 24px;
+    line-height: 53px;
+    color: #007CBA;
+    height: 55px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.admin-subheader {
+    font-size: 14px;
+    line-height: 14px;
+    margin-top: -10px;
+}
+
+.admin-header .fas {
+    display: inline-block;
+    font-size: 35px;
+    padding: 10px;
+    color: #f5f5f5;
+    background-color: #0474ab;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    float: left;
+    margin-right: 10px;
+}
+
+.admin-config-table {
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.admin-config-row {
+    background-color: #fff;
+    height: 36px;
+    border-bottom: 1px solid #dcdcdc;
+    transition: 0.2s;
+    position: relative;
+    cursor: pointer;
+}
+
+.admin-config-row:last-child {
+    border: 0 none;
+}
+
+.admin-config-row .far {
+    font-size:18px;
+    padding:0 7px;
+    color:#0474ab;
+}
+
+.admin-config-row-next:hover::after {
+    content: "";
+    position: absolute;
+    border-right: 2px solid #0474ab;
+    border-bottom: 2px solid #0474ab;
+    width: 14px;
+    height: 14px;
+    transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+    margin: 10px 15px 0px 0px;
+    right: 0;
+    top: 0;
+    transition:0.4s;
+}
+
+
 /**************************************************************************/
 /** Misc
 /**************************************************************************/
