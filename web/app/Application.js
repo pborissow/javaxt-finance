@@ -41,34 +41,24 @@ javaxt.express.finance.Application = function(parent, config) {
 
 
       //Create main table
-        var table = createTable();
-        var tbody = table.firstChild;
-        var tr, td;
+        var table = createTable(parent);
+        var td;
 
 
       //Create header nav
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        tr.appendChild(td);
+        td = table.addRow().addColumn();
         createHeader(td);
 
 
-
       //Create body
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        td.style.height = "100%";
-        tr.appendChild(td);
+        td = table.addRow().addColumn({
+            height: "100%"
+        });
         createBody(td);
 
 
       //Create footer
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        tr.appendChild(td);
+        td = table.addRow().addColumn();
         createFooter(td);
 
 
@@ -95,7 +85,6 @@ javaxt.express.finance.Application = function(parent, config) {
         }
 
 
-        parent.appendChild(table);
         me.el = table;
     };
 
@@ -182,38 +171,26 @@ javaxt.express.finance.Application = function(parent, config) {
     var createHeader = function(parent){
 
       //Create table with three columns
-        var table = createTable();
-        var tbody = table.firstChild;
-        var tr = document.createElement("tr");
-        tr.className = "header";
-        tbody.appendChild(tr);
+        var table = createTable(parent);
+        var tr = table.addRow("header");
         var td;
 
 
       //Create logo in column 1
-        td = document.createElement("td");
-        tr.appendChild(td);
-        var logo = document.createElement("div");
-        logo.className = "header-logo";
-        td.appendChild(logo);
+        td = tr.addColumn();
+        createElement("div", td, "header-logo");
 
 
       //Create nav in column 2
-        td = document.createElement("td");
-        td.style.width = "100%";
-        tr.appendChild(td);
-        nav = document.createElement("ul");
-        nav.className = "header-nav";
-        td.appendChild(nav);
-
+        td = tr.addColumn({
+            width: "100%"
+        });
+        nav = createElement("ul", td, "header-nav");
 
 
       //Create placeholder for settings in column 3
-        td = document.createElement("td");
-        tr.appendChild(td);
+        td = tr.addColumn();
 
-
-        parent.appendChild(table);
     };
 
 
@@ -235,8 +212,9 @@ javaxt.express.finance.Application = function(parent, config) {
 
 
       //Add panels to the carousel
-        var currPanel = document.createElement('div');
-        currPanel.style.height = "100%";
+        var currPanel = createElement('div', {
+            height: "100%"
+        });
         carousel.add(currPanel);
 
         var nextPanel = currPanel.cloneNode(false);
@@ -272,7 +250,7 @@ javaxt.express.finance.Application = function(parent, config) {
         createApp("Dashboard", javaxt.express.finance.Dashboard);
         createApp("Transactions", javaxt.express.finance.Transactions, "aliceblue");
         createApp("Reports", javaxt.express.finance.Reports, "#e2e2e2");
-        createApp("Invoices", javaxt.express.finance.Invoices, "bisque");
+        createApp("Admin", javaxt.express.finance.Admin);
     };
 
 
@@ -282,15 +260,15 @@ javaxt.express.finance.Application = function(parent, config) {
     var createApp = function(label, appClass, color){
 
 
-        var div = document.createElement("div");
-        div.style.width = "100%";
-        div.style.height = "100%";
+        var div = createElement("div", {
+            width: "100%",
+            height: "100%"
+        });
         if (color) div.style.background = color;
         div.setAttribute("desc", label);
 
 
-        var li = document.createElement("li");
-        li.className = "header-link";
+        var li = createElement("li", "header-link");
         li.tabIndex = -1; //allows the element to have focus
         li.innerHTML = label;
         li.select = function(){
@@ -451,6 +429,7 @@ javaxt.express.finance.Application = function(parent, config) {
   //**************************************************************************
   //** Utils
   //**************************************************************************
+    var createElement = javaxt.dhtml.utils.createElement;
     var createTable = javaxt.dhtml.utils.createTable;
 
 
