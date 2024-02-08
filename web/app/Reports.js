@@ -200,6 +200,127 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
   //**************************************************************************
+  //** getAccountSummaryByMonth
+  //**************************************************************************
+    var getAccountSummaryByMonth = function(account, year, callback){
+        if (!callback) return;
+
+        var income = [];
+        var expenses = [];
+
+
+      //Generate list of URLs to call
+        var urls = [];
+        for (var i=0; i<12; i++){
+            var a = year + "-" + pad(i+1);
+            var b = year + "-" + pad(i+2);
+            if (i+2===13) b = (year+1) + "-01";
+
+
+            var startDate = moment.tz(a + "-01 00:00", config.timezone).toISOString();
+            var endDate = moment.tz(b + "-01 00:00", config.timezone).toISOString();
+            var url = "report/AccountSummary?accountID=" + account.id +
+                "&startDate=" + startDate + "&endDate=" + endDate;
+            urls.push(url);
+        }
+
+
+      //Function used to fetch and update income and expenses by month
+        var getData = function(){
+
+          //If there are no more URLs to call, sort and return the income and expenses
+            if (urls.length===0){
+
+                income.forEach((r)=>{
+                    r.total = 0;
+                    r.months.forEach((t)=>{ r.total += t; });
+                });
+
+                expenses.forEach((r)=>{
+                    r.total = 0;
+                    r.months.forEach((t)=>{ r.total += t; });
+                });
+
+                income.sort((a, b)=>{
+                    return (a.total>b.total) ? 1 : -1;
+                });
+
+                expenses.sort((a, b)=>{
+                    return (a.total>b.total) ? 1 : -1;
+                });
+
+                callback.apply(me, [income, expenses]);
+                return;
+            }
+
+
+          //Get next URL and update income and expenses
+            get(urls.shift(), {
+                success: function(text){
+                    var json = JSON.parse(text);
+                    var month = urls.length-12;
+
+
+                  //Update income
+                    json.income.forEach((r)=>{
+
+                        var foundMatch = false;
+                        for (var i=0; i<income.length; i++){
+                            if (income[i].id===r.id){
+                                income[i].months.push(r.total);
+                                foundMatch = true;
+                                break;
+                            }
+                        }
+
+                        if (!foundMatch){
+                            income.push({
+                                id: r.id,
+                                name: r.name,
+                                months: [r.total]
+                            });
+                        }
+                    });
+
+
+                  //Update expenses
+                    json.expenses.forEach((r)=>{
+
+                        var foundMatch = false;
+                        for (var i=0; i<expenses.length; i++){
+                            if (expenses[i].id===r.id){
+                                expenses[i].months.push(r.total);
+                                foundMatch = true;
+                                break;
+                            }
+                        }
+
+                        if (!foundMatch){
+                            expenses.push({
+                                id: r.id,
+                                name: r.name,
+                                months: [r.total]
+                            });
+                        }
+                    });
+
+
+                    getData();
+                },
+                failure: function(request){
+                    alert(request);
+                }
+            });
+        };
+
+      //Get income and expenses
+        getData();
+
+    };
+
+
+
+  //**************************************************************************
   //** renderAccountSummary
   //**************************************************************************
   /** Used to render income and expenses for a given account
@@ -246,6 +367,7 @@ javaxt.express.finance.Reports = function(parent, config) {
               //Get income and expenses as seperate arrays
                 var incomeRows = [];
                 var expenseRows;
+                var hasMonths = false;
                 var rows = accountDetails.getBody().getElementsByTagName("tr");
                 for (var i=0; i<rows.length; i++){
                     var row = rows[i];
@@ -257,32 +379,53 @@ javaxt.express.finance.Reports = function(parent, config) {
                         if (expenseRows) break;
                         else expenseRows = [];
                     }
+                    if (row.category){
+                        if (row.category.months) hasMonths = true;
+                    }
                 }
                 var data = {
-                    "income": incomeRows,
-                    "expenses": expenseRows
+                    "Income": incomeRows,
+                    "Expenses": expenseRows
                 };
 
 
               //Create csv
-                var csvContent = "type,key,val";
-                for (var t in data) {
-                    if (data.hasOwnProperty(t)){
-                        var rows = data[t];
+                var csvContent = "Type,Category";
+                if (hasMonths) csvContent += ",Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec";
+                csvContent += ",Total";
+
+                for (var key in data) {
+                    if (data.hasOwnProperty(key)){
+                        var rows = data[key];
 
                         for (var i=0; i<rows.length; i++){
                             var row = rows[i];
 
                             var col = row.childNodes;
-                            var key = col[0].innerText;
-                            var val = col[2].innerText;
+                            var name = col[0].innerText;
+                            var total = col[col.length-1].innerText;
 
-                            if (val!=="$0.00"){
+                            if (total!=="$0.00"){
 
                                 csvContent += "\r\n";
-                                csvContent += "\"" + t + "\",";
-                                csvContent += "\"" + key + "\",";
-                                csvContent += "\"" + val + "\"";
+                                csvContent += key + ",";
+
+                                if (name.indexOf(",")>-1) name = "\"" + name + "\"";
+                                csvContent += name + ",";
+
+                                if (hasMonths){
+                                    for (var j=0; j<12; j++){
+                                        var v = col[j+1].innerText;
+                                        if (v.length>0){
+                                            if (v.indexOf(",")>-1) v = "\"" + v + "\"";
+                                            csvContent += v;
+                                        }
+                                        csvContent += ",";
+                                    }
+                                }
+
+                                if (total.indexOf(",")>-1) total = "\"" + total + "\"";
+                                csvContent += total;
                             }
 
                         }
@@ -351,82 +494,37 @@ javaxt.express.finance.Reports = function(parent, config) {
         });
 
 
-      //Create "phantom" header row to set up spacing
-        tr = table.addRow();
-        tr.style.height = "1px";
-        var numColumns = 3;
-        for (var i=0; i<numColumns; i++){
-            td = tr.addColumn();
-            td.style.width = "125px";
-        }
-        tr.childNodes[0].style.width = "100%";
+
+        var numColumns = 0;
+        var addHeader = function(title){
+            if (!title) return;
+            if (!numColumns && arguments.length<2) return;
 
 
-        var addHeader = function(title, col1, col2){
-            tr = table.addRow();
-            td = tr.addColumn("report-section-header");
-            //if (!addColHeader) td.colSpan = numColumns;
-            td.innerHTML = title;
+          //Add "phantom" header row to set up spacing as needed
+            if (!numColumns){
+                numColumns = arguments.length-1;
 
-
-            td = tr.addColumn("report-section-header report-column-header");
-            if (col1) td.innerHTML = col1;
-
-
-            td = tr.addColumn("report-section-header report-column-header");
-            if (col2){
-                if (isNaN(col2)){
-                    td.innerHTML = col2;
-                }
-                else{
-                    td.innerHTML = "";
-                    var div = createElement("div", td);
-                    div.style.position = "relative";
-                    div.innerHTML = col2;
-
-                    var btn = createElement("div", div, "fas fa-arrow-down");
-                    btn.style.position = "absolute";
-                    btn.style.opacity = 0;
-
-                    div.onmouseover = function(){
-                        btn.style.opacity = 1;
-                    };
-                    div.onmouseout = function(){
-                        btn.style.opacity = 0;
-                    };
-
-
-
-                    btn.onclick = function(){
-
-                      //Create csv
-                        var csvContent = "key,val";
-                        for (var i=0; i<tbody.childNodes.length; i++){
-                            var row = tbody.childNodes[i];
-                            if (row.className==="report-row"){
-                                var col = row.childNodes;
-                                var key = col[0].innerText;
-                                var val = col[2].innerText;
-
-                                if (val!=="$0.00"){
-
-                                    csvContent += "\r\n";
-                                    csvContent += "\"" + key + "\",";
-                                    csvContent += "\"" + val + "\"";
-                                }
-                            }
-                        }
-
-
-
-                      //Download csv
-                        var title = account.name + " " + col2;
-                        downloadCSV(csvContent, title);
-
-                    };
+                tr = table.addRow({ height: "1px" });
+                for (var i=1; i<arguments.length; i++){
+                    td = tr.addColumn({
+                        width: i===0 ? "100%" : "125px"
+                    });
                 }
             }
 
+
+          //Add section title
+            tr = table.addRow();
+            td = tr.addColumn("report-section-header");
+            td.innerHTML = title;
+
+
+          //Add column headers
+            for (var i=0; i<numColumns; i++){
+                td = tr.addColumn("report-section-header report-column-header");
+                if (arguments[i+1]) td.innerHTML = arguments[i+1];
+            }
         };
 
 
@@ -469,22 +567,36 @@ javaxt.express.finance.Reports = function(parent, config) {
                     }
                     else{ //found footer
                         var cols = rows[i].childNodes;
+                        var n = cols.length-1;
+
+                        var lastCol = "";
+                        var prevCol = "";
 
                         if (cat.isExpense && cat.isRevenue){ //show net revenue (income-expenses)
                             var net = totalIncome+totalExpenses;
-                            cols[1].innerHTML = formatCurrency(comparePreviousYear ? prevIncome+prevExpenses : net/numMonths);
-                            cols[2].innerHTML = formatCurrency(net);
+                            prevCol = formatCurrency(comparePreviousYear ? prevIncome+prevExpenses : net/numMonths);
+                            lastCol = formatCurrency(net);
                         }
                         else{
                             if (isExpense && cat.isExpense){
-                                cols[1].innerHTML = formatCurrency(comparePreviousYear ? prevYear : total/numMonths);
-                                cols[2].innerHTML = formatCurrency(total);
+                                prevCol = formatCurrency(comparePreviousYear ? prevYear : total/numMonths);
+                                lastCol = formatCurrency(total);
                             }
                             if (!isExpense && !cat.isExpense){
-                                cols[1].innerHTML = formatCurrency(comparePreviousYear ? prevYear : total/numMonths);
-                                cols[2].innerHTML = formatCurrency(total);
+                                prevCol = formatCurrency(comparePreviousYear ? prevYear : total/numMonths);
+                                lastCol = formatCurrency(total);
                             }
                         }
+
+                        if (type==="months"){
+
+                        }
+                        else{
+                            cols[n-1].innerHTML = prevCol;
+                        }
+
+                        cols[n].innerHTML = lastCol;
+
                     }
                 }
             }
@@ -549,14 +661,32 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
             var cls = "report-cell" + (isFooter? "-footer" : "");
+
+
+          //Add category name
             td = tr.addColumn(cls);
             if (!isFooter) td.innerHTML = category.name;
 
-            td = tr.addColumn(cls);
-            td.style.textAlign = "right";
-            td.innerHTML = formatCurrency(comparePreviousYear ? category.prevYear : category.total/numMonths);
+
+          //Add middle column(s)
+            if (type==="months"){
+                for (var i=0; i<12; i++){
+                    td = tr.addColumn(cls);
+                    td.style.textAlign = "right";
+                    if (category.months){
+                        var v = category.months[i];
+                        td.innerHTML = formatCurrency(v);
+                    }
+                }
+            }
+            else{
+                td = tr.addColumn(cls);
+                td.style.textAlign = "right";
+                td.innerHTML = formatCurrency(comparePreviousYear ? category.prevYear : category.total/numMonths);
+            }
 
 
+          //Add total
             td = tr.addColumn(cls);
             td.style.textAlign = "right";
             td.innerHTML = formatCurrency(category.total);
@@ -620,13 +750,19 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
           //Render income
-            if (comparePreviousYear){
-                addHeader("Income", (year-1), year);
+            if (type==="months"){
+                addHeader("Income", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Total");
             }
             else{
-                addHeader("Income", "Monthly Avg",
-                accountDetails.year===currDate.getFullYear() ? "YTD Total" : accountDetails.year);
+                if (comparePreviousYear){
+                    addHeader("Income", (year-1), year);
+                }
+                else{
+                    addHeader("Income", "Monthly Avg",
+                    accountDetails.year===currDate.getFullYear() ? "YTD Total" : accountDetails.year);
+                }
             }
+
             var totalIncome = 0;
             var prevIncome = 0;
             income.sort(function(a, b){return b.total - a.total;});
@@ -1353,12 +1489,16 @@ javaxt.express.finance.Reports = function(parent, config) {
                     alignment: "vertical",
                     options: [
                         {
+                            label: "Compare Previous Year",
+                            value: "prevYear"
+                        },
+                        {
                             label: "Show Montly Average",
                             value: "montlyAvg"
                         },
                         {
-                            label: "Compare Previous Year",
-                            value: "prevYear"
+                            label: "Show Individual Months",
+                            value: "months"
                         }
                     ]
                 }
@@ -1370,9 +1510,16 @@ javaxt.express.finance.Reports = function(parent, config) {
                         var year = parseInt(form.getValue("year"));
                         var type = form.getValue("type");
                         var account = accountDetails.account;
-                        getAccountSummary(account, year, function(income, expenses){
+                        var callback = function(income, expenses){
                             renderAccountSummary(income, expenses, account, year, type);
-                        });
+                        };
+
+                        if (type==="months"){
+                            getAccountSummaryByMonth(account, year, callback);
+                        }
+                        else{
+                            getAccountSummary(account, year, callback);
+                        }
 
                         menu.hide();
                     }
@@ -1595,6 +1742,17 @@ javaxt.express.finance.Reports = function(parent, config) {
   //**************************************************************************
     var findSource = function(sourceID){
         return javaxt.express.finance.utils.findSource(sourceID, vendors, sources, sourceAccounts);
+    };
+
+
+  //**************************************************************************
+  //** pad
+  //**************************************************************************
+  /** Used to add a leading zero to an integer
+   */
+    var pad = function(i){
+        if (i<10) return "0"+i;
+        else return i+"";
     };
 
 
