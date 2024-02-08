@@ -258,7 +258,7 @@ javaxt.express.finance.Reports = function(parent, config) {
             get(urls.shift(), {
                 success: function(text){
                     var json = JSON.parse(text);
-                    var month = urls.length-12;
+                    var month = -(urls.length-12);
 
 
                   //Update income
@@ -267,17 +267,24 @@ javaxt.express.finance.Reports = function(parent, config) {
                         var foundMatch = false;
                         for (var i=0; i<income.length; i++){
                             if (income[i].id===r.id){
-                                income[i].months.push(r.total);
+                                income[i].months[month-1] = r.total;
                                 foundMatch = true;
                                 break;
                             }
                         }
 
                         if (!foundMatch){
+
+                            var months = [];
+                            for (var i=0; i<12; i++){
+                                if (i+1===month) months.push(r.total);
+                                else months.push(0);
+                            }
+
                             income.push({
                                 id: r.id,
                                 name: r.name,
-                                months: [r.total]
+                                months: months
                             });
                         }
                     });
@@ -289,17 +296,24 @@ javaxt.express.finance.Reports = function(parent, config) {
                         var foundMatch = false;
                         for (var i=0; i<expenses.length; i++){
                             if (expenses[i].id===r.id){
-                                expenses[i].months.push(r.total);
+                                expenses[i].months[month-1] = r.total;
                                 foundMatch = true;
                                 break;
                             }
                         }
 
                         if (!foundMatch){
+
+                            var months = [];
+                            for (var i=0; i<12; i++){
+                                if (i+1===month) months.push(r.total);
+                                else months.push(0);
+                            }
+
                             expenses.push({
                                 id: r.id,
                                 name: r.name,
-                                months: [r.total]
+                                months: months
                             });
                         }
                     });
