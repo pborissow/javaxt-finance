@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.expression.operators.relational.*;
+import net.sf.jsqlparser.expression.operators.conditional.*;
 import net.sf.jsqlparser.util.deparser.*;
 
 
@@ -196,11 +197,37 @@ public class WebServices extends WebService {
 
                             if (equalsTo.getLeftExpression().toString().equalsIgnoreCase("q")){
 
-                                String q = request.getParameter("q").toString().toLowerCase();
+
+                                javaxt.utils.Value q = request.getParameter("q");
                                 try{
-                                    LikeExpression like = (LikeExpression) CCJSqlParserUtil.parseCondExpression(
-                                    "lower(description) like '" + q + "%'");
-                                    super.visit(like);
+                                    if (q.isNumeric()){
+
+                                        super.visit((EqualsTo) CCJSqlParserUtil.parseCondExpression(
+                                        "amount=" + q.toString()));
+                                    }
+                                    else if (isDate(q.toString())){
+
+                                        javaxt.utils.Date startDate = q.toDate().removeTimeStamp();
+                                        javaxt.utils.Date endDate = startDate.clone().add(1, "day");
+
+                                        StringBuilder str = new StringBuilder();
+                                        str.append("date>='");
+                                        str.append(startDate.toISOString());
+                                        str.append("'");
+                                        str.append(" and ");
+                                        str.append("date<'");
+                                        str.append(endDate.toISOString());
+                                        str.append("'");
+
+                                        super.visit((AndExpression) CCJSqlParserUtil.parseCondExpression(
+                                        str.toString()));
+                                    }
+                                    else{
+
+                                        LikeExpression like = (LikeExpression) CCJSqlParserUtil.parseCondExpression(
+                                        "lower(' ' || description) like '% " + q.toString().toLowerCase() + "%'");
+                                        super.visit(like);
+                                    }
                                 }
                                 catch(Exception e){
                                     super.visit(equalsTo);
@@ -215,7 +242,7 @@ public class WebServices extends WebService {
                     plainSelect.accept(selectDeParser);
 
                     sql = buffer.toString();
-                    System.out.println(sql);
+                    //console.log(sql);
 
                 }
                 request.setParameter("q", null);
@@ -223,6 +250,26 @@ public class WebServices extends WebService {
         }
 
         return super.getRecordset(request, op, c, sql, conn);
+    }
+
+    
+  //**************************************************************************
+  //** isDate
+  //**************************************************************************
+  /** Simple check to see if a given string might be a date
+   */
+    private boolean isDate(String q){
+        try{
+            String t = q.replace("-", "").replace("/", "");
+            if (new javaxt.utils.Value(t).isNumeric()){
+                javaxt.utils.Date d = new javaxt.utils.Date(q);
+                //TODO: validate date range
+                return true;
+            }
+        }
+        catch(Exception e){
+        }
+        return false;
     }
 
 
