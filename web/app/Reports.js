@@ -33,12 +33,6 @@ javaxt.express.finance.Reports = function(parent, config) {
   //**************************************************************************
     var init = function(){
 
-        if (typeof parent === "string"){
-            parent = document.getElementById(parent);
-        }
-        if (!parent) return;
-
-
       //Clone the config so we don't modify the original config object
         var clone = {};
         merge(clone, config);
@@ -58,15 +52,17 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
       //Create main div
-        mainDiv = createElement("div", parent);
-        mainDiv.style.height = "100%";
+        mainDiv = createElement("div", parent, {
+            height: "100%",
+            position: "relative",
+            backgroundColor: "#e2e2e2"
+        });
         me.el = mainDiv;
 
 
 
       //Create container for reports
-        reportList = createElement("div", mainDiv);
-        reportList.style.height = "100%";
+        reportList = createElement("div", mainDiv, {height: "100%"});
         reportList.show = function(callback){
             config.fx.fadeIn(this, "easeInOutCubic", 600, callback);
         };
@@ -133,9 +129,21 @@ javaxt.express.finance.Reports = function(parent, config) {
   //** addReport
   //**************************************************************************
     var addReport = function(account){
-        var div = createElement("div", reportList);
-        div.className = "report-preview";
-        div.innerHTML = account.name + " Account";
+
+        var div = createElement("div", reportList, "report-preview");
+        var table = createTable(div);
+        var title = table.addRow().addColumn("title");
+        createElement("div", title).innerHTML = account.name + " Account";
+
+        var body = table.addRow().addColumn({
+            height: "100%",
+            textAlign: "center"
+        });
+        if (account.info && account.info.logo){
+            var img = createElement('img', body);
+            img.src = account.info.logo;
+        }
+
         div.account = account;
         div.onclick = function(){
             var account = this.account;
