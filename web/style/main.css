@@ -772,16 +772,36 @@
     background-color:#fff;
     margin:50px;
     padding: 5px;
-    font-size: 18px;
     box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
     cursor: pointer;
     transition: all .4s ease;
     user-select: none;
 }
 
-
 .report-preview:hover { /** Super cheezy*/
     box-shadow: 0px 20px 14px 0 rgba(0, 0, 0, 0.2), 14px 20px 20px 0 rgba(0, 0, 0, 0.2);
+    transition: all .4s ease;
+}
+
+.report-preview .title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    text-align: center;
+}
+
+.report-preview .title > div {
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.report-preview img {
+    width: 100px;
+    height: 100px;
+    opacity: 0.8;
+}
+
+.report-preview:hover img {
+    opacity: 1;
     transition: all .4s ease;
 }
 
@@ -1100,6 +1120,49 @@
     right: 0;
     top: 0;
     transition:0.4s;
+}
+
+
+/**************************************************************************/
+/** Source Manager
+/**************************************************************************/
+
+.source-manager-account-icon {
+    margin: 9px 6px 0 5px;
+    border-radius: 50%;
+    border: 1px solid;
+    width: 12px;
+    height: 12px;
+}
+
+.logo-upload-area {
+    transition: 0.2s;
+}
+
+.logo-upload-area::before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f382"; /*cloud-upload-alt*/
+    display: block;
+    vertical-align: middle;
+    font-weight: 900;
+    font-size: 42px;
+    color: #9fb1bd;
+}
+
+.logo-upload-area::after {
+    content: "Drag and drop image here";
+    font-size: 12px;
+    color: #8e9da7;
+    font-weight: bold;
+}
+
+.logo-upload-area::before,
+.logo-upload-area::after {
+    position: relative;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
 }
 
 
