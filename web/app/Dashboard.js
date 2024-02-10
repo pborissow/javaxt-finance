@@ -36,49 +36,12 @@ javaxt.express.finance.Dashboard = function(parent, config) {
 
 
 
-      //Create table with 2 rows
-        var table = createTable();
-        var tbody = table.firstChild;
-        var tr, td;
-
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        tr.appendChild(td);
-        var row1 = td;
-
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        tr.appendChild(td);
-        var row2 = td;
-
-        parent.appendChild(table);
-        me.el = table;
-
-
-
-      //Create pie charts in row 1
-        table = createTable();
-        row1.appendChild(table);
-        tbody = table.firstChild;
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-
-        td = document.createElement("td");
-        td.style.textAlign = "center";
-        tr.appendChild(td);
-        renderAccounts(td);
-
-        td = document.createElement("td");
-        td.style.textAlign = "center";
-        tr.appendChild(td);
-        renderLinkStatus(td);
-
-        td = document.createElement("td");
-        td.style.textAlign = "center";
-        tr.appendChild(td);
-        renderFreshness(td);
+      //Create table with 3 columns
+        var table = createTable(parent);
+        var tr = table.addRow();
+        renderAccounts(tr.addColumn({ textAlign: "center" }));
+        renderLinkStatus(tr.addColumn({ textAlign: "center" }));
+        renderFreshness(tr.addColumn({ textAlign: "center" }));
 
 
 
@@ -106,6 +69,8 @@ javaxt.express.finance.Dashboard = function(parent, config) {
             }
         });
 
+
+        me.el = table;
     };
 
 
@@ -144,6 +109,9 @@ javaxt.express.finance.Dashboard = function(parent, config) {
 
             chart.update();
         };
+
+        createElement("div", parent, "dashboard-caption").innerText =
+        "Transactions Per Account";
     };
 
 
@@ -167,10 +135,13 @@ javaxt.express.finance.Dashboard = function(parent, config) {
             var dataset = chart.data.datasets[0];
             dataset.data[0] = linked;
             dataset.data[1] = unlinked;
-            var d = (linked/(linked+unlinked))*100;
-            console.log(d);
+            var percentLinked = (linked/(linked+unlinked))*100;
+            //console.log(percentLinked);
             chart.update();
         };
+
+        createElement("div", parent, "dashboard-caption").innerText =
+        "Link Status";
     };
 
 
@@ -180,6 +151,9 @@ javaxt.express.finance.Dashboard = function(parent, config) {
     var renderFreshness = function(parent){
         var canvas = createCanvas(parent);
         var chart = createDoughnut(canvas);
+
+        createElement("div", parent, "dashboard-caption").innerText =
+        "Freshness Score";
     };
 
 
@@ -189,18 +163,18 @@ javaxt.express.finance.Dashboard = function(parent, config) {
     var createCanvas = function(parent){
         var w = 250;
         var h = 250;
-        var div = document.createElement("div");
-        div.style.width = w+"px";
-        div.style.height = h+"px";
-        div.style.display = "inline-block";
-        parent.appendChild(div);
-
-        var canvas = document.createElement("canvas");
-        canvas.style.width = w+"px";
-        canvas.style.height = h+"px";
+        var div = createElement("div", parent, {
+            width: w+"px",
+            height: h+"px",
+            display: "inline-block"
+        });
+        
+        var canvas = createElement("canvas", div, {
+            width: w+"px",
+            height: h+"px"
+        });
         canvas.width = w;
         canvas.height = h;
-        div.appendChild(canvas);
         return canvas;
     };
 
@@ -210,6 +184,7 @@ javaxt.express.finance.Dashboard = function(parent, config) {
   //**************************************************************************
     var merge = javaxt.dhtml.utils.merge;
     var createTable = javaxt.dhtml.utils.createTable;
+    var createElement = javaxt.dhtml.utils.createElement;
     var createDoughnut = javaxt.express.finance.utils.createDoughnut;
     var getTransactionsPerAccount = javaxt.express.finance.utils.getTransactionsPerAccount;
 
