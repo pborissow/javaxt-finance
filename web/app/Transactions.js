@@ -253,6 +253,11 @@ javaxt.express.finance.Transactions = function(parent, config) {
             filter.q = q;
             transactionGrid.refresh();
         };
+        searchBar.onClear = function(){
+            delete filter.q;
+            transactionGrid.refresh();
+        };
+
 
 /*
       //Add button
@@ -1261,17 +1266,18 @@ javaxt.express.finance.Transactions = function(parent, config) {
             sort: false
         });
         yearsFacet.onChange = function(val){
+            var key = "year(date)";
             if (val){
                 var arr = val.split(",");
                 if (arr.length===0 || arr.length===yearsFacet.getNumOptions()){
-                    delete filter.year;
+                    delete filter[key];
                 }
                 else{
-                    filter["year(date)"] = val;
+                    filter[key] = val;
                 }
             }
             else {
-                delete filter.year;
+                delete filter[key];
             }
             transactionGrid.refresh();
         };
