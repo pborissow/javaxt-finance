@@ -3,14 +3,14 @@ if(!javaxt.express) javaxt.express={};
 if(!javaxt.express.finance) javaxt.express.finance={};
 
 //******************************************************************************
-//**  Reports
+//**  AccountDashboard
 //******************************************************************************
 /**
  *   Panel used to render a list of reports
  *
  ******************************************************************************/
 
-javaxt.express.finance.Reports = function(parent, config) {
+javaxt.express.finance.AccountDashboard = function(parent, config) {
 
     var me = this;
     var orgConfig = config;
@@ -20,7 +20,7 @@ javaxt.express.finance.Reports = function(parent, config) {
         timezone: "America/New_York"
     };
     var mainDiv;
-    var reportList, menu;
+    var menu;
     var accountDetails, pieChart, barGraph, transactionsPanel; //panels
     var accounts, vendors, sources, sourceAccounts, accountStats; //DataStores
     var transactionEditor; //window
@@ -51,113 +51,33 @@ javaxt.express.finance.Reports = function(parent, config) {
         config.timezone = config.timezone.trim().replace(" ", "_");
 
 
+
+
       //Create main div
         mainDiv = createElement("div", parent, {
             height: "100%",
-            position: "relative",
-            backgroundColor: "#e2e2e2"
+            position: "relative"
         });
         me.el = mainDiv;
-
-
-
-      //Create container for reports
-        reportList = createElement("div", mainDiv, {height: "100%"});
-        reportList.show = function(callback){
-            config.fx.fadeIn(this, "easeInOutCubic", 600, callback);
-        };
-        reportList.hide = function(callback){
-            config.fx.fadeOut(this, "easeInOutCubic", 600, callback);
-        };
-
-
-
-
-        getSources(orgConfig, function(){
-            vendors = orgConfig.vendors;
-            sources = orgConfig.sources;
-            sourceAccounts = orgConfig.sourceAccounts;
-        });
-
-
-      //Get accounts and create reports
-        getAccounts(orgConfig, function(){
-            accounts = orgConfig.accounts;
-            for (var i=0; i<accounts.length; i++){
-                var account = accounts.get(i);
-                addReport(account);
-            }
-
-            accounts.addEventListener("add", function(account){
-                addReport(account);
-            }, me);
-
-            accounts.addEventListener("remove", function(account){
-                var div = getReport(account);
-                if (div) reportList.removeChild(div);
-            }, me);
-
-            accounts.addEventListener("update", function(account){
-                var div = getReport(account);
-                if (div){
-                    div.innerHTML = account.name + " Account";
-                }
-            }, me);
-        });
-
-
-        accountStats = orgConfig.stats.accounts;
-
     };
 
 
   //**************************************************************************
-  //** getReport
+  //** update
   //**************************************************************************
-    var getReport = function(account){
-        for (var i=0; i<reportList.childNodes.length; i++){
-            var div = reportList.childNodes[i];
-            if (div.accountID===account.id){
-                return div;
-            }
-        }
-        return div;
-    };
+    this.update = function(account, datastores){
+
+        accounts = datastores.accounts;
+        vendors = datastores.vendors;
+        sources = datastores.sources;
+        sourceAccounts = datastores.sourceAccounts;
+        accountStats = datastores.accountStats;
 
 
-  //**************************************************************************
-  //** addReport
-  //**************************************************************************
-    var addReport = function(account){
-
-        var div = createElement("div", reportList, "report-preview");
-        var table = createTable(div);
-        var title = table.addRow().addColumn("title");
-        createElement("div", title).innerHTML = account.name + " Account";
-
-        var body = table.addRow().addColumn({
-            height: "100%",
-            textAlign: "center"
-        });
-        if (account.info && account.info.logo){
-            var img = createElement('img', body);
-            img.src = account.info.logo;
-        }
-
-        div.account = account;
-        div.onclick = function(){
-            var account = this.account;
-            reportList.hide(function(){
-                showReport(account);
-            });
-        };
-    };
+console.log(datastores);
 
 
-  //**************************************************************************
-  //** showReport
-  //**************************************************************************
-    var showReport = function(account){
+
 
         get("report/DistinctYears?accountID=" + account.id, {
             success: function(text){
@@ -356,7 +276,7 @@ javaxt.express.finance.Reports = function(parent, config) {
                     if (pieChart) pieChart.hide();
                     if (barGraph) barGraph.hide();
                     accountDetails.hide();
-                    reportList.show();
+
                 },
                 settings: true
             });
@@ -1786,9 +1706,9 @@ javaxt.express.finance.Reports = function(parent, config) {
     var onRender = javaxt.dhtml.utils.onRender;
     var createTable = javaxt.dhtml.utils.createTable;
     var createElement = javaxt.dhtml.utils.createElement;
+
     var createCell = javaxt.express.finance.utils.createCell;
     var createButton = javaxt.express.finance.utils.createButton;
-
     var createDoughnut = javaxt.express.finance.utils.createDoughnut;
     var createBargraph = javaxt.express.finance.utils.createBargraph;
     var addLegend = javaxt.express.finance.utils.addLegend;
@@ -1796,8 +1716,6 @@ javaxt.express.finance.Reports = function(parent, config) {
     var formatCurrency = javaxt.express.finance.utils.formatCurrency;
     var getMomentFormat = javaxt.express.finance.utils.getMomentFormat;
 
-    var getSources = javaxt.express.finance.utils.getSources;
-    var getAccounts = javaxt.express.finance.utils.getAccounts;
     var normalizeResponse = javaxt.express.finance.utils.normalizeResponse;
 
     init();
