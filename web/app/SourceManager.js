@@ -15,7 +15,8 @@ javaxt.express.finance.SourceManager = function(parent, config) {
     var me = this;
     var orgConfig = config ? config : {};
     var defaultConfig = {
-        style: javaxt.express.finance.style
+        style: javaxt.express.finance.style,
+        defaultColor: "#6b6b6b"
     };
     defaultConfig.style.border = "1px solid #ccc";
     defaultConfig.style.form.padding = "15px 20px 0 15px";
@@ -34,12 +35,6 @@ javaxt.express.finance.SourceManager = function(parent, config) {
   //** Constructor
   //**************************************************************************
     var init = function(){
-
-        if (typeof parent === "string"){
-            parent = document.getElementById(parent);
-        }
-        if (!parent) return;
-
 
       //Clone the config so we don't modify the original config object
         var clone = {};
@@ -70,8 +65,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
 
       //Create main table
         var table = createTable(div);
-        var tr, td;
-
+        var td;
 
 
       //Row 1
@@ -189,7 +183,16 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                 {header: 'Category', width:'100%'}
             ]
         });
-        grid.load([['Accounts'],['Sources'],['Templates'],['Vendors']]);
+        grid.load([['Accounts'],['Vendors'],['Sources'],['Templates']]);
+
+        grid.getSelectedRecord = function(){
+            var arr = grid.getSelectedRecords();
+            if (arr.length>0){
+                return arr[0][0];
+            }
+            return null;
+        };
+
         grid.onSelectionChange = function(){
 
             editor.clear();
@@ -200,9 +203,8 @@ javaxt.express.finance.SourceManager = function(parent, config) {
 
 
           //Update grid
-            var arr = grid.getSelectedRecords();
-            if (arr.length>0){
-                var selectedRecord = arr[0][0];
+            var selectedRecord = grid.getSelectedRecord();
+            if (selectedRecord){
                 if (selectedRecord==="Vendors"){
                     grid2.load(vendors);
                 }
@@ -252,30 +254,88 @@ javaxt.express.finance.SourceManager = function(parent, config) {
             ],
             update: function(row, data){
 
+                var selectedRecord = grid.getSelectedRecord();
+
+
+              //Find name attribute in the data
+                var name;
+                for (var key in data) {
+                    if (data.hasOwnProperty(key)){
+                        if (key.toLowerCase().indexOf("name")>-1){ //remove "s"
+                            name = data[key];
+                            break;
+                        }
+                    }
+                }
+
+
+
+
               //Find vendor name
-                var vendorName;
+                var vendorName, vendorColor;
                 if (data.vendorID){
                     for (var i=0; i<vendors.length; i++){
                         var vendor = vendors.get(i);
                         if (vendor.id===data.vendorID){
                             vendorName = vendor.name;
+                            if (vendor.info) vendorColor = vendor.info.color;
                             break;
                         }
                     }
                 }
 
 
-              //Find name attribute in the data and update row
-                for (var key in data) {
-                    if (data.hasOwnProperty(key)){
-                        if (key.toLowerCase().indexOf("name")>-1){ //remove "s"
-                            var name = data[key];
-                            if (vendorName) name += " (" + vendorName + ")";
-                            row.set(0, name);
-                            break;
-                        }
-                    }
+
+                var div = createElement("div", {
+                    position: "relative"
+                });
+
+
+
+                if (selectedRecord==="Vendors"){
+
+                    var color;
+                    if (data.info) color = data.info.color;
+                    if (!color) color = config.defaultColor;
+
+                    var colorScale = chroma.scale([color, "#fff"]);
+
+                    var backgroundColor = colorScale(0.5).css();
+                    var borderColor = color;
+
+
+                    createElement("div", div, {
+                        display: "inline-block",
+                        float: "left",
+                        backgroundColor: backgroundColor,
+                        borderColor: borderColor
+                    }).className = "source-manager-account-icon";
+
                 }
+                else if (selectedRecord==="Sources"){
+
+                    var cell = createCell("source", {
+                        color: vendorColor,
+                        vendor: vendorName,
+                        account: name
+                    });
+
+                    row.set(0, cell);
+                    if (true) return;
+                }
+
+
+
+                if (vendorName) name += " (" + vendorName + ")";
+                createElement("div", div, {
+                    float: "left",
+                    display: "inline-block"
+                }).innerHTML = name;
+
+
+
+                row.set(0, div);
+
             }
         });
         grid2.onSelectionChange = function(){
@@ -414,13 +474,9 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                     type: "textarea"
                 },
                 {
-                    name: "color",
-                    label: "Color",
-                    type: new javaxt.dhtml.ComboBox(
-                        createElement("div"),{
-                            style: config.style.combobox
-                        }
-                    )
+                    name: "logo",
+                    label: "Logo",
+                    type: createUploadPanel()
                 },
                 {
                     name: "active",
@@ -462,6 +518,8 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                         if (!account.info) account.info = {};
                         account.info.color = getColor(account.color);
                         delete account.color;
+                        if (account.logo) account.info.logo = account.logo;
+                        delete account.logo;
 
 
 
@@ -486,28 +544,21 @@ javaxt.express.finance.SourceManager = function(parent, config) {
 
 
 
-      //Update color field
-        addColorPicker("color", form);
-
 
         var reset = function(){
             form.reset();
-            var defaultColor = "#6b6b6b";
             if (account){
                 editor.setTitle("Edit Account");
                 form.setValue("name", account.name);
                 form.setValue("description", account.description);
                 form.setValue("active", account.active);
-
-                var color;
-                if (account.info) color = account.info.color;
-                if (!color) color = defaultColor;
-                form.setValue("color", color);
+                if (account.info){
+                    form.setValue("logo", account.info.logo);
+                }
             }
             else{
                 editor.setTitle("New Account");
                 form.setValue("active", true);
-                form.setValue("color", defaultColor);
             }
         };
         reset();
@@ -549,15 +600,6 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                     name: "number",
                     label: "Account Number",
                     type: "text"
-                },
-                {
-                    name: "color",
-                    label: "Color",
-                    type: new javaxt.dhtml.ComboBox(
-                        createElement("div"),{
-                            style: config.style.combobox
-                        }
-                    )
                 },
                 {
                     name: "active",
@@ -637,13 +679,10 @@ javaxt.express.finance.SourceManager = function(parent, config) {
         });
 
 
-      //Update color field
-        addColorPicker("color", form);
 
 
         var reset = function(){
             form.reset();
-            var defaultColor = "#6b6b6b";
             if (sourceAccount){
                 editor.setTitle("Edit Account");
                 form.setValue("name", sourceAccount.accountName);
@@ -658,10 +697,6 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                         break;
                     }
                 }
-                var color;
-                if (sourceAccount.info) color = sourceAccount.info.color;
-                if (!color) color = defaultColor;
-                form.setValue("color", color);
             }
             else{
                 editor.setTitle("New Account");
@@ -670,7 +705,6 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                     var vendor = vendors.get(i);
                     vendorField.add(vendor.name, vendor.id);
                 }
-                form.setValue("color", defaultColor);
             }
         };
         reset();
@@ -807,7 +841,6 @@ javaxt.express.finance.SourceManager = function(parent, config) {
 
         var reset = function(){
             form.reset();
-            var defaultColor = "#6b6b6b";
             if (vendor){
                 editor.setTitle("Edit Vendor");
                 form.setValue("name", vendor.name);
@@ -816,13 +849,13 @@ javaxt.express.finance.SourceManager = function(parent, config) {
 
                 var color;
                 if (vendor.info) color = vendor.info.color;
-                if (!color) color = defaultColor;
+                if (!color) color = config.defaultColor;
                 form.setValue("color", color);
             }
             else{
                 editor.setTitle("New Vendor");
                 form.setValue("active", true);
-                form.setValue("color", defaultColor);
+                form.setValue("color", config.defaultColor);
             }
         };
         reset();
@@ -956,6 +989,63 @@ javaxt.express.finance.SourceManager = function(parent, config) {
     };
 
 
+  //**************************************************************************
+  //** createUploadPanel
+  //**************************************************************************
+    var createUploadPanel = function(){
+
+      //Create div with enough height to match the preview panel
+        var div = createElement("div", {
+            width: "100%",
+            height: "200px",
+            textAlign: "center"
+        });
+        div.className = "form-input";
+
+
+
+      //Create thumbnailEditor
+        var thumbnailEditor = new javaxt.dhtml.ThumbnailEditor(div, {
+            thumbnailWidth: 150,
+            thumbnailHeight: 150,
+            readOnly: true,
+            sliders: false,
+            mask: false,
+            style: {
+                backgroundColor: "#fff",
+                uploadArea: "logo-upload-area"
+            }
+        });
+
+
+      //Update vertical position of the thumbnailEditor
+        thumbnailEditor.el.className = "middle";
+
+
+      //Create form input
+        var input = {
+            el: div,
+            getValue: function(){
+                return thumbnailEditor.getImage("png", true);
+            },
+            setValue: function(src){
+                thumbnailEditor.setImage(src);
+            },
+            onChange: function(){}
+        };
+
+
+      //Watch for changes to the thumbnailEditor and relay it to the form input
+        thumbnailEditor.onChange = function(){
+            input.onChange();
+        };
+
+
+      //Return form input
+        return input;
+    };
+
+
 
   //**************************************************************************
   //** Utils
@@ -969,6 +1059,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
     var createElement = javaxt.dhtml.utils.createElement;
 
     var warn = javaxt.express.finance.utils.warn;
+    var createCell = javaxt.express.finance.utils.createCell;
     var createSpacer = javaxt.express.finance.utils.createSpacer;
     var createButton = javaxt.express.finance.utils.createButton;
     var createWaitMask = javaxt.express.finance.utils.createWaitMask;
