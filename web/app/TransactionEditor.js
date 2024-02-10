@@ -86,14 +86,6 @@ javaxt.express.finance.TransactionEditor = function(config) {
             ],
             buttons: [
                 {
-                    name: "Cancel",
-                    onclick: function(){
-                        form.clear();
-                        win.close();
-                        me.onCancel();
-                    }
-                },
-                {
                     name: "Save",
                     onclick: function(){
 
@@ -104,6 +96,14 @@ javaxt.express.finance.TransactionEditor = function(config) {
                         }
 
                         me.onSubmit();
+                    }
+                },
+                {
+                    name: "Cancel",
+                    onclick: function(){
+                        form.clear();
+                        win.close();
+                        me.onCancel();
                     }
                 }
             ]
