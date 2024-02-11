@@ -6,23 +6,22 @@ if(!javaxt.express.finance) javaxt.express.finance={};
 //**  AccountDashboard
 //******************************************************************************
 /**
- *   Panel used to render a list of reports
+ *   Panel used to render income and expense reports for a specific account
  *
  ******************************************************************************/
 
 javaxt.express.finance.AccountDashboard = function(parent, config) {
 
     var me = this;
-    var orgConfig = config;
     var defaultConfig = {
         style: javaxt.express.finance.style,
         dateFormat: "M/d/yyyy",
         timezone: "America/New_York"
     };
     var mainDiv;
-    var menu;
     var accountDetails, pieChart, barGraph, transactionsPanel; //panels
     var accounts, vendors, sources, sourceAccounts, accountStats; //DataStores
+    var yearList, reportList; //comboboxes
     var transactionEditor; //window
     var spacing = 30; //panel spacing
     var link;
@@ -51,15 +50,31 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
         config.timezone = config.timezone.trim().replace(" ", "_");
 
 
+        var table = createTable(parent);
+        addShowHide(table);
+
+
+      //Create toolbar
+        createToolbar(table.addRow().addColumn("panel-toolbar"));
 
 
       //Create main div
-        mainDiv = createElement("div", parent, {
+        var td = table.addRow().addColumn({
+            height: "100%"
+        });
+        mainDiv = createElement("div", td, {
             height: "100%",
             position: "relative"
         });
-        me.el = mainDiv;
+
+        me.el = table;
     };
+
+
+  //**************************************************************************
+  //** onClose
+  //**************************************************************************
+    this.onClose = function(){};
 
 
   //**************************************************************************
@@ -74,15 +89,19 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
         accountStats = datastores.accountStats;
 
 
-console.log(datastores);
-
-
+        yearList.clear();
+        reportList.setValue("Compare Previous Year", true);
 
 
         get("report/DistinctYears?accountID=" + account.id, {
             success: function(text){
                 var years = JSON.parse(text);
                 var year = years.length>0 ? years[0] : new Date().getFullYear();
+
+                years.forEach((y)=>{
+                    yearList.add(y);
+                });
+                yearList.setValue(year, true);
 
 
                 getAccountSummary(account, year, function(income, expenses){
@@ -103,6 +122,18 @@ console.log(datastores);
                 });
             }
         });
+    };
+
+
+  //**************************************************************************
+  //** close
+  //**************************************************************************
+    var close = function(){
+        if (transactionsPanel) transactionsPanel.hide();
+        if (pieChart) pieChart.hide();
+        if (barGraph) barGraph.hide();
+        if (accountDetails) accountDetails.hide();
+        me.onClose();
     };
 
 
@@ -272,10 +303,7 @@ console.log(datastores);
         if (!accountDetails){
             accountDetails = createPanel(mainDiv, {
                 onClose: function(){
-                    if (transactionsPanel) transactionsPanel.hide();
-                    if (pieChart) pieChart.hide();
-                    if (barGraph) barGraph.hide();
-                    accountDetails.hide();
+                    close();
 
                 },
                 settings: true
@@ -291,6 +319,7 @@ console.log(datastores);
                 setSubTitle(subtitle);
             };
 
+            /*
             accountDetails.settings.onclick = function(e){
                 var rect = javaxt.dhtml.utils.getRect(this);
                 var x = rect.x + rect.width-5;
@@ -298,7 +327,7 @@ console.log(datastores);
                 if (!menu) menu = createMenu();
                 menu.showAt(x, y, "right", "middle");
             };
-
+            */
 
             var download = createElement("div", accountDetails.settings.parentNode);
             download.className = "report-download noselect";
@@ -1396,6 +1425,75 @@ console.log(datastores);
     };
 
 
+  //**************************************************************************
+  //** createToolbar
+  //**************************************************************************
+    var createToolbar = function(parent){
+        var table = createTable(parent);
+        table.style.width = "";
+        var tr = table.addRow();
+
+        var backButton = createButton(tr.addColumn(), {
+            label: "Reports",
+            icon: "fas fa-th" //"fas fa-arrow-left"
+        });
+        backButton.onClick = close;
+
+
+        createSpacer(tr.addColumn({verticalAlign: "bottom"}));
+
+        var onChange = function(){
+            var year = parseInt(yearList.getValue());
+            var type = reportList.getValue();
+            var account = accountDetails.account;
+
+            var callback = function(income, expenses){
+                renderAccountSummary(income, expenses, account, year, type);
+            };
+
+            if (type==="months"){
+                getAccountSummaryByMonth(account, year, callback);
+            }
+            else{
+                getAccountSummary(account, year, callback);
+            }
+        };
+
+
+        tr.addColumn("toolbar-label").innerText = "Year:";
+        yearList = new javaxt.dhtml.ComboBox(tr.addColumn(), {
+            style: merge({width:"100px"}, config.style.combobox),
+            scrollbar: true,
+            readOnly: true
+        });
+        yearList.el.style.marginRight = "15px";
+        yearList.onChange = onChange;
+
+
+        tr.addColumn("toolbar-label").innerText = "Report:";
+        reportList = new javaxt.dhtml.ComboBox(tr.addColumn(), {
+            style: config.style.combobox,
+            scrollbar: true,
+            readOnly: true,
+            options: [
+                {
+                    label: "Compare Previous Year",
+                    value: "prevYear"
+                },
+                {
+                    label: "Show Montly Average",
+                    value: "montlyAvg"
+                },
+                {
+                    label: "Show Individual Months",
+                    value: "months"
+                }
+            ]
+        });
+
+        reportList.onChange = onChange;
+    };
+
 
   //**************************************************************************
   //** createMenu
@@ -1412,92 +1510,6 @@ console.log(datastores);
         var contentDiv = createElement("div", innerDiv);
         contentDiv.style.padding = "5px";
 
-
-        var form = new javaxt.dhtml.Form(contentDiv, {
-            style: config.style.form,
-            items: [
-                {
-                    name: "year",
-                    label: "Year",
-                    type: createComboBox({
-                        style: config.style.combobox,
-                        scrollbar: true
-                    })
-                },
-                {
-                    name: "type",
-                    label: "Columns",
-                    type: "radio",
-                    alignment: "vertical",
-                    options: [
-                        {
-                            label: "Compare Previous Year",
-                            value: "prevYear"
-                        },
-                        {
-                            label: "Show Montly Average",
-                            value: "montlyAvg"
-                        },
-                        {
-                            label: "Show Individual Months",
-                            value: "months"
-                        }
-                    ]
-                }
-            ],
-            buttons: [
-                {
-                    name: "Update",
-                    onclick: function(){
-                        var year = parseInt(form.getValue("year"));
-                        var type = form.getValue("type");
-                        var account = accountDetails.account;
-                        var callback = function(income, expenses){
-                            renderAccountSummary(income, expenses, account, year, type);
-                        };
-
-                        if (type==="months"){
-                            getAccountSummaryByMonth(account, year, callback);
-                        }
-                        else{
-                            getAccountSummary(account, year, callback);
-                        }
-
-                        menu.hide();
-                    }
-                }
-            ]
-        });
-
-
-        callout.onShow = function(){
-
-          //Update type
-            if (accountDetails.type){
-                form.setValue("type", accountDetails.type);
-            }
-            else{
-                form.setValue("type", "montlyAvg");
-            }
-
-
-          //Update year
-            var year = form.findField("year");
-            year.clear();
-            var arr = accountDetails.years;
-            if (arr){
-                for (var i=0; i<arr.length; i++){
-                    year.add(arr[i]);
-                }
-
-                if (accountDetails.year){
-                    year.setValue(accountDetails.year);
-                }
-                else {
-                    if (arr.length>0) year.setValue(arr[0]);
-                }
-            }
-        };
 
         return callout;
     };
@@ -1601,14 +1613,6 @@ console.log(datastores);
 
 
   //**************************************************************************
-  //** createComboBox
-  //**************************************************************************
-    var createComboBox = function(comboboxConfig){
-        return new javaxt.dhtml.ComboBox(createElement("div"), comboboxConfig);
-    };
-
-
-  //**************************************************************************
   //** createCanvas
   //**************************************************************************
     var createCanvas = function(parent, style){
@@ -1704,11 +1708,13 @@ console.log(datastores);
     var get = javaxt.dhtml.utils.get;
     var merge = javaxt.dhtml.utils.merge;
     var onRender = javaxt.dhtml.utils.onRender;
+    var addShowHide = javaxt.dhtml.utils.addShowHide;
     var createTable = javaxt.dhtml.utils.createTable;
     var createElement = javaxt.dhtml.utils.createElement;
 
     var createCell = javaxt.express.finance.utils.createCell;
     var createButton = javaxt.express.finance.utils.createButton;
+    var createSpacer = javaxt.express.finance.utils.createSpacer;
     var createDoughnut = javaxt.express.finance.utils.createDoughnut;
     var createBargraph = javaxt.express.finance.utils.createBargraph;
     var addLegend = javaxt.express.finance.utils.addLegend;
