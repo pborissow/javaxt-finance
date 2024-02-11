@@ -20,7 +20,7 @@ javaxt.express.finance.Reports = function(parent, config) {
         timezone: "America/New_York"
     };
     var mainDiv;
-    var reportList, accountDashboard;
+    var reportList, reportEditor, accountDashboard;
     var accounts, vendors, sources, sourceAccounts, accountStats; //DataStores
 
 
@@ -83,6 +83,7 @@ javaxt.express.finance.Reports = function(parent, config) {
                 var account = accounts.get(i);
                 addReport(account);
             }
+            addNewReportOption();
 
             accounts.addEventListener("add", function(account){
                 addReport(account);
@@ -146,6 +147,9 @@ javaxt.express.finance.Reports = function(parent, config) {
 
             if (!accountDashboard){
                 accountDashboard = new javaxt.express.finance.AccountDashboard(mainDiv, config);
+                accountDashboard.onClose = function(){
+                    reportList.show();
+                };
             }
 
             reportList.hide(function(){
@@ -161,129 +165,21 @@ javaxt.express.finance.Reports = function(parent, config) {
     };
 
 
-
-
-
   //**************************************************************************
-  //** createMenu
+  //** addNewReportOption
   //**************************************************************************
-    var createMenu = function(){
-        var callout = new javaxt.dhtml.Callout(document.body, {
-            style: {
-                panel: "callout-panel",
-                arrow: "callout-arrow"
-            }
-        });
-
-        var innerDiv = callout.getInnerDiv();
-        var contentDiv = createElement("div", innerDiv);
-        contentDiv.style.padding = "5px";
-
-
-        var form = new javaxt.dhtml.Form(contentDiv, {
-            style: config.style.form,
-            items: [
-                {
-                    name: "year",
-                    label: "Year",
-                    type: createComboBox({
-                        style: config.style.combobox,
-                        scrollbar: true
-                    })
-                },
-                {
-                    name: "type",
-                    label: "Columns",
-                    type: "radio",
-                    alignment: "vertical",
-                    options: [
-                        {
-                            label: "Compare Previous Year",
-                            value: "prevYear"
-                        },
-                        {
-                            label: "Show Montly Average",
-                            value: "montlyAvg"
-                        },
-                        {
-                            label: "Show Individual Months",
-                            value: "months"
-                        }
-                    ]
-                }
-            ],
-            buttons: [
-                {
-                    name: "Update",
-                    onclick: function(){
-                        var year = parseInt(form.getValue("year"));
-                        var type = form.getValue("type");
-
-
-
-                        var callback = function(income, expenses){
-                            renderAccountSummary(income, expenses, account, year, type);
-                        };
-
-                        if (type==="months"){
-                            getAccountSummaryByMonth(account, year, callback);
-                        }
-                        else{
-                            getAccountSummary(account, year, callback);
-                        }
-
-
-                    }
-                }
-            ]
-        });
-
-
-        callout.onShow = function(){
-
-          //Update type
-            if (accountDetails.type){
-                form.setValue("type", accountDetails.type);
-            }
-            else{
-                form.setValue("type", "montlyAvg");
+    var addNewReportOption = function(){
+        var div = createElement("div", reportList, "new-report");
+        div.onclick = function(){
+            if (!reportEditor){
+                reportEditor = new javaxt.express.finance.ReportEditor(mainDiv, config);
             }
 
-
-          //Update year
-            var year = form.findField("year");
-            year.clear();
-            var arr = accountDetails.years;
-            if (arr){
-                for (var i=0; i<arr.length; i++){
-                    year.add(arr[i]);
-                }
-
-                if (accountDetails.year){
-                    year.setValue(accountDetails.year);
-                }
-                else {
-                    if (arr.length>0) year.setValue(arr[0]);
-                }
-            }
+            reportList.hide(function(){
+                reportEditor.update();
+            });
         };
-
-        return callout;
     };
-
-
-
-
-  //**************************************************************************
-  //** createComboBox
-  //**************************************************************************
-    var createComboBox = function(comboboxConfig){
-        return new javaxt.dhtml.ComboBox(createElement("div"), comboboxConfig);
-    };
-
-
-
-
 
 
   //**************************************************************************
@@ -294,15 +190,6 @@ javaxt.express.finance.Reports = function(parent, config) {
     var onRender = javaxt.dhtml.utils.onRender;
     var createTable = javaxt.dhtml.utils.createTable;
     var createElement = javaxt.dhtml.utils.createElement;
-    var createCell = javaxt.express.finance.utils.createCell;
-    var createButton = javaxt.express.finance.utils.createButton;
-
-    var createDoughnut = javaxt.express.finance.utils.createDoughnut;
-    var createBargraph = javaxt.express.finance.utils.createBargraph;
-    var addLegend = javaxt.express.finance.utils.addLegend;
-
-    var formatCurrency = javaxt.express.finance.utils.formatCurrency;
-    var getMomentFormat = javaxt.express.finance.utils.getMomentFormat;
 
     var getSources = javaxt.express.finance.utils.getSources;
     var getAccounts = javaxt.express.finance.utils.getAccounts;
