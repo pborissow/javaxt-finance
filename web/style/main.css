@@ -500,6 +500,14 @@
 }
 
 
+.toolbar-button-icon.fas.fa-th {
+    color: #777;
+    font-size: 16px;
+    line-height: 16px;
+}
+
+
+
 /**************************************************************************/
 /** menu-item-checkmark - unused!
 /**************************************************************************/
@@ -534,6 +542,17 @@
     background-color:#008000;
     left:7px;
     top:16px;
+}
+
+
+/**************************************************************************/
+/** Dashboard Panel
+/**************************************************************************/
+
+.dashboard-caption {
+    padding: 10px 0;
+    color: #777;
+    font-family: 'Montserrat', sans-serif;
 }
 
 
@@ -759,11 +778,13 @@
 /** Reports Panel
 /**************************************************************************/
 
+.new-report,
 .report-preview {
     display:inline-block;
     float: left;
 }
 
+.new-report,
 .report-preview {
     width:150px;
     height:150px;
@@ -804,6 +825,46 @@
     opacity: 1;
     transition: all .4s ease;
 }
+
+
+
+.new-report {
+    box-shadow: none;
+    border: 2px dashed #7e93a0;
+    background-color: #ffffff;
+    text-align:center;
+    opacity: 0.5;
+    border:1px solid #bcbcbc;
+    color:#777;
+}
+
+.new-report::before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f067"; /*cloud-upload-alt*/
+    display: block;
+    vertical-align: middle;
+    font-weight: 900;
+    font-size: 67px;
+    color: #c2cfd8;
+    margin: 32px 0 25px;
+}
+
+.new-report::after {
+    content: "Create New Report";
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+}
+
+.new-report:hover{
+    opacity: 1;
+    color: #8e9da7;
+    background-color: #f2f5f7;
+    border:1px solid #dcdcdc;
+    box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+
 
 .report-header { /** Used in conjunction with window-header */
     background-color: #f0f8ff;
