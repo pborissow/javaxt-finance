@@ -9,8 +9,11 @@ import javaxt.json.*;
 import java.util.*;
 import java.math.BigDecimal;
 
+//Scripting includes
 import javax.script.*;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
+import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import org.openjdk.nashorn.api.scripting.NashornScriptEngine;
 
 
 //******************************************************************************
@@ -62,8 +65,9 @@ public class Parser {
                 ScriptObjectMirror parser = null;
                 if (columnParser!=null){
                     try{
-                        ScriptEngineManager factory = new ScriptEngineManager();
-                        ScriptEngine engine = factory.getEngineByName("nashorn");
+                        String[] options = new String[] { "--language=es6" };
+                        NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+                        NashornScriptEngine engine = (NashornScriptEngine) factory.getScriptEngine(options);
                         Compilable compilable = (Compilable) engine;
                         CompiledScript script = compilable.compile(columnParser);
                         Bindings bindings = engine.createBindings();
