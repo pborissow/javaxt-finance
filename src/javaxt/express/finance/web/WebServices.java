@@ -183,6 +183,9 @@ public class WebServices extends WebService {
 
         if (c.equals(Transaction.class)){
             if (op.equals("list")){
+
+
+              //Rewrite SQL when "q=" parameter is found
                 String q = request.getParameter("q").toString();
                 if (q!=null && !q.isBlank()){
 
@@ -201,32 +204,18 @@ public class WebServices extends WebService {
                                 javaxt.utils.Value q = request.getParameter("q");
                                 try{
                                     if (q.isNumeric()){
-
-                                        super.visit((EqualsTo) CCJSqlParserUtil.parseCondExpression(
-                                        "amount=" + q.toString()));
+                                        super.visit((OrExpression) CCJSqlParserUtil.parseCondExpression(
+                                        "amount=" + q + " OR amount=-" + q));
                                     }
                                     else if (isDate(q.toString())){
-
                                         javaxt.utils.Date startDate = q.toDate().removeTimeStamp();
                                         javaxt.utils.Date endDate = startDate.clone().add(1, "day");
-
-                                        StringBuilder str = new StringBuilder();
-                                        str.append("date>='");
-                                        str.append(startDate.toISOString());
-                                        str.append("'");
-                                        str.append(" and ");
-                                        str.append("date<'");
-                                        str.append(endDate.toISOString());
-                                        str.append("'");
-
                                         super.visit((AndExpression) CCJSqlParserUtil.parseCondExpression(
-                                        str.toString()));
+                                        "date>='" + startDate.toISOString() + "' and date<'" + endDate.toISOString() + "'"));
                                     }
                                     else{
-
-                                        LikeExpression like = (LikeExpression) CCJSqlParserUtil.parseCondExpression(
-                                        "lower(' ' || description) like '% " + q.toString().toLowerCase() + "%'");
-                                        super.visit(like);
+                                        super.visit((LikeExpression) CCJSqlParserUtil.parseCondExpression(
+                                        "lower(' ' || description) like '% " + q.toString().trim().toLowerCase() + "%'"));
                                     }
                                 }
                                 catch(Exception e){
@@ -252,7 +241,7 @@ public class WebServices extends WebService {
         return super.getRecordset(request, op, c, sql, conn);
     }
 
-    
+
   //**************************************************************************
   //** isDate
   //**************************************************************************
