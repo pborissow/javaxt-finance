@@ -13,17 +13,19 @@
 <script src="lib/*.js"></script>
 <link href="lib/*.css" rel="stylesheet" />
 
-<!-- Special Case for Moment.js -->
+<!-- Add specific js and css files to override ordering of the wildcard includes -->
 <script src="lib/moment/moment.min.js"></script>
 <script src="lib/moment/moment-timezone-with-data.min.js"></script>
+<link href="lib/bluewave/bluewave-explorer.css" rel="stylesheet" />
 
 
-<!-- This Application -->
+<!-- Add this application -->
 <link href="style/main.css" rel="stylesheet" />
 <script src="style/main.js"></script>
 <script src="app/*.js"></script>
 
 
+<!-- Wait for everything to load and start the main app -->
 <script>
 window.onload = function() {
     javaxt.dhtml.utils.updateDOM();
