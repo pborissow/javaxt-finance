@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+
+        <!-- Ant-style directory layout -->
+        <src.dir>src</src.dir>
+
+
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
+        <buildDate>${maven.build.timestamp}</buildDate>
+
+    </properties>
+
+  <!-- =========================================================== -->
+  <!--     Module Description                                      -->
+  <!-- =========================================================== -->
+    <groupId>javaxt</groupId>
+    <artifactId>finance</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+
+  <!-- =========================================================== -->
+  <!--     Dependency Management                                   -->
+  <!-- =========================================================== -->
+    <repositories>
+      <repository>
+        <id>javaxt.com</id>
+        <url>https://www.javaxt.com/maven</url>
+      </repository>
+      <repository>
+        <id>jsqlparser-snapshots</id>
+        <snapshots>
+          <enabled>true</enabled>
+        </snapshots>
+        <url>https://oss.sonatype.org/content/groups/public/</url>
+      </repository>
+    </repositories>
+    <dependencies>
+
+
+      <!-- JavaXT Express (app server and java extensions) -->
+      <dependency>
+        <groupId>javaxt</groupId>
+        <artifactId>javaxt-express</artifactId>
+        <version>1.4.0</version>
+      </dependency>
+
+
+      <!-- JavaScript Parser -->
+      <dependency>
+        <groupId>org.openjdk.nashorn</groupId>
+        <artifactId>nashorn-core</artifactId>
+        <version>15.4</version>
+      </dependency>
+
+
+      <!-- SQL Parser -->
+      <dependency>
+        <groupId>com.github.jsqlparser</groupId>
+        <artifactId>jsqlparser</artifactId>
+        <version>4.1</version>
+      </dependency>
+
+
+      <!-- H2 Database -->
+      <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>2.2.224</version>
+      </dependency>
+
+    </dependencies>
+
+
+
+  <!-- =========================================================== -->
+  <!--     Build Info                                              -->
+  <!-- =========================================================== -->
+    <build>
+
+        <sourceDirectory>${src.dir}</sourceDirectory>
+
+
+        <plugins>
+
+            <!-- Copy dependencies into the lib folder -->
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+            <!-- Create main app -->
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                            <mainClass>javaxt.express.finance.Main</mainClass>
+                        </manifest>
+                        <manifestEntries>
+                          <Built-By>JavaXT</Built-By>
+                          <Bundle-Name>JavaXT Finance</Bundle-Name>
+                          <Bundle-Version>${project.version}</Bundle-Version>
+                          <Bundle-Date>${buildDate}</Bundle-Date>
+                          <Implementation-Title>JavaXT Finance</Implementation-Title>
+                          <Implementation-Version>${project.version}</Implementation-Version>
+                          <Implementation-URL>https://github.com/pborissow/javaxt-finance</Implementation-URL>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+
+
+            <!-- Move jars to the dist directory -->
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-antrun-plugin</artifactId>
+              <version>1.8</version>
+              <executions>
+                <execution>
+                  <phase>install</phase>
+                  <configuration>
+                    <target>
+                      <move file="${project.build.directory}/${project.artifactId}-${project.version}.jar" todir="${project.basedir}/dist" />
+                      <move todir="${project.basedir}/dist/lib" >
+                          <fileset dir="${project.build.directory}/lib" />
+                      </move>
+                    </target>
+                  </configuration>
+                  <goals>
+                    <goal>run</goal>
+                  </goals>
+                </execution>
+              </executions>
+            </plugin>
+
+
+
+      </plugins>
+    </build>
+</project>
