@@ -51,7 +51,7 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
 
 
         var table = createTable(parent);
-        addShowHide(table);
+
 
 
       //Create toolbar
@@ -68,6 +68,7 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
         });
 
         me.el = table;
+        addShowHide(me);
     };
 
 

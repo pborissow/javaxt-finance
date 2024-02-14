@@ -149,6 +149,7 @@ javaxt.express.finance.Reports = function(parent, config) {
                 accountDashboard = new javaxt.express.finance.AccountDashboard(mainDiv, config);
                 accountDashboard.onClose = function(){
                     reportList.show();
+                    accountDashboard.hide();
                 };
             }
 
@@ -160,6 +161,7 @@ javaxt.express.finance.Reports = function(parent, config) {
                     sourceAccounts: sourceAccounts,
                     accountStats: accountStats
                 });
+                accountDashboard.show();
             });
         };
     };
@@ -173,10 +175,15 @@ javaxt.express.finance.Reports = function(parent, config) {
         div.onclick = function(){
             if (!reportEditor){
                 reportEditor = new javaxt.express.finance.ReportEditor(mainDiv, config);
+                reportEditor.onClose = function(){
+                    reportList.show();
+                    reportEditor.hide();
+                };
             }
 
             reportList.hide(function(){
                 reportEditor.update();
+                reportEditor.show();
             });
         };
     };

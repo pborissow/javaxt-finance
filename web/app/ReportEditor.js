@@ -32,7 +32,7 @@ javaxt.express.finance.ReportEditor = function(parent, config) {
 
 
         var table = createTable(parent);
-        me.el = table;
+
 
 
       //Create toolbar
@@ -42,6 +42,8 @@ javaxt.express.finance.ReportEditor = function(parent, config) {
       //Create main div
         createBody(table.addRow().addColumn({ height: "100%" }));
 
+        me.el = table;
+        addShowHide(me);
     };
 
 
@@ -148,6 +150,7 @@ javaxt.express.finance.ReportEditor = function(parent, config) {
   //**************************************************************************
     var createElement = javaxt.dhtml.utils.createElement;
     var createTable = javaxt.dhtml.utils.createTable;
+    var addShowHide = javaxt.dhtml.utils.addShowHide;
     var merge = javaxt.dhtml.utils.merge;
     var get = javaxt.dhtml.utils.get;
 
