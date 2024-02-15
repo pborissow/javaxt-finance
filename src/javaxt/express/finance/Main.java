@@ -3,7 +3,7 @@ package javaxt.express.finance;
 import javaxt.express.finance.web.WebApp;
 import javaxt.express.finance.utils.*;
 
-import static javaxt.utils.Console.console;
+import static javaxt.utils.Console.*;
 import static javaxt.express.ConfigFile.*;
 
 import javaxt.io.Jar;
@@ -29,15 +29,7 @@ public class Main {
   /** Entry point for the application.
    */
     public static void main(String[] inputs) throws Exception {
-        HashMap<String, String> args = console.parseArgs(inputs);
-
-
-      //Check Java version
-        int javaVersion = javaxt.utils.Java.getVersion();
-        if (javaVersion!=11){
-            System.out.println("Invalid Java Version: " + javaVersion);
-            return;
-        }
+        HashMap<String, String> args = parseArgs(inputs);
 
 
       //Get jar file and schema
@@ -71,19 +63,21 @@ public class Main {
             Maintenance.parseArgs(inputs, database);
         }
         else{
-            try{
-                if (!Config.has("webserver")){
-                    throw new Exception("Config file is missing \"webserver\" config information");
-                }
-                else{
-                    JSONObject webConfig = Config.get("webserver").toJSONObject();
-                    if (args.containsKey("-port")) webConfig.set("port", Integer.parseInt(args.get("-port")));
-                    new WebApp(webConfig, database).start();
-                }
+
+          //Get web config
+            JSONObject webConfig = Config.get("webserver").toJSONObject();
+            if (webConfig==null){
+                System.out.println("Config file is missing \"webserver\" config information");
+                return;
             }
-            catch(Exception e){
-                e.printStackTrace();
-            }
+
+          //Override port config as needed
+            Integer port = getValue(args, "-p", "-port").toInteger();
+            if (port!=null) webConfig.set("port", port);
+
+
+          //Start the web server
+            new WebApp(webConfig, database).start();
         }
     }
 }
