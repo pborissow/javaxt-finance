@@ -4,6 +4,7 @@ import javaxt.json.*;
 import javaxt.sql.*;
 import java.util.*;
 
+import static javaxt.express.ConfigFile.*;
 
 //******************************************************************************
 //**  Config Class
@@ -78,6 +79,9 @@ public class Config {
             properties.setProperty("MODE", "PostgreSQL");
             properties.setProperty("DATABASE_TO_LOWER", "TRUE");
             properties.setProperty("DEFAULT_NULL_ORDERING", "HIGH");
+
+          //Update list of reserved keywords to exclude "year"
+            properties.setProperty("NON_KEYWORDS", "YEAR");
         }
 
 
@@ -182,97 +186,5 @@ public class Config {
   //**************************************************************************
     public static javaxt.sql.Database getDatabase(){
         return config.getDatabase();
-    }
-
-
-  //**************************************************************************
-  //** getFile
-  //**************************************************************************
-  /** Returns a File for a given path
-   *  @param path Full canonical path to a file or a relative path (relative
-   *  to the jarFile)
-   */
-    public static javaxt.io.File getFile(String path, javaxt.io.File jarFile){
-        javaxt.io.File file = new javaxt.io.File(path);
-        if (!file.exists()){
-            file = new javaxt.io.File(jarFile.MapPath(path));
-        }
-        return file;
-    }
-
-    private static javaxt.io.File getFile(String path, java.io.File jarFile){
-        return getFile(path, new javaxt.io.File(jarFile));
-    }
-
-
-  //**************************************************************************
-  //** updateDir
-  //**************************************************************************
-  /** Used to update a path to a directory defined in a config file. Resolves
-   *  both canonical and relative paths (relative to the configFile).
-   */
-    public static void updateDir(String key, JSONObject config, javaxt.io.File configFile, boolean create){
-        if (config.has(key)){
-            String path = config.get(key).toString();
-            if (path==null){
-                config.remove(key);
-            }
-            else{
-                path = path.trim();
-                if (path.length()==0){
-                    config.remove(key);
-                }
-                else{
-
-                    javaxt.io.Directory dir = new javaxt.io.Directory(path);
-                    if (!dir.exists()) dir = new javaxt.io.Directory(configFile.MapPath(path));
-
-                    if (!dir.exists() && create) dir.create();
-
-
-                    if (dir.exists()){
-                        config.set(key, dir.toString());
-                    }
-                    else{
-                        config.remove(key);
-                    }
-                }
-            }
-        }
-    }
-
-
-  //**************************************************************************
-  //** updateFile
-  //**************************************************************************
-  /** Used to update a path to a file defined in a config file. Resolves
-   *  both canonical and relative paths (relative to the configFile).
-   */
-    public static void updateFile(String key, JSONObject config, javaxt.io.File configFile){
-        if (config.has(key)){
-            String path = config.get(key).toString();
-            if (path==null){
-                config.remove(key);
-            }
-            else{
-                path = path.trim();
-                if (path.length()==0){
-                    config.remove(key);
-                }
-                else{
-
-                    javaxt.io.File file = new javaxt.io.File(path);
-                    if (!file.exists()) file = new javaxt.io.File(configFile.MapPath(path));
-
-                    config.set(key, file.toString());
-//                    if (file.exists()){
-//                        config.set(key, file.toString());
-//                    }
-//                    else{
-//                        config.remove(key);
-//                    }
-                }
-            }
-        }
     }
 }
