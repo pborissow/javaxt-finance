@@ -2,6 +2,7 @@ package javaxt.express.finance;
 import javaxt.express.utils.DbUtils;
 import javaxt.json.*;
 import javaxt.sql.*;
+import java.util.*;
 
 
 //******************************************************************************
@@ -63,6 +64,26 @@ public class Config {
 
       //Get database connection info
         Database database = getDatabase();
+
+
+      //Update database properties as needed
+        if (database.getDriver().equals("H2")){
+
+          //Set H2 to PostgreSQL mode
+            Properties properties = database.getProperties();
+            if (properties==null){
+                properties = new java.util.Properties();
+                database.setProperties(properties);
+            }
+            properties.setProperty("MODE", "PostgreSQL");
+            properties.setProperty("DATABASE_TO_LOWER", "TRUE");
+            properties.setProperty("DEFAULT_NULL_ORDERING", "HIGH");
+        }
+
+
+      //Enable database caching
+        database.enableMetadataCache(true);
+
 
 
       //Initialize schema (create tables, indexes, etc)
