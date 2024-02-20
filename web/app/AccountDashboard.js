@@ -22,7 +22,7 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
     var accountDetails, pieChart, barGraph, transactionsPanel; //panels
     var accounts, vendors, sources, sourceAccounts, accountStats; //DataStores
     var yearList, reportList; //comboboxes
-    var transactionEditor; //window
+    var downloadOptions, transactionEditor; //windows
     var spacing = 30; //panel spacing
     var link;
 
@@ -307,7 +307,7 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
                     close();
 
                 },
-                settings: true
+                settings: false
             });
 
             var setSubTitle = accountDetails.setSubTitle;
@@ -318,95 +318,6 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
                 subtitle.style.display = "inline-block";
                 subtitle.innerText = text;
                 setSubTitle(subtitle);
-            };
-
-            /*
-            accountDetails.settings.onclick = function(e){
-                var rect = javaxt.dhtml.utils.getRect(this);
-                var x = rect.x + rect.width-5;
-                var y = rect.y + (rect.height/2);
-                if (!menu) menu = createMenu();
-                menu.showAt(x, y, "right", "middle");
-            };
-            */
-
-            var download = createElement("div", accountDetails.settings.parentNode);
-            download.className = "report-download noselect";
-            download.innerHTML = '<i class="fas fa-long-arrow-alt-down"></i>';
-
-            download.onclick = function(){
-
-              //Get income and expenses as seperate arrays
-                var incomeRows = [];
-                var expenseRows;
-                var hasMonths = false;
-                var rows = accountDetails.getBody().getElementsByTagName("tr");
-                for (var i=0; i<rows.length; i++){
-                    var row = rows[i];
-                    if (row.className==="report-row"){
-                        if (expenseRows) expenseRows.push(row);
-                        else incomeRows.push(row);
-                    }
-                    if (row.className==="report-row-footer"){
-                        if (expenseRows) break;
-                        else expenseRows = [];
-                    }
-                    if (row.category){
-                        if (row.category.months) hasMonths = true;
-                    }
-                }
-                var data = {
-                    "Income": incomeRows,
-                    "Expenses": expenseRows
-                };
-
-
-              //Create csv
-                var csvContent = "Type,Category";
-                if (hasMonths) csvContent += ",Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec";
-                csvContent += ",Total";
-
-                for (var key in data) {
-                    if (data.hasOwnProperty(key)){
-                        var rows = data[key];
-
-                        for (var i=0; i<rows.length; i++){
-                            var row = rows[i];
-
-                            var col = row.childNodes;
-                            var name = col[0].innerText;
-                            var total = col[col.length-1].innerText;
-
-                            if (total!=="$0.00"){
-
-                                csvContent += "\r\n";
-                                csvContent += key + ",";
-
-                                if (name.indexOf(",")>-1) name = "\"" + name + "\"";
-                                csvContent += name + ",";
-
-                                if (hasMonths){
-                                    for (var j=0; j<12; j++){
-                                        var v = col[j+1].innerText;
-                                        if (v.length>0){
-                                            if (v.indexOf(",")>-1) v = "\"" + v + "\"";
-                                            csvContent += v;
-                                        }
-                                        csvContent += ",";
-                                    }
-                                }
-
-                                if (total.indexOf(",")>-1) total = "\"" + total + "\"";
-                                csvContent += total;
-                            }
-
-                        }
-                    }
-                }
-
-
-              //Download csv
-                downloadCSV(csvContent, "Income and Expenses");
             };
         }
 
@@ -677,6 +588,40 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
         };
 
 
+        //Get income and expenses as seperate arrays
+        accountDetails.getIncomeAndExpenses = function(){
+
+            var incomeRows = [];
+            var expenseRows;
+            var hasMonths = false;
+            var rows = accountDetails.getBody().getElementsByTagName("tr");
+            for (var i=0; i<rows.length; i++){
+                var row = rows[i];
+                var className = row.className;
+                if (className.indexOf("hidden")>-1) continue;
+
+                if (className.indexOf("report-row")>-1){
+                    if (expenseRows) expenseRows.push(row);
+                    else incomeRows.push(row);
+                }
+
+                if (className.indexOf("report-row-footer")>-1){
+                    if (expenseRows) break;
+                    else expenseRows = [];
+                }
+
+                if (row.category){
+                    if (row.category.months) hasMonths = true;
+                }
+            }
+            return {
+                "Income": incomeRows,
+                "Expenses": expenseRows,
+                hasMonths: hasMonths,
+                year: accountDetails.year,
+                account: accountDetails.account
+            };
+        };
 
 
         getAccountSummary(account, year-1, function(income2, expenses2){
@@ -1153,7 +1098,7 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
 
         var downloadButton = createButton(toolbar, {
             label: "Download",
-            icon: "downloadIcon",
+            icon: "fas fa-arrow-alt-circle-down", //"fas fa-long-arrow-alt-down"
             hidden: isMobile
         });
 
@@ -1235,85 +1180,97 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
                 transactionsPanel.clear();
             }
 
-            var startDate = moment.tz((year-1) + "-01-01 00:00", config.timezone).toISOString();
-            var endDate = moment.tz((year+1) + "-01-01 00:00", config.timezone).toISOString();
 
+            getTransactions(year, category, function(transactions){
 
-            var fields = "id,date,description,amount,categoryID,sourceID";
-            var where = "category_id=" + category.id + " and (date>='" + startDate + "' and date<'" + endDate + "')";
-            var orderBy = "date desc";
-            var url = "transactions?where=" + encodeURIComponent(where) + "&fields=" + fields +
-                "&orderBy=" + encodeURIComponent(orderBy) + "&limit=100000";
+              //Get records and monthly totals
+                var records = [];
+                var monthlyTotals = {};
+                for (var i=0; i<transactions.length; i++){
+                    var transaction = transactions[i];
+                    var id = transaction.id;
+                    var date = transaction.date;
+                    var desc = transaction.description;
+                    var amount = transaction.amount;
+                    var sourceID = transaction.sourceID;
 
-            get(url, {
-                success: function(text, xml, url, request){
-
-                  //Get records and monthly totals
-                    var records = [];
-                    var monthlyTotals = {};
-                    var transactions = normalizeResponse(request);
-                    for (var i=0; i<transactions.length; i++){
-                        var transaction = transactions[i];
-                        var id = transaction.id;
-                        var date = transaction.date;
-                        var desc = transaction.description;
-                        var amount = transaction.amount;
-                        var sourceID = transaction.sourceID;
-
-                        var m = moment.tz(date, config.timezone);
-                        if (m.year()===year){
-                            records.push([
-                                id,
-                                createCell("date", m, config.dateFormat),
-                                createCell("source", findSource(sourceID)),
-                                desc,
-                                createCell("currency", amount)
-                            ]);
-                        }
-
-                        var key = m.year()+"";
-                        var json = monthlyTotals[key];
-                        if (!json){
-                            json = {
-                                income: [0,0,0,0,0,0,0,0,0,0,0,0],
-                                expenses: [0,0,0,0,0,0,0,0,0,0,0,0]
-                            };
-                            monthlyTotals[key] = json;
-                        }
-
-                        if (category.isExpense===true){
-                            monthlyTotals[key].expenses[m.month()]+= amount;
-                        }
-                        else{
-                            monthlyTotals[key].income[m.month()]+= amount;
-                        }
+                    var m = moment.tz(date, config.timezone);
+                    if (m.year()===year){
+                        records.push([
+                            id,
+                            createCell("date", m, config.dateFormat),
+                            createCell("source", findSource(sourceID)),
+                            desc,
+                            createCell("currency", amount)
+                        ]);
                     }
 
-
-                  //Update transactionsPanel
-                    if (!transactionsPanel) createTransactionPanel(mainDiv);
-                    transactionsPanel.clear();
-                    transactionsPanel.setTitle(category.name);
-                    transactionsPanel.update(records);
-                    var xOffset = accountDetails.getWidth()+(spacing*2);
-                    if (!transactionsPanel.isOpen()){
-                        var x = xOffset;
-                        if (pieChart){ //and is pieChart in default position...
-                            x += pieChart.getWidth()+spacing;
-                        }
-                        transactionsPanel.showAt(x, spacing);
+                    var key = m.year()+"";
+                    var json = monthlyTotals[key];
+                    if (!json){
+                        json = {
+                            income: [0,0,0,0,0,0,0,0,0,0,0,0],
+                            expenses: [0,0,0,0,0,0,0,0,0,0,0,0]
+                        };
+                        monthlyTotals[key] = json;
                     }
 
-
-                  //Update barGraph
-                    updateBarGraph(category, monthlyTotals, xOffset);
-
-                },
-                failure: function(request){
-                    alert(request);
+                    if (category.isExpense===true){
+                        monthlyTotals[key].expenses[m.month()]+= amount;
+                    }
+                    else{
+                        monthlyTotals[key].income[m.month()]+= amount;
+                    }
                 }
+
+
+              //Update transactionsPanel
+                if (!transactionsPanel) createTransactionPanel(mainDiv);
+                transactionsPanel.clear();
+                transactionsPanel.setTitle(category.name);
+                transactionsPanel.update(records);
+                var xOffset = accountDetails.getWidth()+(spacing*2);
+                if (!transactionsPanel.isOpen()){
+                    var x = xOffset;
+                    if (pieChart){ //and is pieChart in default position...
+                        x += pieChart.getWidth()+spacing;
+                    }
+                    transactionsPanel.showAt(x, spacing);
+                }
+
+
+              //Update barGraph
+                updateBarGraph(category, monthlyTotals, xOffset);
             });
         }
+    };
+
+
+  //**************************************************************************
+  //** getTransactions
+  //**************************************************************************
+    var getTransactions = function(year, category, callback){
+
+        var startDate = moment.tz((year-1) + "-01-01 00:00", config.timezone).toISOString();
+        var endDate = moment.tz((year+1) + "-01-01 00:00", config.timezone).toISOString();
+
+
+        var fields = "id,date,description,amount,categoryID,sourceID";
+        var where = "category_id=" + category.id + " and (date>='" + startDate + "' and date<'" + endDate + "')";
+        var orderBy = "date desc";
+        var url = "transactions?where=" + encodeURIComponent(where) + "&fields=" + fields +
+            "&orderBy=" + encodeURIComponent(orderBy) + "&limit=100000";
+
+        get(url, {
+            success: function(text, xml, url, request){
+                var transactions = normalizeResponse(request);
+                callback.apply(me, [transactions]);
+            },
+            failure: function(request){
+                alert(request);
+            }
+        });
+
     };
 
 
@@ -1385,6 +1342,8 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
                     get("linkTransaction/" + transaction.id + "?categoryID="+ transaction.categoryID,  {
                         success: function(){
 
+transactionsPanel.close();
+if (true) return;
                           //Refresh panels
                             showReport(account);
 
@@ -1437,8 +1396,19 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
         var backButton = createButton(tr.addColumn(), {
             label: "Reports",
             icon: "fas fa-th" //"fas fa-arrow-left"
+//            label: "Back",
+//            icon: "fas fa-arrow-left"
         });
         backButton.onClick = close;
+
+        createSpacer(tr.addColumn({verticalAlign: "bottom"}));
+
+
+        var downloadButton = createButton(tr.addColumn(), {
+            label: "Download",
+            icon: "fas fa-arrow-alt-circle-down"
+        });
+        downloadButton.onClick = download;
 
 
         createSpacer(tr.addColumn({verticalAlign: "bottom"}));
@@ -1493,26 +1463,6 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
         });
 
         reportList.onChange = onChange;
-    };
-
-
-  //**************************************************************************
-  //** createMenu
-  //**************************************************************************
-    var createMenu = function(){
-        var callout = new javaxt.dhtml.Callout(document.body, {
-            style: {
-                panel: "callout-panel",
-                arrow: "callout-arrow"
-            }
-        });
-
-        var innerDiv = callout.getInnerDiv();
-        var contentDiv = createElement("div", innerDiv);
-        contentDiv.style.padding = "5px";
-
-
-        return callout;
     };
 
 
@@ -1660,6 +1610,208 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
 
 
   //**************************************************************************
+  //** download
+  //**************************************************************************
+    var download = function(){
+
+
+        if (!downloadOptions){
+
+            var win = createWindow({
+                title: "Download Options",
+                width: 350,
+                modal: true,
+                valign: "top",
+                style: config.style.window
+            });
+
+            downloadOptions = new javaxt.dhtml.Form(win.getBody(), {
+                style: config.style.form,
+                items: [
+                    {
+                        name: "download",
+                        label: "",
+                        type: "radio",
+                        alignment: "vertical",
+                        options: [
+                            {
+                                label: "Download Summary",
+                                value: "summary"
+                            },
+                            {
+                                label: "Download Transactions",
+                                value: "transactions"
+                            }
+                        ]
+                    }
+                ],
+                buttons: [
+                    {
+                        name: "Download",
+                        onclick: function(){
+                            win.close();
+
+
+                            var input = downloadOptions.getData();
+                            if (input.download==="summary"){
+                                downloadSummary();
+                            }
+                            else{
+                                downloadTransactions();
+                            }
+                        }
+                    },
+                    {
+                        name: "Cancel",
+                        onclick: function(){
+                            win.close();
+                        }
+                    }
+                ]
+            });
+
+            downloadOptions.show = function(){
+                downloadOptions.setValue("download", "summary");
+                win.show();
+            };
+        }
+
+        downloadOptions.show();
+    };
+
+
+  //**************************************************************************
+  //** downloadSummary
+  //**************************************************************************
+    var downloadSummary = function(){
+
+
+      //Get income and expenses as seperate arrays
+        var data = accountDetails.getIncomeAndExpenses();
+        var hasMonths = data.hasMonths;
+        console.log(data);
+
+
+      //Create csv
+        var csvContent = "Type,Category";
+        if (hasMonths) csvContent += ",Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec";
+        csvContent += ",Total";
+
+        for (var key in data) {
+            if (data.hasOwnProperty(key)){
+                var rows = data[key];
+
+                for (var i=0; i<rows.length; i++){
+                    var row = rows[i];
+
+                    var col = row.childNodes;
+                    var name = col[0].innerText;
+                    var total = col[col.length-1].innerText;
+
+                    if (total!=="$0.00"){
+
+                        csvContent += "\r\n";
+                        csvContent += key + ",";
+
+                        if (name.indexOf(",")>-1) name = "\"" + name + "\"";
+                        csvContent += name + ",";
+
+                        if (hasMonths){
+                            for (var j=0; j<12; j++){
+                                var v = col[j+1].innerText;
+                                if (v.length>0){
+                                    if (v.indexOf(",")>-1) v = "\"" + v + "\"";
+                                    csvContent += v;
+                                }
+                                csvContent += ",";
+                            }
+                        }
+
+                        if (total.indexOf(",")>-1) total = "\"" + total + "\"";
+                        csvContent += total;
+                    }
+
+                }
+            }
+        }
+
+
+      //Download csv
+        downloadCSV(csvContent, "Income and Expenses");
+
+    };
+
+
+  //**************************************************************************
+  //** downloadTransactions
+  //**************************************************************************
+    var downloadTransactions = function(){
+
+        var data = accountDetails.getIncomeAndExpenses();
+        var account = data.account;
+        var year = data.year;
+
+
+        var categories = [];
+        ["Income","Expenses"].forEach((type)=>{
+            data[type].forEach((row)=>{
+                if (row.category){
+                    var category = row.category;
+                    if (category.name){
+                        categories.push({
+                            id: category.id,
+                            name: category.name,
+                            type: type
+                        });
+                    }
+                }
+            });
+        });
+        //console.log(categories);
+
+
+
+        var csv = "Date,Source,Account,Description,Amount,Type,Category";
+        var getCSV = function(){
+            if (categories.length===0){
+                downloadCSV(csv, year + " " + account.name + " Transactions");
+                return;
+            }
+
+            var category = categories.shift();
+            getTransactions(year, category, function(transactions){
+                transactions.forEach((transaction)=>{
+
+
+                    //var id = transaction.id;
+                    var date = transaction.date;
+                    var desc = transaction.description;
+                    var amount = transaction.amount;
+                    var source = findSource(transaction.sourceID);
+
+                    var m = moment.tz(date, config.timezone);
+                    if (m.year()===year){
+
+                        csv += "\r\n";
+                        csv += escape(createCell("date", m, config.dateFormat)) + ",";
+                        csv += escape(source.vendor) + ",";
+                        csv += escape(source.account) + ",";
+                        csv += escape(desc) + ",";
+                        csv += escape(formatCurrency(amount)) + ",";
+                        csv += category.type + ",";
+                        csv += escape(category.name);
+                    }
+
+                });
+                getCSV();
+            });
+        };
+        getCSV();
+
+    };
+
+
+  //**************************************************************************
   //** downloadCSV
   //**************************************************************************
     var downloadCSV = function(csvContent, title){
@@ -1703,6 +1855,13 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
     };
 
 
+    var escape = function(str){
+        if (typeof str === "undefined") str = "";
+        if (str.indexOf(",")) str = "\"" + str + "\"";
+        return str;
+    };
+
+
   //**************************************************************************
   //** Utils
   //**************************************************************************
@@ -1716,6 +1875,7 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
     var createCell = javaxt.express.finance.utils.createCell;
     var createButton = javaxt.express.finance.utils.createButton;
     var createSpacer = javaxt.express.finance.utils.createSpacer;
+    var createWindow = javaxt.express.finance.utils.createWindow;
     var createDoughnut = javaxt.express.finance.utils.createDoughnut;
     var createBargraph = javaxt.express.finance.utils.createBargraph;
     var addLegend = javaxt.express.finance.utils.addLegend;

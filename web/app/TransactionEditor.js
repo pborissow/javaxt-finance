@@ -59,7 +59,7 @@ javaxt.express.finance.TransactionEditor = function(config) {
 
 
       //Create form
-        var div = document.createElement("div");
+        var div = createElement("div");
         form = new javaxt.dhtml.Form(div, {
             style: config.style.form,
             items: [
@@ -114,7 +114,7 @@ javaxt.express.finance.TransactionEditor = function(config) {
 
 
       //Create window
-        win = new javaxt.dhtml.Window(document.body, {
+        win = createWindow({
             width: 450,
             modal: true,
             body: div,
@@ -253,7 +253,7 @@ javaxt.express.finance.TransactionEditor = function(config) {
   //** createComboBox
   //**************************************************************************
     var createComboBox = function(comboboxConfig){
-        return new javaxt.dhtml.ComboBox(document.createElement("div"), comboboxConfig);
+        return new javaxt.dhtml.ComboBox(createElement("div"), comboboxConfig);
     };
 
 
@@ -261,7 +261,10 @@ javaxt.express.finance.TransactionEditor = function(config) {
   //** Utils
   //**************************************************************************
     var merge = javaxt.dhtml.utils.merge;
+    var createElement = javaxt.dhtml.utils.createElement;
+
     var isNumber = javaxt.express.finance.utils.isNumber;
+    var createWindow = javaxt.express.finance.utils.createWindow;
 
 
     init();

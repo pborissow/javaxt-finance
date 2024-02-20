@@ -613,6 +613,17 @@ javaxt.express.finance.utils = {
 
 
   //**************************************************************************
+  //** createWindow
+  //**************************************************************************
+    createWindow: function(config){
+        var win = new javaxt.dhtml.Window(document.body, config);
+        if (!javaxt.express.finance.windows) javaxt.express.finance.windows = [];
+        javaxt.express.finance.windows.push(win);
+        return win;
+    },
+
+
+  //**************************************************************************
   //** createCell
   //**************************************************************************
     createCell: function(type, val){
@@ -974,6 +985,7 @@ javaxt.express.finance.utils = {
         };
 
         searchBar.clear = function(){
+            if (timer) clearTimeout(timer);
             input.value = "";
             cancelButton.hide();
             searchIcon.show();

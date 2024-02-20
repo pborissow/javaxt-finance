@@ -506,6 +506,14 @@
     line-height: 16px;
 }
 
+.toolbar-button-icon.fas.fa-arrow-left {
+    font-size: 14px;
+}
+
+.toolbar-button-icon.fas.fa-arrow-alt-circle-down {
+    color: #35a535;
+    font-size: 20px;
+}
 
 
 /**************************************************************************/
