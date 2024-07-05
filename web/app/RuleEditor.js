@@ -143,14 +143,6 @@ javaxt.express.finance.RuleEditor = function(config) {
             ],
             buttons: [
                 {
-                    name: "Cancel",
-                    onclick: function(){
-                        form.clear();
-                        win.close();
-                        me.onCancel();
-                    }
-                },
-                {
                     name: "Save",
                     onclick: function(){
 
@@ -161,6 +153,14 @@ javaxt.express.finance.RuleEditor = function(config) {
                         }
 
                         me.onSubmit();
+                    }
+                },
+                {
+                    name: "Cancel",
+                    onclick: function(){
+                        form.clear();
+                        win.close();
+                        me.onCancel();
                     }
                 }
             ]
@@ -199,9 +199,11 @@ javaxt.express.finance.RuleEditor = function(config) {
                     for (var i=0; i<accounts.length; i++){
                         var a = accounts.get(i);
                         if (a.id===accountID){
-                            for (var j=0; j<a.categories.length; j++){
-                                var c = a.categories.get(j);
-                                category.add(c.name, c.id);
+                            if (a.categories){
+                                for (var j=0; j<a.categories.length; j++){
+                                    var c = a.categories.get(j);
+                                    category.add(c.name, c.id);
+                                }
                             }
                             break;
                         }

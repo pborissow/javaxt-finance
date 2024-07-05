@@ -508,13 +508,13 @@ javaxt.express.finance.SourceManager = function(parent, config) {
 
                         var account = form.getData();
                         if (!account.name){
-                            warn("Name is required", form.findField("name"));
+                            form.showError("Name is required", "name");
                             return;
                         }
 
 
-                        account.id = orgAccount.id;
-                        account.info = orgAccount.info;
+                        account.id = orgAccount ? orgAccount.id : null;
+                        account.info = orgAccount ? orgAccount.info : {};
                         if (!account.info) account.info = {};
                         account.info.color = getColor(account.color);
                         delete account.color;
