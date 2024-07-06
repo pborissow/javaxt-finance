@@ -188,6 +188,60 @@ input, select, textarea { /* Allows overriding native style of form elements on 
 
 
 /**************************************************************************/
+/** Button
+/**************************************************************************/
+
+.button {
+    border-radius: 3px;
+    color: #363636;
+    display: inline-block;
+    font-size: 14px;
+    width: 80px;
+    height: 26px;
+    line-height: 24px;
+    vertical-align: middle;
+    background-color: #e4e4e4;
+    border: 1px solid #b4b4b4;
+    /*
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+    text-shadow: 1px 1px 0px rgb(255, 255, 255);
+    */
+    cursor: pointer;
+}
+
+.button-selected {
+
+}
+
+.button:disabled,
+.button[disabled]{
+    opacity:0.75;
+    color: #939393;
+    box-shadow: 0 0px 0px 0 rgba(0, 0, 0, 0.2);
+    cursor:default;
+}
+
+.button:hover {
+    background-color: #d2e3ed;
+    border-color: rgba(82, 168, 236, 0.8);
+}
+
+.button:disabled:hover {
+    background-color: #e4e4e4;
+    border: 1px solid #b4b4b4;
+}
+
+.button:active {
+    box-shadow: none;
+}
+.button:focus {
+    outline:0;
+}
+
+
+
+
+/**************************************************************************/
 /** Form Inputs
 /**************************************************************************/
 /** The following classes are used to define the style for form inputs
@@ -228,6 +282,13 @@ input, select, textarea { /* Allows overriding native style of form elements on 
     border-color: rgba(82, 168, 236, 0.8);
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset, 0 0 8px rgba(82, 168, 236, 0.6);
     outline: 0 none;
+}
+
+.form-input:disabled,
+.form-input[disabled]{
+    opacity:0.75;
+    color: #939393;
+    cursor:default;
 }
 
 .form-label {
@@ -637,6 +698,67 @@ select:focus, textarea:focus, input:focus{
     position: relative;
 }
 
+
+
+/**************************************************************************/
+/** Tab Panel
+/**************************************************************************/
+/** The following classes are used to define the style for the tab panel.
+ */
+
+.tab-panel {
+    padding: 0 5px;
+}
+
+.tab-bar {
+    background-color: #0f6391; /* same as windows header */
+    height: 30px;
+    color: #fff;
+    border: 1px solid #6393bf;
+    border-width: 0 1px;
+}
+
+.tab-active, .tab-inactive {
+    padding: 0 12px;
+    line-height: 30px;
+    cursor: default;
+}
+
+.tab-active {
+    background-color: #379ad1;
+}
+
+.tab-inactive {
+    background: none;
+}
+
+.tab-inactive:hover {
+    background-color: #3dabe9;
+}
+
+.tab-body {
+    padding: 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    vertical-align: top;
+}
+
+/** Special case when tab is the first component inside a window  **/
+
+.window-body table:first-child .tab-bar {
+    background-color: #208EC9;
+}
+
+.window-body table:first-child .tab-active {
+    background-color: #379ad1;
+    border-top: 2px solid #69b9ff;
+    margin-top: -2px;
+}
+
+.window-body table:first-child .tab-body {
+    border: 0 none;
+    border-radius: 0 0 8px 8px;
+}
 
 /**************************************************************************/
 /** Table
