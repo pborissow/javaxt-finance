@@ -446,7 +446,6 @@
     border-radius: 4px;
     color: #363636;
     display: inline-block;
-    font-size: 14px;
     height: 32px;
     line-height: 32px;
     padding: 2px 4px 2px 26px;
@@ -472,7 +471,6 @@
 
 .search-bar-input::placeholder {
     color: #b9b9b9;
-    font-size: 14px;
 }
 
 
@@ -496,7 +494,7 @@
 
 .panel-toolbar .search-bar-icon,
 .panel-toolbar .search-bar-cancel {
-    top: 10px
+    top: 8px
 }
 
 
@@ -504,6 +502,7 @@
     color: #777;
     font-size: 16px;
     line-height: 16px;
+    margin-top: 2px;
 }
 
 .toolbar-button-icon.fas.fa-arrow-left {
@@ -715,8 +714,7 @@
 .blue-table-header-col,
 .green-table-header-col,
 .orange-table-header-col{
-    font-family: helvetica,arial,verdana,sans-serif;
-    font-size: 14px;
+
     white-space: nowrap;
 
     height: 35px;
@@ -820,7 +818,7 @@
 
 .report-preview .title > div {
     overflow: hidden;
-    white-space: nowrap;
+    height: 16px;
 }
 
 .report-preview img {
@@ -879,19 +877,21 @@
     box-shadow: none;
     border: none;
     border-bottom: 1px solid #aacde2;
+    height: 32px;
 
 }
 
 .report-title { /** Used in conjunction with window-title */
     color: #0d4262;
-    text-align: center;
-    width: 100%;
-    font-size: 20px;
+    font-size: 13px;
     text-transform: none;
+    line-height: 32px;
 }
 
 .report-header-button { /** Used in conjunction with window-header-button */
     color: #0d4262;
+    font-size: 16px;
+    margin-top: -3px;
 }
 
 .report-header-button:hover{
@@ -1133,7 +1133,7 @@
 }
 
 .admin-subheader {
-    font-size: 14px;
+
     line-height: 14px;
     margin-top: -10px;
 }
@@ -1214,15 +1214,14 @@
     display: block;
     vertical-align: middle;
     font-weight: 900;
-    font-size: 42px;
+    font-size: 48px;
     color: #9fb1bd;
 }
 
 .logo-upload-area::after {
     content: "Drag and drop image here";
-    font-size: 12px;
     color: #8e9da7;
-    font-weight: bold;
+    white-space: nowrap;
 }
 
 .logo-upload-area::before,
@@ -1242,6 +1241,14 @@
 .no-border {
     border: 0 none;
 }
+
+
+/*
+.table-col, .table-header-col {
+    font-family: Montserrat, helvetica, arial, verdana, sans-serif;
+    font-size:13px;
+}
+*/
 
 /** Used to add padding to the right-most column in a table to allow room
  *  for iScroll

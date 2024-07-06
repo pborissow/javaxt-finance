@@ -343,11 +343,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
         var runButton = createButton(rulesMenu, {
             label: "Run...",
             icon: "runIcon",
-            display: "inherit",
-            style: {
-                button: "menu-button",
-                hover:  "menu-button-hover"
-            }
+            display: "inherit"
         });
         runButton.onClick = function(){
             runRules();
@@ -356,11 +352,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
         var viewButton = createButton(rulesMenu, {
             label: "Edit...",
             icon: "checklistIcon",
-            display: "inherit",
-            style: {
-                button: "menu-button",
-                hover:  "menu-button-hover"
-            }
+            display: "inherit"
         });
         viewButton.onClick = function(){
             if (!rules) rules = new javaxt.express.finance.Rules(null, {

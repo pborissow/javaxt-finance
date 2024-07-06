@@ -107,6 +107,7 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
 
                 getAccountSummary(account, year, function(income, expenses){
                     renderAccountSummary(income, expenses, account, year, years.length==1 ? "montlyAvg" : "prevYear");
+                    if (years.length==1) reportList.setValue("Show Montly Average", true);
                     accountDetails.years = years;
 
                     setTimeout(function(){
@@ -747,7 +748,8 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
         pieChart = createPanel(parent, {
             title: "Expense Summary",
             closable: false,
-            width: "475px"
+            width: "475px",
+            height: "350px"
         });
         pieChart.getBody().style.padding = "15px 10px 0px 10px";
         var div = createElement("div");
@@ -1002,16 +1004,8 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
       //Create panel
         transactionsPanel = createPanel(parent, {
             width: "600px",
-            height: "640px",
-            onClose: function(){
-                //console.log("Update charts!");
-            },
-            style: {
-                body: {
-                    padding: "0 0 5px 0",
-                    verticalAlign: "top"
-                }
-            }
+            height: "680px",
+            padding: "0px 0px 7px 0"
         });
 
 
@@ -1474,6 +1468,18 @@ if (true) return;
     var createPanel = function(parent, options){
 
 
+
+        var style = merge({}, config.style.window);
+        style.header += " report-header";
+        style.title += " report-title";
+        style.button += " report-header-button";
+        style.body = "report-body";
+        if (options.style){
+            if (options.style.body){
+                style.body = options.style.body;
+            }
+        }
+
       //Create "panel" (actually a window)
         var panel = new javaxt.dhtml.Window(parent, {
             title: options.title,
@@ -1481,7 +1487,14 @@ if (true) return;
             height: options.height,
             style: style
         });
-        var div = createElement("div", panel.getBody(), {
+
+
+      //Update padding
+        var b = panel.getBody();
+        if (options.padding) b.style.padding = options.padding;
+
+
+        var div = createElement("div", b, {
             width: "100%",
             height: "100%",
             position: "relative"
@@ -1505,16 +1518,6 @@ if (true) return;
         var body = td;
 
 
-        var style = merge({}, config.style.window);
-        style.header += " report-header";
-        style.title += " report-title";
-        style.button += " report-header-button";
-        style.body = "report-body";
-        if (options.style){
-            if (options.style.body){
-                style.body = options.style.body;
-            }
-        }
 
 
 
