@@ -13,6 +13,7 @@ import javaxt.http.servlet.*;
 import java.util.*;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.select.*;
@@ -193,13 +194,14 @@ public class WebServices extends WebService {
                     Select select = (Select) CCJSqlParserUtil.parse(sql);
                     PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
 
+                    AtomicBoolean foundQ = new AtomicBoolean(false);
                     StringBuilder buffer = new StringBuilder();
                     SelectDeParser selectDeParser = new SelectDeParser();
                     selectDeParser.setExpressionVisitor(new ExpressionDeParser(null, buffer) {
                         public void visit(EqualsTo equalsTo) {
 
                             if (equalsTo.getLeftExpression().toString().equalsIgnoreCase("q")){
-
+                                foundQ.set(true);
 
                                 javaxt.utils.Value q = request.getParameter("q");
                                 try{
@@ -227,10 +229,34 @@ public class WebServices extends WebService {
                             }
                         }
                     });
-                    selectDeParser.setBuffer(buffer);
-                    plainSelect.accept(selectDeParser);
 
-                    sql = buffer.toString();
+                    if (foundQ.get()){ //javaxt-express <1.5
+                        selectDeParser.setBuffer(buffer);
+                        plainSelect.accept(selectDeParser);
+                        sql = buffer.toString();
+                    }
+                    else{
+
+                        javaxt.utils.Value v = request.getParameter("q");
+                        if (v.isNumeric()){
+                            q = "amount=" + v + " OR amount=-" + v;
+                        }
+                        else if (isDate(q)){
+                            javaxt.utils.Date startDate = v.toDate().removeTimeStamp();
+                            javaxt.utils.Date endDate = startDate.clone().add(1, "day");
+                            q = "date>='" + startDate.toISOString() + "' and date<'" + endDate.toISOString() + "'";
+                        }
+                        else{
+                            q = "lower(' ' || description) like '% " + q.trim().toLowerCase() + "%'";
+                        }
+
+                        net.sf.jsqlparser.expression.Expression where = plainSelect.getWhere();
+                        if (where!=null) q = where.toString() + " AND (" + q + ")";
+                        where = CCJSqlParserUtil.parseCondExpression(q);
+                        plainSelect.setWhere(where);
+                        sql = select.toString();
+                    }
+
                     //console.log(sql);
 
                 }
