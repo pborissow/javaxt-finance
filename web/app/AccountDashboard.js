@@ -476,10 +476,14 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
 
                         }
                         else{
-                            cols[n-1].innerHTML = prevCol;
+                            if (prevCol.length>0){
+                                cols[n-1].innerHTML = prevCol;
+                            }
                         }
 
-                        cols[n].innerHTML = lastCol;
+                        if (lastCol.length>0){
+                            cols[n].innerHTML = lastCol;
+                        }
 
                     }
                 }
