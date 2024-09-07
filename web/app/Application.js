@@ -61,72 +61,70 @@ javaxt.express.finance.Application = function(parent, config) {
         td = table.addRow().addColumn();
         createFooter(td);
 
-
-      //Check whether the table has been added to the DOM
-        var w = table.offsetWidth;
-        if (w===0 || isNaN(w)){
-            var timer;
-
-            var checkWidth = function(){
-                var w = table.offsetWidth;
-                if (w===0 || isNaN(w)){
-                    timer = setTimeout(checkWidth, 100);
-                }
-                else{
-                    clearTimeout(timer);
-                    onRender();
-                }
-            };
-
-            timer = setTimeout(checkWidth, 100);
-        }
-        else{
-            onRender();
-        }
-
-
         me.el = table;
+
+
+      //Wait for the table to render
+        onRender(table, function(){
+
+
+          //Render carousel
+            carousel.resize();
+
+
+          //Select dashboard app as default view
+            var dashboard = apps[0];
+            dashboard.li.select();
+
+
+          //Initialize dashboard app
+            var panels = carousel.getPanels();
+            for (var i=0; i<panels.length; i++){
+                var panel = panels[i];
+                if (panel.isVisible){
+                    panel.div.appendChild(dashboard.div);
+                    initApp(dashboard, panel.div);
+                    break;
+                }
+            }
+
+
+          //Initialize listeners
+            addListeners();
+
+        });
     };
 
 
   //**************************************************************************
-  //** onRender
+  //** addListeners
   //**************************************************************************
-    var onRender = function(){
-
-      //Render carousel
-        carousel.resize();
-
-
-      //Select dashboard app as default view
-        var dashboard = apps[0];
-        dashboard.li.select();
-
-
-      //Initialize dashboard app
-        var panels = carousel.getPanels();
-        for (var i=0; i<panels.length; i++){
-            var panel = panels[i];
-            if (panel.isVisible){
-                panel.div.appendChild(dashboard.div);
-                initApp(dashboard, panel.div);
-                break;
-            }
-        }
+    var addListeners = function(){
 
 
       //Watch for drag and drop events
-        parent.addEventListener('dragover', onDragOver, false);
-        parent.addEventListener('drop', function(e) {
+        var transactions = apps[1];
+        me.el.addEventListener('dragover', function(e) {
             e.stopPropagation();
             e.preventDefault();
+            var dropEffect = "none";
+            if (transactions.li.selected){
+                dropEffect = "copy";
+            }
+            e.dataTransfer.dropEffect = dropEffect;
+        }, false);
+
+        transactions.div.addEventListener('drop', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!transactions.li.selected) return;
+
 
           //Get files
             var files = e.dataTransfer.files;
 
 
           //Select transactions app
-            var transactions = apps[1];
             transactions.li.select();
 
 
@@ -160,8 +158,6 @@ javaxt.express.finance.Application = function(parent, config) {
             }
 
         }, false);
-
-
     };
 
 
@@ -249,7 +245,7 @@ javaxt.express.finance.Application = function(parent, config) {
       //Create apps
         createApp("Dashboard", javaxt.express.finance.Dashboard);
         createApp("Transactions", javaxt.express.finance.Transactions, "aliceblue");
-        createApp("Reports", javaxt.express.finance.Reports, "#e2e2e2");
+        createApp("Reports", javaxt.express.finance.Reports);
         createApp("Admin", javaxt.express.finance.Admin);
     };
 
@@ -414,23 +410,11 @@ javaxt.express.finance.Application = function(parent, config) {
 
 
   //**************************************************************************
-  //** onDragOver
-  //**************************************************************************
-  /** Called when the client drags a file over the parent.
-   */
-    var onDragOver = function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
-    };
-
-
-
-  //**************************************************************************
   //** Utils
   //**************************************************************************
     var createElement = javaxt.dhtml.utils.createElement;
     var createTable = javaxt.dhtml.utils.createTable;
+    var onRender = javaxt.dhtml.utils.onRender;
 
 
     init();
