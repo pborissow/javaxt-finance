@@ -44,44 +44,52 @@ public class Maintenance {
    */
     public static void deleteDuplicates(Database database) throws Exception {
 
+        var threshold = 25; //min distance between transaction IDs
 
-        HashSet<Integer> duplicates = new HashSet<>();
+        System.out.println("Running report with distance threshold set to " + threshold + "...\n");
+
+        HashSet<Integer> suggestions = new HashSet<>();
+        var duplicates = new HashMap<Integer, Integer>();
         try (Connection conn = database.getConnection()){
 
             //ALTER TABLE TRANSACTION ADD UNIQUE (DATE, SOURCE_ID, AMOUNT, DESCRIPTION);
 
 
-            String query = "";
-            query = "select TRANSACTION.ID, DATE, ACCOUNT_ID, AMOUNT, DESCRIPTION, RAW_DATA " +
+            var query =
+            "select TRANSACTION.ID, DATE, ACCOUNT_ID, AMOUNT, DESCRIPTION, RAW_DATA " +
             "from TRANSACTION JOIN SOURCE ON TRANSACTION.SOURCE_ID=SOURCE.ID " +
-            //" where ACCOUNT_ID<>12 " +
             "ORDER BY TRANSACTION.ID";
-            //query = "select DATE, SOURCE_ID, AMOUNT, DESCRIPTION from TRANSACTION";
 
-            HashMap<String, Integer> uniqueTransactions = new HashMap<>();
-            HashMap<Integer, String> raw = new HashMap<>();
+
+            var uniqueTransactions = new HashMap<String, Integer>();
+            var raw = new HashMap<Integer, String>();
+            var groupID = 0;
 
             for (Record record : conn.getRecords(query)){
-                Integer id = record.get("id").toInteger();
-                javaxt.utils.Date date = record.get("date").toDate();
-                String sourceID = record.get("account_id").toString();
-                String amount = record.get("amount").toString();
-                String description = record.get("description").toString();
-                String transaction = date+"|"+sourceID+"|"+amount+"|"+description;
+                var id = record.get("id").toInteger();
+                var date = record.get("date").toDate();
+                var sourceID = record.get("account_id").toString();
+                var amount = record.get("amount").toString();
+                var description = record.get("description").toString();
+                var transaction = ("|"+date.toString("yyyy-MM-dd")+"|"+sourceID+"|"+amount+"|"+description+"|").toUpperCase();
 
                 raw.put(id, record.get("RAW_DATA").toString());
 
                 if (uniqueTransactions.containsKey(transaction)){
                     int dupID = uniqueTransactions.get(transaction);
                     int d = Math.abs(id-dupID);
-                    boolean del = d>25;
+                    boolean del = d>threshold;
 
-                    console.log(dupID, transaction, "[" + raw.get(dupID) + "]");
-                    console.log(id, transaction, "[" + record.get("RAW_DATA") + "]", del ? "<----del" : "");
+                    groupID++;
+                    System.out.println("(" + groupID + ")");
+                    System.out.println("\t" + dupID + transaction + "[" + raw.get(dupID) + "]");
+                    System.out.println("\t" + id + transaction + "[" + record.get("RAW_DATA") + "]" + (del ? "<----del" : ""));
                     System.out.println();
 
+                    duplicates.put(groupID, id);
+
                     if (del){
-                        duplicates.add(id);
+                        suggestions.add(id);
                     }
                 }
                 else{
@@ -91,29 +99,33 @@ public class Maintenance {
             }
         }
 
-        if (duplicates.isEmpty()){
-            System.out.println("No duplicates found");
-            return;
+        System.out.print("Found " + duplicates.size() + " similar transactions. ");
+
+        if (suggestions.isEmpty()){
+            System.out.println("However, the transaction IDs are so close that " +
+            "they probably aren't duplicates. Compare the raw description to " +
+            "determine whether you really have any duplicate.");
+            /*
+            Boolean answer = new Value(console.getInput(
+            "\nIs there a specific transaction you would like to delete? [Y/n] ")).toBoolean();
+            if (answer==null || answer==false) return;
+            */
         }
-
-        System.out.println("Found " + duplicates.size() + " duplicates.");
-
-
-
-      //Prompt user
-        Boolean answer = new Value(console.getInput(
-        "\nDo you want to delete these records? [Y/n] ")).toBoolean();
-        if (answer==null || answer==false) return;
+        else{
+            System.out.println("Found " + suggestions.size() + " potential duplicates.");
+            Boolean answer = new Value(console.getInput(
+            "\nDo you want to delete these records? [Y/n] ")).toBoolean();
+            if (answer==null || answer==false) return;
 
 
-
-        try (Connection conn = database.getConnection()){
-            for (Integer id : duplicates){
-                conn.execute("delete from transaction where id=" + id);
+            try (Connection conn = database.getConnection()){
+                for (Integer id : suggestions){
+                    conn.execute("delete from transaction where id=" + id);
+                }
             }
-        }
 
-        System.out.println("Successfully deleted " + duplicates.size() + " duplicates.");
+            System.out.println("Successfully deleted " + suggestions.size() + " duplicates.");
+        }
     }
 
 
