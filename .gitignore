@@ -1,11 +1,18 @@
+# Ignore IDE and build files
+target/
 build/
 dist/
 nbproject/
-data/
 build.xml
-[Cc]onfig.json
 manifest.mf
 
+
+# Ignore database and config file
+data/
+[Cc]onfig.json
+
+
+# Ignore miscellaneous artifacts
 *.dll
 **/test.html*
 **/!README.TXT
