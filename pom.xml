@@ -32,13 +32,6 @@
         <id>javaxt.com</id>
         <url>https://www.javaxt.com/maven</url>
       </repository>
-      <repository>
-        <id>jsqlparser-snapshots</id>
-        <snapshots>
-          <enabled>true</enabled>
-        </snapshots>
-        <url>https://oss.sonatype.org/content/groups/public/</url>
-      </repository>
     </repositories>
     <dependencies>
 
@@ -47,7 +40,7 @@
       <dependency>
         <groupId>javaxt</groupId>
         <artifactId>javaxt-express</artifactId>
-        <version>1.4.0</version>
+        <version>1.5.1</version>
       </dependency>
 
 
@@ -139,7 +132,10 @@
                   <phase>install</phase>
                   <configuration>
                     <target>
-                      <move file="${project.build.directory}/${project.artifactId}-${project.version}.jar" todir="${project.basedir}/dist" />
+                      <move
+                        file="${project.build.directory}/${project.artifactId}-${project.version}.jar"
+                        tofile="${project.basedir}/dist/${project.artifactId}.jar"
+                      />
                       <move todir="${project.basedir}/dist/lib" >
                           <fileset dir="${project.build.directory}/lib" />
                       </move>
