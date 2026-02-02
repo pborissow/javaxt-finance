@@ -831,10 +831,19 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
       //Create chart
         var chart = createBargraph(canvas, {});
 
+      //Store data for tooltip access
+        var chartMonthlyTotals = null;
+        var chartCategory = null;
+
+
       //Create function to update chart
         barGraph.update = function(monthlyTotals, category){
             if (!category) return;
             barGraph.setSubTitle("");
+
+          //Store data for tooltip callback
+            chartMonthlyTotals = monthlyTotals;
+            chartCategory = category;
 
           //Create datasets
             var datasets = [];
@@ -995,6 +1004,83 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
           //Update chart
             chart.data.labels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
             chart.data.datasets = datasets;
+
+            chart.options.tooltips = {
+                enabled: true,
+                mode: 'point',
+                intersect: true,
+                yAlign: 'bottom',
+                xAlign: 'center',
+                filter: function(tooltipItem, data) { //exclude tooltops for the lines
+                    return data.datasets[tooltipItem.datasetIndex].type !== 'line';
+                },
+                callbacks: {
+                    title: function(tooltipItems, data) {
+                        return '';
+                    },
+                    label: function(tooltipItem, data) {
+
+                        var yearLabel = data.datasets[tooltipItem.datasetIndex].label || '';
+                        var monthIndex = tooltipItem.index; // 0-11 for Jan-Dec
+
+                        var currYear = parseInt(data.datasets[1].label);
+                        var prevYear = parseInt(data.datasets[0].label);
+
+
+                        if (!chartMonthlyTotals || !chartCategory) {
+                            return yearLabel + ': ' + formatCurrency(Math.abs(tooltipItem.yLabel));
+                        }
+
+                        // Get the year from the dataset being hovered over
+                        var hoveredYear = parseInt(yearLabel);
+                        if (isNaN(hoveredYear)) {
+                            return yearLabel + ': ' + formatCurrency(Math.abs(tooltipItem.yLabel));
+                        }
+
+                        var previousYear = hoveredYear == prevYear ? currYear : prevYear;
+
+
+                        // Create date objects for formatting
+                        var currentDate = moment().year(hoveredYear).month(monthIndex).date(1);
+                        var previousDate = moment().year(previousYear).month(monthIndex).date(1);
+
+                        // Format as "YYYY"
+                        var currentMonthLabel = currentDate.format('YYYY');
+                        var previousMonthLabel = previousDate.format('YYYY');
+
+                        // Get current month value for the hovered year and previous year
+                        var currentMonthValue = 0;
+                        var previousYearMonthValue = 0;
+
+                        if (chartCategory.isExpense === true) {
+                            if (chartMonthlyTotals[hoveredYear] && chartMonthlyTotals[hoveredYear].expenses) {
+                                currentMonthValue = -chartMonthlyTotals[hoveredYear].expenses[monthIndex] || 0;
+                            }
+                            if (chartMonthlyTotals[previousYear] && chartMonthlyTotals[previousYear].expenses) {
+                                previousYearMonthValue = -chartMonthlyTotals[previousYear].expenses[monthIndex] || 0;
+                            }
+                        } else if (chartCategory.isRevenue === true) {
+                            if (chartMonthlyTotals[hoveredYear] && chartMonthlyTotals[hoveredYear].income) {
+                                currentMonthValue = chartMonthlyTotals[hoveredYear].income[monthIndex] || 0;
+                            }
+                            if (chartMonthlyTotals[previousYear] && chartMonthlyTotals[previousYear].income) {
+                                previousYearMonthValue = chartMonthlyTotals[previousYear].income[monthIndex] || 0;
+                            }
+                        }
+
+                        var currentFormatted = formatCurrency(currentMonthValue);
+                        var previousFormatted = formatCurrency(previousYearMonthValue);
+
+                        // Return 2 labels: current month and previous year's same month
+                        return [
+                            currentMonthLabel + ': ' + currentFormatted,
+                            //previousMonthLabel + ': ' + previousFormatted
+                        ];
+                    }
+                }
+            };
+
+
             chart.update();
         };
     };

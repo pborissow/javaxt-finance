@@ -781,7 +781,9 @@ javaxt.express.finance.utils = {
                     display: false
                 },
                 tooltips: {
-                    enabled: false
+                    enabled: true,
+                    mode: 'index',
+                    intersect: false
                 }
             }
         });
