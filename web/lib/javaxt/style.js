@@ -15,10 +15,19 @@ javaxt.dhtml.style.default = {
     window : {
         panel: "window",
         header: "panel-header window-header",
-        title: "panel-title window-title",
+        title: "window-title",
         button: "window-header-button",
         buttonBar: "window-header-button-bar",
+        footerButton: "form-button noselect",
+        body: "window-body",
         mask: "window-mask"
+    },
+
+
+    panel: {
+        header: "panel-header",
+        toolbar: "panel-toolbar",
+        body: "panel-body"
     },
 
 
@@ -38,7 +47,14 @@ javaxt.dhtml.style.default = {
         radio: "form-radio noselect",
         checkbox: "form-checkbox",
         groupbox: "form-groupbox",
-        grouplabel: "form-grouplabel noselect"
+        grouplabel: "form-grouplabel noselect",
+        error: {
+            input: "form-input-error",
+            callout: {
+                panel: "error-callout-panel",
+                arrow: "error-callout-arrow"
+            }
+        }
     },
 
 
@@ -47,18 +63,25 @@ javaxt.dhtml.style.default = {
         button: "form-button form-input-button pulldown-button-icon",
         menu: "form-input-menu",
         option: "form-input-menu-item",
-        newOption: "form-input-menu-item form-input-menu-item-new"
+        newOption: "form-input-menu-item form-input-menu-item-new",
+        iscroll: null //updated below
     },
 
 
     checkbox : {
-        panel: "checkbox-panel",
         box: "checkbox-box",
         label: "checkbox-label",
         check: "checkbox-check",
         select: "checkbox-select",
         disable: "checkbox-disable",
         hover: "checkbox-hover"
+    },
+
+
+    button: {
+        button: "button",
+        select: "button-selected",
+        label: "button-label"
     },
 
 
@@ -69,6 +92,11 @@ javaxt.dhtml.style.default = {
         label: "toolbar-button-label"
     },
 
+    iscroll: {
+        horizontalScrollbar: "iScrollHorizontalScrollbar",
+        verticalScrollbar: "iScrollVerticalScrollbar",
+        indicator: "iScrollIndicator"
+    },
 
     table: {
         headerRow: "table-header",
@@ -79,24 +107,33 @@ javaxt.dhtml.style.default = {
         resizeHandle: "table-resizeHandle",
         ascendingSortIcon: "table-icon-sort-asc",
         descendingSortIcon: "table-icon-sort-desc",
-        iscroll: {
-            horizontalScrollbar: "iScrollHorizontalScrollbar",
-            verticalScrollbar: "iScrollVerticalScrollbar",
-            indicator: "iScrollIndicator"
-        }
+        iscroll: null //updated below
     },
 
     tabPanel: {
+        tabBar: "tab-bar",
+        activeTab: "tab-active",
+        inactiveTab: "tab-inactive",
+        tabBody: "tab-body"
+    },
 
+    accordion: {
+        accordion: "accordion-panel",
+        tabHeader: "accordion-header",
+        tabContent: "accordion-content"
     },
 
     switch: {
         groove: "switch-groove",
         handle: "switch-handle",
-        grooveActive: "switch-groove-active",
-        handleActive: "switch-handle-active"
+        grooveActive: "switch-groove active",
+        handleActive: "switch-handle active"
     },
 
+    slider: {
+        groove: "slider-groove",
+        handle: "slider-handle"
+    },
 
     datePicker: {
         panel: "date-picker-panel",
@@ -117,3 +154,7 @@ javaxt.dhtml.style.default = {
         return settings;
     }
 };
+
+
+javaxt.dhtml.style.default.table.iscroll = javaxt.dhtml.style.default.iscroll;
+javaxt.dhtml.style.default.combobox.iscroll = javaxt.dhtml.style.default.iscroll;

@@ -18,8 +18,9 @@ body {
 }
 
 body, textarea, input, select, td, th {
-    font-family:helvetica,arial,verdana,sans-serif;
-    font-size:14px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text',
+    helvetica,arial,verdana,sans-serif;
+    font-size:13px;
 }
 
 input, select, textarea { /* Allows overriding native style of form elements on iPad */
@@ -61,183 +62,189 @@ input, select, textarea { /* Allows overriding native style of form elements on 
 /** The following classes are used to define the style for a panel. Panels
  *  consist of a header, toolbar, body, and footer.
  */
+.javaxt-panel {
 
-.panel-header {
-    background-color: #0f6391;
-    height: 36px;
-    cursor: default;
-    border-bottom: 1px solid #6a9ebb;
+    .panel-header {
+        background-color: #0f6391;
+        height: 36px;
+        cursor: default;
+        border-bottom: 1px solid #6a9ebb;
+    }
+
+    .panel-title {
+        color: white;
+        text-align: center;
+        white-space: nowrap;
+        text-transform: uppercase;
+        line-height: 36px; /*Should match panel-header height*/
+    }
+
+    .panel-toolbar {
+        height: 36px;
+        padding: 0 5px;
+        /*background-color: #208ec9; blue*/
+        background-color: #d4d4d4;
+        background-image: linear-gradient(to bottom, #f9f9f9, #cfcfcf);
+
+        /*border-top: 1px solid #f2f7fd;*/
+        border-bottom: 1px solid #8f8f8f;
+
+        .form-input {
+            margin: 0 5px;
+        }
+    }
+
+
+    .toolbar-button,
+    .toolbar-button-selected {
+        height: 26px;
+        padding: 0px 7px;
+        margin: 0 0 0 5px;
+        color: #272727;
+        border-radius: 3px;
+        border: 1px solid rgba(0,0,0,0); /* Transparent border, maintains size parity with default.css */
+        cursor: pointer;
+    }
+
+
+
+
+    .toolbar-button:hover {
+        background-color: #d2e3ed;
+        border: 1px solid #adadad;
+    }
+
+    .toolbar-button-selected {
+        background-color: #d2e3ed;
+        border: 1px solid #adadad;
+    }
+
+
+    /* update margin for first button in the toolbar */
+    .panel-toolbar > div:first-child {
+        .toolbar-button,
+        .toolbar-button-selected {
+            margin:0;
+        }
+    }
+
+
+    .toolbar-label,
+    .toolbar-button-label {
+        white-space: nowrap;
+        color: #272727;
+        min-width: 50px;
+    }
+
+    .toolbar-label {
+        padding: 0 5px;
+    }
+
+    .toolbar-button-icon {
+        margin: 0px;
+    }
+
+    /* Menu pulldown icon (triangle) */
+    .toolbar-button-menu-icon {
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 5px solid #525252;
+        margin-left: 10px;
+    }
+
+
+    /* Selected menu button. Remove radius on the bottom. */
+    .panel-toolbar-menubutton-selected {
+        background-color: #d2e3ed;
+        border: 1px solid #adadad;
+        /*border-bottom: 0px;*/
+        border-radius: 3px 3px 0 0;
+    }
+
+    /* Selected toggle button. Add inner shadows when selected. */
+    .panel-toolbar-togglebutton-selected {
+        background-color: #bababa;
+        border: 1px solid #6c6a6a;
+        -webkit-box-shadow: inset 0px 0px 4px #787878;
+        -moz-box-shadow: inset 0px 0px 4px #787878;
+        box-shadow: inset 1px 4px 9px 0px #787878;
+    }
+
+    .toolbar-spacer {
+        display: inline-block;
+        position: relative;
+        width: 0px;
+        height: 23px;
+        margin: 0 2px 1px 8px;
+        border-left: 1px solid #adadad;
+        border-right: 1px solid #fff;
+    }
+
+
+    .panel-body {
+        background-color: #fff;
+        vertical-align: top;
+    }
 }
-
-.panel-title {
-    color: white;
-    text-align: center;
-    white-space: nowrap;
-    text-transform: uppercase;
-    font-size: 16px;
-    line-height: 36px; /*Should match panel-header height*/
-
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -o-user-select: none;
-    -ms-user-select: none;
-    -khtml-user-select: none;
-    user-select: none;
-}
-
-.panel-toolbar {
-    /*background-color: #208ec9; blue*/
-    background-color: #d4d4d4;
-    height: 37px;
-    padding: 0 5px;
-    /*border-top: 1px solid #f2f7fd;*/
-    border-bottom: 1px solid #8f8f8f;
-    background-image: linear-gradient(to bottom, #f9f9f9, #cfcfcf);
-}
-
-.panel-body {
-    background-color: #fff;
-}
-
-
-
-
-
-/**************************************************************************/
-/** Toolbar Items
-/**************************************************************************/
-/** The following classes are used to define the style for items rendered
- *  in a panel toolbar.
- */
-
-.toolbar-button, .toolbar-button-hover, .toolbar-button-selected {
-    height: 28px;
-    border-radius: 3px;
-    cursor: pointer;
-    padding: 0px 7px;
-    margin: 3px 0 0 0;
-    color: #272727;
-    /*background: #208ec9; /* Same as toolbar background */
-    /*border: 1px solid #208ec9; /* Same as toolbar background */
-    border: 1px solid rgba(0,0,0,0);
-}
-
-.toolbar-label,
-.toolbar-button-label {
-    white-space: nowrap;
-    color: #272727;
-}
-
-.toolbar-label{
-    padding: 0 5px;
-}
-
-.toolbar-button-hover {
-    background-color: #d2e3ed;
-    border: 1px solid #adadad;
-}
-
-.toolbar-button-selected {
-    background-color: #d2e3ed;
-    border: 1px solid #adadad;
-}
-
-/* Padding for button icons */
-.toolbar-button-icon {
-    margin: 0 5px 0 0px;
-}
-
-/* Menu pulldown icon (triangle) */
-.toolbar-button-menu-icon {
-    width: 0;
-    height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #525252;
-    margin-left: 10px;
-}
-
-
-/* Selected menu button. Remove radius on the bottom. */
-.panel-toolbar-menubutton-selected {
-    background-color: #d2e3ed;
-    border: 1px solid #adadad;
-    /*border-bottom: 0px;*/
-    border-radius: 3px 3px 0 0;
-}
-
-/* Selected toggle button. Add inner shadows when selected. */
-.panel-toolbar-togglebutton-selected {
-    background-color: #bababa;
-    border: 1px solid #6c6a6a;
-    -webkit-box-shadow: inset 0px 0px 4px #787878;
-    -moz-box-shadow: inset 0px 0px 4px #787878;
-    box-shadow: inset 1px 4px 9px 0px #787878;
-}
-
-.toolbar-spacer {
-    display: inline-block;
-    position: relative;
-    width: 0px;
-    height: 23px;
-    margin: 0 8px 3px 8px;
-    border-left: 1px solid #adadad;
-    border-right: 1px solid #fff;
-}
-
 
 
 /**************************************************************************/
 /** Button
 /**************************************************************************/
+.javaxt-button {
 
-.button {
-    border-radius: 3px;
-    color: #363636;
-    display: inline-block;
-    font-size: 14px;
-    width: 80px;
-    height: 26px;
-    line-height: 24px;
-    vertical-align: middle;
-    background-color: #e4e4e4;
-    border: 1px solid #b4b4b4;
-    /*
-    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
-    text-shadow: 1px 1px 0px rgb(255, 255, 255);
-    */
-    cursor: pointer;
+    .button {
+        border-radius: 3px;
+        color: #363636;
+        display: inline-block;
+        width: 80px;
+        height: 26px;
+        line-height: 24px;
+        vertical-align: middle;
+        background-color: #e4e4e4;
+        border: 1px solid #b4b4b4;
+        /*
+        box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+        text-shadow: 1px 1px 0px rgb(255, 255, 255);
+        */
+        cursor: pointer;
+    }
+
+    .button-label {
+        white-space: nowrap;
+    }
+
+    .button-selected {
+
+    }
+
+    .button:disabled,
+    .button[disabled]{
+        opacity:0.75;
+        color: #939393;
+        box-shadow: 0 0px 0px 0 rgba(0, 0, 0, 0.2);
+        cursor:default;
+    }
+
+    .button:hover {
+        background-color: #d2e3ed;
+        border-color: rgba(82, 168, 236, 0.8);
+    }
+
+    .button:disabled:hover {
+        background-color: #e4e4e4;
+        border: 1px solid #b4b4b4;
+    }
+
+    .button:active {
+        box-shadow: none;
+    }
+    .button:focus {
+        outline:0;
+    }
 }
-
-.button-selected {
-
-}
-
-.button:disabled,
-.button[disabled]{
-    opacity:0.75;
-    color: #939393;
-    box-shadow: 0 0px 0px 0 rgba(0, 0, 0, 0.2);
-    cursor:default;
-}
-
-.button:hover {
-    background-color: #d2e3ed;
-    border-color: rgba(82, 168, 236, 0.8);
-}
-
-.button:disabled:hover {
-    background-color: #e4e4e4;
-    border: 1px solid #b4b4b4;
-}
-
-.button:active {
-    box-shadow: none;
-}
-.button:focus {
-    outline:0;
-}
-
 
 
 
@@ -257,7 +264,6 @@ input, select, textarea { /* Allows overriding native style of form elements on 
 
     color: #363636;
     display: inline-block;
-    font-size: 14px;
     height: 28px;
     line-height: 28px;
     padding: 2px 4px;
@@ -293,7 +299,6 @@ input, select, textarea { /* Allows overriding native style of form elements on 
 
 .form-label {
     color: #636363;
-    font-size: 14px;
     white-space: nowrap;
     cursor: default;
     padding: 5px 10px 0 0;
@@ -383,7 +388,6 @@ input, select, textarea { /* Allows overriding native style of form elements on 
     border-radius: 3px;
     color: #363636;
     display: inline-block;
-    font-size: 14px;
     width: 80px;
     height: 26px;
     line-height: 24px;
@@ -482,7 +486,6 @@ select:focus, textarea:focus, input:focus{
 
 .form-input-menu-item {
     color: #363636;
-    font-size: 14px;
     height: 28px;
     line-height: 28px;
     padding: 0px 6px;
@@ -502,6 +505,26 @@ select:focus, textarea:focus, input:focus{
 }
 .form-input-menu-item-new { /* For a "new" menu option in a combobox menu. Used in conjuction with form-input-menu-item */
     border-top: 1px solid #ccc;
+}
+
+
+/**************************************************************************/
+/** Form Error
+/**************************************************************************/
+
+.form-input-error {
+    background-color: #fff2f2;
+    border-color: #d66262;
+}
+
+
+/**************************************************************************/
+/** Form placeholder
+/**************************************************************************/
+
+.form-input::placeholder {
+  color: #a1a1a1;
+  font-style: italic;
 }
 
 
@@ -545,23 +568,53 @@ select:focus, textarea:focus, input:focus{
 /** The following classes are used to define the style for pop-up callouts
  *  generated using the javaxt.dhtml.Callout class.
  */
+.javaxt-callout{
+    .callout-panel, .callout-arrow {
+        border: 1px solid #adadad;
+        background-color: #f8f8f8;
+        cursor: pointer;
+    }
 
-.callout-panel, .callout-arrow {
-    border: 1px solid #adadad;
-    background-color: #f8f8f8;
+    .callout-panel {
+        border-radius: 3px;
+        box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    .callout-arrow {
+        width: 7px;
+        height: 7px;
+        padding: 12px;
+    }
+}
+
+
+/**************************************************************************/
+/** Error Callout Panel
+/**************************************************************************/
+/** The following classes are used to define the style for pop-up callouts
+ *  generated using the javaxt.dhtml.Callout class.
+ */
+
+.error-callout-panel, .error-callout-arrow {
+    border: 1px solid #8c0000;
+    background-color: #921d1d;
+    color: #fff;
     cursor: pointer;
 }
 
-.callout-panel {
+.error-callout-panel {
     border-radius: 3px;
+    padding: 5px !important;
     box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
 }
 
-.callout-arrow {
+.error-callout-arrow {
     width: 7px;
     height: 7px;
     padding: 12px;
 }
+
+
 
 
 /**************************************************************************/
@@ -596,7 +649,7 @@ select:focus, textarea:focus, input:focus{
 }
 
 .menu-button-hover {
-    border-color: #cccccc;
+    border-color: #ccc;
     background-color: #f0f8ff;
 }
 
@@ -611,93 +664,94 @@ select:focus, textarea:focus, input:focus{
 /** The following classes are used to define the style for windows and
  *  dialogs generated using the javaxt.dhtml.Window class.
  */
+.javaxt-window {
 
-.window {
-    background-color: #ffffff;
-    border-radius: 8px;
-    display: inline-block;
-    box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
-    min-width: 150px;
-    min-height: 75px;
+    .window {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 12px 14px 0 rgba(0, 0, 0, 0.2), 0 13px 20px 0 rgba(0, 0, 0, 0.2);
+        min-width: 150px;
+        min-height: 75px;
+    }
+
+    .window-header {
+        background-color: #0f6391;
+        height: 36px;
+        cursor: default;
+
+        position: relative;
+        border-radius: 7px 7px 0px 0px;
+        border: 1px solid #2a79bf;
+        border-bottom: 0px;
+        box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px 0px;
+        cursor: default;
+        overflow: hidden;
+    }
+
+    .window-title {
+        color: #fff;
+        text-align: center;
+        white-space: nowrap;
+        text-transform: uppercase;
+        line-height: 36px; /*Should match window-header height*/
+
+        position: absolute;
+        text-align: left;
+        cursor: default;
+        padding-left: 9px;
+    }
+
+    .window-header-button-bar {
+        position: absolute;
+        right: 0;
+        padding: 6px 7px 0 0;
+    }
+
+    .window-header-button {
+        font-size: 18px;
+        border: 0;
+        color: #ffffff;
+        cursor: pointer;
+        padding: 5px;
+    }
+
+    .window-header-button:hover {
+        background-color:#5b9bd2;
+        transition: 0.1s;
+        border-radius: 3px;
+    }
+
+    .window-mask {
+        background-color: rgba(23, 34, 42, 0.6)
+    }
+
+    .window-body {
+        padding: 7px;
+        vertical-align: top;
+        color: #303131;
+    }
+
+    .alert-header { /* used in conjunction with window-header */
+        border: 1px solid #c9af53;
+        background-color: #cb6400;
+    }
+
+    .alert-header .window-header-button:hover {
+        background-color: #ea985c;
+    }
+
+    .alert-body, .confirm-body {
+        padding: 10px 10px 15px 15px;
+        line-height: 18px;
+    }
+
+    .button-div {
+        padding: 0 12px 12px 12px;
+        text-align: right;
+        position: relative;
+    }
+
 }
-
-.window-header {
-    background-color: #0f6391;
-    height: 36px;
-    cursor: default;
-    border-bottom: 1px solid #6a9ebb;
-
-    position: relative;
-    border-radius: 7px 7px 0px 0px;
-    border: 1px solid #2a79bf;
-    box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px 0px;
-    cursor: default;
-    overflow: hidden;
-}
-
-.window-title {
-    color: white;
-    text-align: center;
-    white-space: nowrap;
-    text-transform: uppercase;
-    line-height: 36px; /*Should match window-header height*/
-
-    position: absolute;
-    font-size: 14px;
-    text-align: left;
-    cursor: default;
-    padding-left: 9px;
-}
-
-.window-header-button-bar {
-    position: absolute;
-    right: 0;
-    padding: 6px 7px 0 0;
-}
-
-.window-header-button {
-    font-size: 18px;
-    border: 0;
-    color: #ffffff;
-    cursor: pointer;
-    padding: 5px;
-}
-
-.window-header-button:hover {
-    background-color:#5b9bd2;
-    transition: 0.1s;
-    border-radius: 3px;
-}
-
-.window-mask {
-    background-color: rgba(23, 34, 42, 0.6)
-}
-
-.window-body {
-    padding: 7px;
-    vertical-align: top;
-}
-
-.alert-header { /* used in conjunction with window-header */
-    border: 1px solid #c9af53;
-    background-color: #cb6400;
-}
-
-.alert-header .window-header-button:hover {
-    background-color: #ea985c;
-}
-
-.alert-body, .confirm-body {
-    padding: 10px 10px 15px 15px;
-    line-height: 18px;
-}
-
-.button-div {
-    padding: 0 12px 12px 12px;
-    text-align: right;
-    position: relative;
-}
-
 
 
 /**************************************************************************/
@@ -705,152 +759,157 @@ select:focus, textarea:focus, input:focus{
 /**************************************************************************/
 /** The following classes are used to define the style for the tab panel.
  */
+.javaxt-tab-panel{
 
-.tab-panel {
-    padding: 0 5px;
-}
+    .tab-bar {
+        background-color: #0f6391; /* same as windows header */
+        height: 30px;
+        color: #fff;
+        border: 1px solid #6393bf;
+        border-width: 0 1px;
+    }
 
-.tab-bar {
-    background-color: #0f6391; /* same as windows header */
-    height: 30px;
-    color: #fff;
-    border: 1px solid #6393bf;
-    border-width: 0 1px;
-}
+    .tab-active, .tab-inactive {
+        padding: 0 12px;
+        line-height: 30px;
+        cursor: default;
+    }
 
-.tab-active, .tab-inactive {
-    padding: 0 12px;
-    line-height: 30px;
-    cursor: default;
-}
+    .tab-active {
+        background-color: #379ad1;
+    }
 
-.tab-active {
-    background-color: #379ad1;
-}
+    .tab-inactive {
+        background-color: none;
+    }
 
-.tab-inactive {
-    background: none;
-}
+    .tab-inactive:hover {
+        background-color: #3dabe9;
+    }
 
-.tab-inactive:hover {
-    background-color: #3dabe9;
-}
+    .tab-body {
+        padding: 0;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        vertical-align: top;
+    }
 
-.tab-body {
-    padding: 0;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    vertical-align: top;
 }
 
 /** Special case when tab is the first component inside a window  **/
+.javaxt-window {
+    .window-body table:first-child .tab-bar {
+        background-color: #208EC9;
+    }
 
-.window-body table:first-child .tab-bar {
-    background-color: #208EC9;
+    .window-body table:first-child .tab-active {
+        background-color: #379ad1;
+        border-top: 2px solid #69b9ff;
+        margin-top: -2px;
+    }
+
+    .window-body table:first-child .tab-body {
+        border: 0 none;
+        border-radius: 0 0 8px 8px;
+    }
 }
 
-.window-body table:first-child .tab-active {
-    background-color: #379ad1;
-    border-top: 2px solid #69b9ff;
-    margin-top: -2px;
-}
-
-.window-body table:first-child .tab-body {
-    border: 0 none;
-    border-radius: 0 0 8px 8px;
-}
 
 /**************************************************************************/
 /** Table
 /**************************************************************************/
 /** Default style for grid controls
  */
-.table-header {
-    /*height: 36px; /*table-header-col height + border */
-    border-bottom: 1px solid #ababab;
-    background-color: #eaeaea;
-    background-image: linear-gradient(to bottom, #f9f9f9, #e4e5e7);
-    /* box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 3px 10px 0 rgba(0, 0, 0, 0.19); */
-}
 
-.table-row, .table-row-selected {
-    background-color: #ffffff;
-    border-bottom: 1px solid #cccccc;
-}
+ .javaxt-table,
+ .javaxt-datagrid {
 
-/* .table-row:nth-child(even) {background: #CCC} */
-.table-row:nth-child(odd) {
-    background-color: #F8F8F8;
-}
+    .table-header {
+        /*height: 36px; /*table-header-col height + border */
+        border-bottom: 1px solid #ababab;
+        background-color: #eaeaea;
+        background-image: linear-gradient(to bottom, #f9f9f9, #e4e5e7);
+        /* box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 3px 10px 0 rgba(0, 0, 0, 0.19); */
+    }
 
+    .table-row, .table-row-selected {
+        background-color: #ffffff;
+        border-bottom: 1px solid #cccccc;
+    }
 
-.table-row:hover{
-    background-color:#EDF3FE;
-}
-
-.table-row-selected{
-    /*border-bottom-style:dotted;*/
-    /*border-color:#a3bae9;*/
-    background-color:#FFFFB1;
-}
-
-.table-col, .table-header-col {
-    font-family: helvetica,arial,verdana,sans-serif;
-    font-size: 14px;
-    white-space: nowrap;
-    color: #272727;
-    height: 35px;
-    line-height: 35px;
-    padding: 0 5px;
-
-    /*
-    text-overflow: ellipsis;
-    -o-text-overflow: ellipsis;
-    -webkit-text-overflow: ellipsis;
-    */
-}
-
-.table-header-col {
-    border-left: 1px solid #cccccc;
-    border-right: 1px solid #cccccc;
-    cursor: pointer;
-}
-
-.table-header-col:first-child{
-    border-left: none;
-}
-
-.table-col {
-    border-left: 0;
-    border-right: 0;
-}
-
-.table-resizeHandle {
-    width: 5px;
-    height: 100%;
-    cursor: col-resize;
-    margin: 0 -7px 0 0px;
-}
+    /* .table-row:nth-child(even) {background-color: #CCC} */
+    .table-row:nth-child(odd) {
+        background-color: #F8F8F8;
+    }
 
 
-/* Up/down triangles that appear in the header */
-.table-icon-sort-asc, .table-icon-sort-desc {
-    width: 0;
-    height: 0;
-    position: absolute;
-    margin: -8px 0 0 5px;
-}
+    .table-row:hover{
+        background-color:#EDF3FE;
+    }
 
-.table-icon-sort-asc {
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-bottom: 5px solid #525252;
-}
+    .table-row-selected{
+        /*border-bottom-style:dotted;*/
+        /*border-color:#a3bae9;*/
+        background-color:#FFFFB1;
+    }
 
-.table-icon-sort-desc {
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 5px solid #525252;
+    .table-col, .table-header-col {
+        white-space: nowrap;
+        color: #272727;
+        height: 35px;
+        line-height: 35px;
+        padding: 0 5px;
+
+        /*
+        text-overflow: ellipsis;
+        -o-text-overflow: ellipsis;
+        -webkit-text-overflow: ellipsis;
+        */
+    }
+
+    .table-header-col {
+        border-left: 1px solid #cccccc;
+        border-right: 1px solid #cccccc;
+        cursor: pointer;
+    }
+
+    .table-header-col:first-child{
+        border-left: none;
+    }
+
+    .table-col {
+        border-left: 0;
+        border-right: 0;
+    }
+
+    .table-resizeHandle {
+        width: 5px;
+        height: 100%;
+        cursor: col-resize;
+        margin: 0 -7px 0 0px;
+    }
+
+
+    /* Up/down triangles that appear in the header */
+    .table-icon-sort-asc, .table-icon-sort-desc {
+        width: 0;
+        height: 0;
+        position: absolute;
+        margin: -8px 0 0 5px;
+    }
+
+    .table-icon-sort-asc {
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-bottom: 5px solid #525252;
+    }
+
+    .table-icon-sort-desc {
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 5px solid #525252;
+    }
+
 }
 
 
@@ -858,55 +917,54 @@ select:focus, textarea:focus, input:focus{
 /** Checkbox
 /**************************************************************************/
 
-.checkbox-panel {
-    position: relative;
-    display: inline-block;
-}
+.javaxt-checkbox {
 
-.checkbox-label {
-    white-space: nowrap;
-    cursor: default;
-    padding: 1px 0 0 5px;
-}
+    .checkbox-label {
+        white-space: nowrap;
+        cursor: pointer;
+        padding: 0 0 0 5px;
+        line-height: 20px;
+    }
 
-.checkbox-box {
-    padding: 0px;
-    margin: 0px;
-    width: 14px;
-    height: 14px;
-    border: 1px solid #b9b9b9;
-    border-radius: 3px;
-    background-color: #f8f8f8;
+    .checkbox-box {
+        padding: 0px;
+        margin: 0px;
+        width: 18px;
+        height: 18px;
+        border: 1px solid #b9b9b9;
+        border-radius: 3px;
+        background-color: #f8f8f8;
 
 
-    transition: border 0.2s linear 0s, box-shadow 0.2s linear 0s;
-    -webkit-transition: all 0.20s ease-in-out;
-    -moz-transition: all 0.20s ease-in-out;
-    -ms-transition: all 0.20s ease-in-out;
-    -o-transition: all 0.20s ease-in-out;
+        transition: border 0.2s linear 0s, box-shadow 0.2s linear 0s;
+        -webkit-transition: all 0.20s ease-in-out;
+        -moz-transition: all 0.20s ease-in-out;
+        -ms-transition: all 0.20s ease-in-out;
+        -o-transition: all 0.20s ease-in-out;
 
-}
+    }
 
-.checkbox-check {
-    content: '';
-    display: block;
-    width: 4px;
-    height: 9px;
-    border: solid #fff;
-    border-width: 0 2px 2px 0;
-    transform: rotate(40deg);
-    margin: 1px 0px 0px 4px;
-}
+    .checkbox-check {
+        content: '';
+        display: block;
+        width: 4px;
+        height: 9px;
+        border: solid #fff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+        margin: 2px 0 0 6px;
+    }
 
-.checkbox-select {
-    background-color: #0087ff;
-    border-color: #2a79bf;
-}
+    .checkbox-select {
+        background-color: #0087ff;
+        border-color: #2a79bf;
+    }
 
-.checkbox-hover {}
-.checkbox-panel:hover .checkbox-box {
-    border-color: rgba(82, 168, 236, 0.8);
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset, 0 0 8px rgba(82, 168, 236, 0.6);
+    .checkbox-hover {
+        border-color: rgba(82, 168, 236, 0.8);
+        box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset, 0 0 8px rgba(82, 168, 236, 0.6);
+        outline: 0 none;
+    }
 }
 
 
@@ -1020,37 +1078,32 @@ select:focus, textarea:focus, input:focus{
 /**************************************************************************/
 /** Switch
 /**************************************************************************/
-.switch-groove {
-    background-color: #dcdcdc;
-    width: 40px;
-    height: 24px;
-    border-radius: 12px;
-    position: relative;
-}
-.switch-handle {
-    width: 20px;
-    height: 20px;
-    background-color: #fff;
-    border-radius: 10px;
-    position: absolute;
-    margin: 2px;
-    box-shadow: 0px 3px 4px rgba(0, 0, 0, 0.2);
-}
-.switch-groove-active {
-    background-color: #4bd763;
-    width: 40px;
-    height: 24px;
-    border-radius: 12px;
-    position: relative;
-}
-.switch-handle-active {
-    width: 20px;
-    height: 20px;
-    background-color: #fff;
-    border-radius: 10px;
-    position: absolute;
-    margin: 2px;
-    box-shadow: 0px 3px 4px rgba(0, 0, 0, 0.2);
+
+.javaxt-switch {
+    
+    display: inline-block;
+
+    .switch-groove {
+        background-color: #dcdcdc;
+        width: 40px;
+        height: 24px;
+        border-radius: 12px;
+        position: relative;
+    }
+    .switch-handle {
+        width: 20px;
+        height: 20px;
+        background-color: #fff;
+        border-radius: 10px;
+        position: absolute;
+        margin: 2px;
+        box-shadow: 0px 3px 4px rgba(0, 0, 0, 0.2);
+    }
+    .switch-groove.active {
+        background-color: #4bd763;
+    }
+    .switch-handle.active {
+    }
 }
 
 
@@ -1058,7 +1111,7 @@ select:focus, textarea:focus, input:focus{
 /** Slider
 /**************************************************************************/
 
-.sliderGrove {
+.slider-groove {
     display: inline-block;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: padding-box;
@@ -1099,7 +1152,7 @@ select:focus, textarea:focus, input:focus{
     background-repeat: no-repeat, repeat-x;
 }
 
-.sliderHandle {
+.slider-handle {
     position:relative;
     -webkit-box-shadow: 2px 2px 3px #666;
     -moz-box-shadow: 2px 2px 3px #666;
@@ -1126,7 +1179,7 @@ select:focus, textarea:focus, input:focus{
 }
 
 
-.sliderHandle:hover, .sliderHandle.hover {
+.slider-handle:hover, .slider-handle.hover {
     background-image:
        -webkit-gradient(linear, left top, left bottom,
                from(#6297f2),
