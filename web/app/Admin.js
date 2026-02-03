@@ -82,6 +82,7 @@ javaxt.express.finance.Admin = function(parent, config) {
                 toolbarButton: javaxt.dhtml.style.default.toolbarButton
             }
         });
+        createPanel("IconSearch", "fas fa-image", javaxt.express.finance.IconSearch, config);
 
 
 
