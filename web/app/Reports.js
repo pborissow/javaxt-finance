@@ -20,8 +20,9 @@ javaxt.express.finance.Reports = function(parent, config) {
         timezone: "America/New_York"
     };
     var mainDiv;
-    var reportList, reportEditor, accountDashboard;
+    var reportList, reportEditor, accountDashboard, toggleSwitch;
     var accounts, vendors, sources, sourceAccounts, accountStats; //DataStores
+    var showAll = false;
 
 
   //**************************************************************************
@@ -51,8 +52,8 @@ javaxt.express.finance.Reports = function(parent, config) {
         mainDiv = createElement("div", parent, {
             height: "100%",
             position: "relative",
-            backgroundColor: "#e2e2e2"
         });
+        mainDiv.className = "report-list";
         me.el = mainDiv;
 
 
@@ -67,7 +68,45 @@ javaxt.express.finance.Reports = function(parent, config) {
         };
 
 
+      //Add toggle switch
+        var toggleDiv = createElement("div", reportList, {float: "right"});
+        toggleSwitch = new javaxt.dhtml.Switch(toggleDiv, {value: false, style: config.style.switch});
+        toggleSwitch.onChange = function(value){
+            showAll = value;
+            update();
+        };
 
+
+      //Render tiles
+        update();
+
+    };
+
+
+  //**************************************************************************
+  //** clear
+  //**************************************************************************
+    var clear = function(){
+
+        var nodesToRemove = [];
+        for (var i=0; i<reportList.childNodes.length; i++){
+            var div = reportList.childNodes[i];
+            if (div.accountID || (div.classList && div.classList.contains('new-report'))) {
+                nodesToRemove.push(div);
+            }
+        }
+
+        for (var i=0; i<nodesToRemove.length; i++){
+            reportList.removeChild(nodesToRemove[i]);
+        }
+    };
+
+
+  //**************************************************************************
+  //** update
+  //**************************************************************************
+    var update = function(){
+        clear();
 
         getSources(orgConfig, function(){
             vendors = orgConfig.vendors;
@@ -81,12 +120,16 @@ javaxt.express.finance.Reports = function(parent, config) {
             accounts = orgConfig.accounts;
             for (var i=0; i<accounts.length; i++){
                 var account = accounts.get(i);
-                addReport(account);
+                if (showAll || account.active===true) {
+                    addReport(account);
+                }
             }
             addNewReportOption();
 
             accounts.addEventListener("add", function(account){
-                addReport(account);
+                if (showAll || account.active===true) {
+                    addReport(account);
+                }
             }, me);
 
             accounts.addEventListener("remove", function(account){
@@ -104,7 +147,6 @@ javaxt.express.finance.Reports = function(parent, config) {
 
 
         accountStats = orgConfig.stats.accounts;
-
     };
 
 
@@ -118,7 +160,7 @@ javaxt.express.finance.Reports = function(parent, config) {
                 return div;
             }
         }
-        return div;
+        return null;
     };
 
 
@@ -127,7 +169,13 @@ javaxt.express.finance.Reports = function(parent, config) {
   //**************************************************************************
     var addReport = function(account){
 
+      //Check if report already exists to avoid duplicates
+        var existingReport = getReport(account);
+        if (existingReport) return;
+
+
         var div = createElement("div", reportList, "report-preview");
+        div.accountID = account.id;
         var table = createTable(div);
         var title = table.addRow().addColumn("title");
         createElement("div", title).innerHTML = account.name + " Account";
