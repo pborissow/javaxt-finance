@@ -214,19 +214,22 @@ javaxt.express.finance.Transactions = function(parent, config) {
   //**************************************************************************
     var createMainPanel = function(parent){
 
-        var table = createTable(parent);
-        var tr, td;
 
-      //Row 1
-        tr = table.addRow();
-        td = tr.addColumn("panel-toolbar");
-        td.colSpan = 2;
-        td.style.width = "100%";
-        createToolbar(td);
+      //Create panel
+        var panel = new javaxt.dhtml.Panel(parent, {
+            style: config.style.panel
+        });
 
 
-      //Row 2
-        tr = table.addRow();
+      //Create toolbar
+        createToolbar(panel.getToolbar());
+
+
+      //Create body (table with 2 columns)
+        var table = createTable(panel.getBody());
+        var tr = table.addRow();
+        var td;
+
         td = tr.addColumn({
             width: "100%",
             height: "100%"
@@ -244,8 +247,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
   //**************************************************************************
   //** createToolbar
   //**************************************************************************
-    var createToolbar = function(parent){
-        var toolbar = createElement('div', parent);
+    var createToolbar = function(toolbar){
 
 
         searchBar = createSearchBar(toolbar);
@@ -902,7 +904,7 @@ javaxt.express.finance.Transactions = function(parent, config) {
   //**************************************************************************
     var editCategory = function(category){
         if (!categoryEditor){
-            categoryEditor = new javaxt.express.finance.CategoryEditor();
+            categoryEditor = new javaxt.express.finance.CategoryEditor(config);
             categoryEditor.onSubmit = function(){
                 var category = categoryEditor.getValues();
                 save("category", JSON.stringify(category), {

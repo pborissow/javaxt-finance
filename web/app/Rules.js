@@ -50,28 +50,17 @@ javaxt.express.finance.Rules = function(parent, config) {
         });
 
 
-      //Create main table
-        var table = createTable();
-        var tbody = table.firstChild;
-        var tr, td;
+        var div = createElement("div", {
+            height: "100%",
+            position: "relative"
+        });
 
 
-      //Row 1
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        td.className = "panel-toolbar";
-        tr.appendChild(td);
-        createToolbar(td);
-
-
-      //Row 2
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        td.style.height = "100%";
-        tr.appendChild(td);
-        createBody(td);
+        var panel = new javaxt.dhtml.Panel(div, {
+            style: config.style.panel
+        });
+        createToolbar(panel.getToolbar());
+        createBody(panel.getBody());
 
 
 
@@ -80,20 +69,19 @@ javaxt.express.finance.Rules = function(parent, config) {
             if (typeof parent === "string"){
                 parent = document.getElementById(parent);
             }
-            parent.appendChild(table);
+            parent.appendChild(div);
         }
         else{
 
           //Create window
-            var body = document.getElementsByTagName("body")[0];
-            var buttonDiv = document.createElement("div");
-            win = new javaxt.dhtml.Window(body, {
+            var buttonDiv = createElement("div");
+            win = new javaxt.dhtml.Window(document.body, {
                 title: "Rules",
                 width: 800,
                 height: 600,
                 valign: "middle",
                 modal: true,
-                body: table,
+                body: div,
                 footer: buttonDiv,
                 style: merge({
                     body: {
@@ -107,10 +95,9 @@ javaxt.express.finance.Rules = function(parent, config) {
             buttonDiv.className = "button-div";
             buttonDiv.style.borderTop = "1px solid #dcdcdc";
             buttonDiv.style.paddingTop = "10px";
-            var button = document.createElement("input");
+            var button = createElement("input", "form-button");
             button.type = "button";
             button.name = button.value = "Close";
-            button.className = "form-button";
             button.onclick = win.hide;
             buttonDiv.appendChild(button);
         }
@@ -385,7 +372,7 @@ javaxt.express.finance.Rules = function(parent, config) {
     var save = javaxt.dhtml.utils.post;
     var del = javaxt.dhtml.utils.delete;
     var merge = javaxt.dhtml.utils.merge;
-    var createTable = javaxt.dhtml.utils.createTable;
+    var createElement = javaxt.dhtml.utils.createElement;
     var createCell = javaxt.express.finance.utils.createCell;
     var createSpacer = javaxt.express.finance.utils.createSpacer;
     var createButton = javaxt.express.finance.utils.createButton;

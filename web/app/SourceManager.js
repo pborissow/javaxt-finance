@@ -51,38 +51,17 @@ javaxt.express.finance.SourceManager = function(parent, config) {
 
 
 
-      //Create main div
-        var div = createElement("div", parent, {
-            position: "relative",
-            height: "100%"
+      //Create panel
+        var panel = new javaxt.dhtml.Panel(parent, {
+            style: config.style.panel
         });
-        me.el = div;
+        me.el = panel.el;
 
 
-      //Create waitmask
-        waitmask = createWaitMask(div);
-
-
-      //Create main table
-        var table = createTable(div);
-        var td;
-
-
-      //Row 1
-        td = table.addRow().addColumn("panel-toolbar");
-        td.style.width = "100%";
-        createToolbar(td);
-
-
-      //Row 2
-        td = table.addRow().addColumn({
-            width: "100%",
-            height: "100%"
-        });
-        createPanels(td);
-
-
-
+      //Create waitmask, toolbar, and body
+        waitmask = createWaitMask(panel.el);
+        createToolbar(panel.getToolbar());
+        createPanels(panel.getBody());
 
 
       //Get or create datastore for vendors
@@ -106,8 +85,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
   //**************************************************************************
   //** createToolbar
   //**************************************************************************
-    var createToolbar = function(parent){
-        var toolbar = createElement('div', parent);
+    var createToolbar = function(toolbar){
 
 
       //Add button
@@ -419,16 +397,26 @@ javaxt.express.finance.SourceManager = function(parent, config) {
   //** createEditor
   //**************************************************************************
     var createEditor = function(parent){
+
+
+      //Create table to match javaxt-table style
         var table = createTable(parent);
+        table.className = "javaxt-table";
         var tr, td;
 
 
+      //Add phantom row to match javaxt-table style
+        table.addRow().addColumn({ width:"100%", height:"1px"});
+
+
+      //Add table header to match javaxt-table
         tr = table.addRow("table-header");
         td = tr.addColumn("table-header-col no-border noselect");
         td.innerHTML = "Editor";
         var header = td;
 
 
+      //Add body
         td = table.addRow().addColumn({
             height: "100%",
             verticalAlign: "top"
@@ -437,7 +425,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
         setStyle(body, config.style.form);
 
 
-
+      //Create editor
         editor = {
             setTitle: function(title){
                 header.innerHTML = title;
@@ -497,12 +485,6 @@ javaxt.express.finance.SourceManager = function(parent, config) {
             ],
             buttons: [
                 {
-                    name: "Reset",
-                    onclick: function(){
-                        reset();
-                    }
-                },
-                {
                     name: "Save",
                     onclick: function(){
 
@@ -537,6 +519,12 @@ javaxt.express.finance.SourceManager = function(parent, config) {
                             }
                         });
 
+                    }
+                },
+                {
+                    name: "Reset",
+                    onclick: function(){
+                        reset();
                     }
                 }
             ]
@@ -1005,7 +993,7 @@ javaxt.express.finance.SourceManager = function(parent, config) {
 
 
       //Create thumbnailEditor
-        var thumbnailEditor = new javaxt.dhtml.ThumbnailEditor(div, {
+        var thumbnailEditor = new javaxt.express.ThumbnailEditor(div, {
             thumbnailWidth: 150,
             thumbnailHeight: 150,
             readOnly: true,

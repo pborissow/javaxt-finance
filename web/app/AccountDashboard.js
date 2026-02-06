@@ -50,24 +50,17 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
         config.timezone = config.timezone.trim().replace(" ", "_");
 
 
-        var table = createTable(parent);
-
-
-
-      //Create toolbar
-        createToolbar(table.addRow().addColumn("panel-toolbar"));
-
-
-      //Create main div
-        var td = table.addRow().addColumn({
-            height: "100%"
+      //Create panel
+        var panel = new javaxt.dhtml.Panel(parent, {
+            style: config.style.panel
         });
-        mainDiv = createElement("div", td, {
+        createToolbar(panel.getToolbar());
+        mainDiv = createElement("div", panel.getBody(), {
             height: "100%",
             position: "relative"
         });
 
-        me.el = table;
+        me.el = panel.el;
         addShowHide(me);
     };
 
@@ -1099,17 +1092,17 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
         });
 
 
-      //Create table with 2 rows
-        var table = createTable();
-        var td;
 
-        td = table.addRow().addColumn("panel-toolbar");
-        td.style.width = "100%";
-        var toolbar = createElement('div', td);
+        var div = createElement("div", {
+            height: "100%",
+            position: "relative"
+        });
 
-        td = table.addRow().addColumn();
-        td.style.width = "100%";
-        td.style.height = "100%";
+        var panel = new javaxt.dhtml.Panel(div, {
+            style: config.style.panel
+        });
+        var toolbar = panel.getToolbar();
+        var body = panel.getBody();
 
 
       //Create data table/grid
@@ -1137,7 +1130,7 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
                 align: "right"
             }
         ];
-        var grid = new javaxt.dhtml.Table(td, {
+        var grid = new javaxt.dhtml.Table(body, {
             style: config.style.table,
             columns: columns
         });
@@ -1157,7 +1150,7 @@ javaxt.express.finance.AccountDashboard = function(parent, config) {
 
 
       //Append table and refactor the update method
-        transactionsPanel.update(table);
+        transactionsPanel.update(div);
         transactionsPanel.update = function(arr){
             grid.addRows(arr);
         };

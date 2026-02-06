@@ -79,7 +79,11 @@ javaxt.express.finance.Admin = function(parent, config) {
                     borderRight: "1px solid #383b41"
                 },
                 table: javaxt.dhtml.style.default.table,
-                toolbarButton: javaxt.dhtml.style.default.toolbarButton
+                toolbarButton: javaxt.dhtml.style.default.toolbarButton,
+                toolbarIcons: {
+                    run: "runIcon",
+                    cancel: "stopIcon"
+                }
             }
         });
         createPanel("IconSearch", "fas fa-image", javaxt.express.finance.IconSearch, config);

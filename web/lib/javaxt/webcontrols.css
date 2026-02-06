@@ -133,7 +133,6 @@ input, select, textarea { /* Allows overriding native style of form elements on 
     .toolbar-button-label {
         white-space: nowrap;
         color: #272727;
-        min-width: 50px;
     }
 
     .toolbar-label {
@@ -1080,7 +1079,7 @@ select:focus, textarea:focus, input:focus{
 /**************************************************************************/
 
 .javaxt-switch {
-    
+
     display: inline-block;
 
     .switch-groove {

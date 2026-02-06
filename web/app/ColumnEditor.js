@@ -56,40 +56,27 @@ javaxt.express.finance.ColumnEditor = function() {
         gridStyle.column += " compact-table";
 
 
+      //Create panel
+        var mainDiv = createElement("div", {
+            width: "100%",
+            height: "100%",
+            position: "relative"
+        });
 
-      //Create main table
-        var table = createTable();
-        var tbody = table.firstChild;
-        var tr, td;
-
-
-      //Row 1
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        td.className = "panel-toolbar";
-        tr.appendChild(td);
-        createToolbar(td);
-
-
-      //Row 2
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        td.style.height = "100%";
-        tr.appendChild(td);
-        createBody(td);
-
+        var panel = new javaxt.dhtml.Panel(mainDiv, {
+            style: config.style.panel
+        });
+        createToolbar(panel.getToolbar());
+        createBody(panel.getBody());
 
 
       //Create window
-        var body = document.getElementsByTagName("body")[0];
-        win = new javaxt.dhtml.Window(body, {
+        win = new javaxt.dhtml.Window(document.body, {
             width: 800,
             height: 600,
             valign: "middle",
             modal: true,
-            body: table,
+            body: mainDiv,
             style: merge({
                 body: {
                     padding: "0px",
@@ -104,9 +91,7 @@ javaxt.express.finance.ColumnEditor = function() {
   //**************************************************************************
   //** createToolbar
   //**************************************************************************
-    var createToolbar = function(parent){
-        var toolbar = document.createElement('div');
-
+    var createToolbar = function(toolbar){
 
       //Add button
         var runButton = createButton(toolbar, {
@@ -126,7 +111,6 @@ javaxt.express.finance.ColumnEditor = function() {
             me.onSubmit(editor.getValue());
         };
 
-        parent.appendChild(toolbar);
     };
 
 
@@ -135,30 +119,18 @@ javaxt.express.finance.ColumnEditor = function() {
   //**************************************************************************
     var createBody = function(parent){
 
-        var table = createTable();
-        var tbody = table.firstChild;
-        var tr, td;
+        var table = createTable(parent);
+        var td;
 
       //Row 1
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        td.style.height = "50%";
-        tr.appendChild(td);
+        td = table.addRow().addColumn({ height: "50%" });
         createEditor(td);
 
-
       //Row 2
-        tr = document.createElement("tr");
-        tbody.appendChild(tr);
-        td = document.createElement("td");
-        td.style.height = "50%";
-        tr.appendChild(td);
+        td = table.addRow().addColumn({ height: "50%" });
         createPreview(td);
 
-        parent.appendChild(table);
     };
-
 
 
   //**************************************************************************
@@ -219,9 +191,7 @@ javaxt.express.finance.ColumnEditor = function() {
   //** createPreview
   //**************************************************************************
     var createPreview = function(parent){
-        preview = document.createElement("div");
-        preview.style.height = "100%";
-        parent.appendChild(preview);
+        preview = createElement("div", parent, { height: "100%" });
     };
 
 
@@ -354,6 +324,7 @@ javaxt.express.finance.ColumnEditor = function() {
   //**************************************************************************
     var merge = javaxt.dhtml.utils.merge;
     var createTable = javaxt.dhtml.utils.createTable;
+    var createElement = javaxt.dhtml.utils.createElement;
     var createButton = javaxt.express.finance.utils.createButton;
 
     init();

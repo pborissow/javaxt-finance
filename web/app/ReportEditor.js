@@ -31,18 +31,15 @@ javaxt.express.finance.ReportEditor = function(parent, config) {
         config = clone;
 
 
-        var table = createTable(parent);
+      //Create panel
+        var panel = new javaxt.dhtml.Panel(parent, {
+            style: config.style.panel
+        });
 
+        createToolbar(panel.getToolbar());
+        createBody(panel.getBody());
 
-
-      //Create toolbar
-        createToolbar(table.addRow().addColumn("panel-toolbar"));
-
-
-      //Create main div
-        createBody(table.addRow().addColumn({ height: "100%" }));
-
-        me.el = table;
+        me.el = panel.el;
         addShowHide(me);
     };
 

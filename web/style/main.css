@@ -441,7 +441,7 @@
     width: 250px;
     display: inline-block;
     float: left;
-    padding: 4px 0 0 0;
+    padding: 0;
     height: 30px;
 }
 
@@ -452,7 +452,7 @@
 
 .panel-toolbar .search-bar-icon,
 .panel-toolbar .search-bar-cancel {
-    top: 8px
+    top: 4px
 }
 
 
