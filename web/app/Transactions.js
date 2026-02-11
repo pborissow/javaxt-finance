@@ -643,14 +643,33 @@ javaxt.express.finance.Transactions = function(parent, config) {
             selectedRow: "green-table-row-selected"
         }, config.style.table);
 
+        var hasCategoryIcons = false;
 
         categoryGrid = new javaxt.dhtml.DataGrid(panel.body, {
             style: style,
             columns: [
                 {header: 'Categories', width:'100%'}
             ],
-            update: function(row, account){
-                row.set(0, account.name);
+            update: function(row, category){
+                if (hasCategoryIcons){
+                    var outerDiv = createElement("div", "category-row");
+
+                    var iconDiv = createElement("div", outerDiv, "category-icon");
+                    if (category.info){
+                        if (category.info.icon){
+                            var typeClass = category.isExpense == true ? "expense-icon" : "income-icon";
+                            createElement("i", iconDiv, category.info.icon + " " + typeClass);
+                        }
+                    }
+
+                    var labelDiv = createElement("div", outerDiv, "category-label");
+                    labelDiv.innerText = category.name;
+
+                    row.set(0, outerDiv);
+                }
+                else{
+                    row.set(0, category.name);
+                }
             }
         });
 
@@ -698,13 +717,21 @@ javaxt.express.finance.Transactions = function(parent, config) {
         categoryGrid.update = function(account){
             categoryGrid.clear();
             panel.createButton.disable();
+            hasCategoryIcons = false;
 
             if (account){
                 var categories = account.categories;
                 if (categories){
                     var rows = [];
                     for (var i=0; i<categories.length; i++){
-                        rows.push(categories.get(i));
+
+                        var category = categories.get(i);
+                        if (category.info && category.info.icon){
+                            hasCategoryIcons = true;
+                        }
+
+
+                        rows.push(category);
                     }
                     categoryGrid.load(rows);
                 }

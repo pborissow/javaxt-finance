@@ -659,6 +659,30 @@
     border-bottom: 1px solid #cccccc;
 }
 
+.green-table-row, .green-table-row-selected{
+
+    .category-row {
+        display: flex;
+        align-items: center;
+    }
+
+    .category-icon {
+        width: 20px;
+        text-align: center;
+        margin-right: 5px;
+        flex-shrink: 0;
+        font-size: 14px;
+        text-shadow: 1px 3px 5px #b3b3b3;
+    }
+
+    .category-label {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
 .bbar-green {
     background-color: #5aa560;
 }
@@ -1323,6 +1347,39 @@
         margin-bottom: 10px;
         display: block;
     }
+}
+
+
+/**************************************************************************/
+/** Icon Picker
+/**************************************************************************/
+.javaxt-combobox.icon-input {
+
+    input:not(:placeholder-shown) {
+        padding-left:26px;
+    }
+
+    .icon-div {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        left: 4px;
+        top: -25px;
+        font-size: 16px;
+        text-align: center;
+    }
+}
+
+
+/**************************************************************************/
+/** Icon Colors
+/**************************************************************************/
+.income-icon {
+    color: #25754c;
+}
+
+.expense-icon {
+    color: #752525;
 }
 
 

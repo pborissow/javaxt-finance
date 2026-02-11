@@ -16,7 +16,7 @@ javaxt.express.finance.CategoryEditor = function(config) {
     var defaultConfig = {
         style: javaxt.dhtml.style.default
     };
-    var form, win, iconComboBox, iconWindow;
+    var form, win, iconInput, iconDiv, iconWindow;
 
 
 
@@ -31,17 +31,23 @@ javaxt.express.finance.CategoryEditor = function(config) {
 
 
       //Create icon ComboBox
-        var iconDiv = createElement("div");
-        iconComboBox = new javaxt.dhtml.ComboBox(iconDiv, {
+        var iconComboBox = new javaxt.dhtml.ComboBox(createElement("div"), {
             readOnly: true,
             showMenuOnFocus: false,
             placeholder: "Select an icon...",
             style: config.style.combobox
         });
+        iconComboBox.el.className += " icon-input";
         var iconButton = iconComboBox.getButton();
         iconButton.innerHTML = "...";
         iconButton.style.backgroundImage = "none";
-        var iconInput = iconComboBox.getInput();
+        iconInput = iconComboBox.getInput();
+        iconInput.disabled = true;
+
+        var menuDiv = iconComboBox.el.childNodes[1];
+        iconDiv = createElement("div", menuDiv, "icon-div");
+        addShowHide(iconDiv);
+        iconDiv.hide();
 
 
       //Create form
@@ -133,6 +139,9 @@ javaxt.express.finance.CategoryEditor = function(config) {
         iconSearch.onClick = function(iconClass){
             iconInput.value = iconClass;
             iconInput.data = iconClass;
+            iconDiv.innerHTML = "";
+            createElement("i", iconDiv, iconClass);
+            iconDiv.show();
             iconWindow.close();
         };
 
@@ -166,26 +175,50 @@ javaxt.express.finance.CategoryEditor = function(config) {
 
       //Broadcast onChange events
         form.onChange = function(formInput, value){
+            if (formInput.name === "isExpense") updateIconStyle();
             me.onChange(formInput.name, value);
         };
     };
 
 
   //**************************************************************************
+  //** updateIconStyle
+  //**************************************************************************
+  /** Updates the iconDiv className to reflect the current expense/revenue type
+   */
+    var updateIconStyle = function(){
+        var data = form.getData();
+        var typeClass = data.isExpense === true || data.isExpense === "true" ?
+            "expense-icon" : "income-icon";
+        iconDiv.className = "icon-div " + typeClass;
+    };
+
+
+  //**************************************************************************
   //** getValues
   //**************************************************************************
+  /** Transforms form inputs into a category object
+   */
     this.getValues = function(){
+
+      //Get form data
         var category = form.getData();
+
+      //Get category ID
         if (isNumber(category.id)) category.id = parseInt(category.id);
         else delete category.id;
+
+      //Get accountID
         if (isNumber(category.accountID)) category.accountID = parseInt(category.accountID);
         else delete category.accountID;
 
-        // Get icon value from ComboBox
-        if (iconComboBox) {
-            var iconInput = iconComboBox.getInput();
-            category.icon = iconInput.data || iconInput.value || null;
+      //Get icon value from ComboBox and store it in the info field
+        var icon = iconInput.data || iconInput.value || null;
+        if (icon){
+            if (!category.info) category.info = {};
+            category.info.icon = icon;
         }
+        delete category.icon;
 
         return category;
     };
@@ -195,27 +228,45 @@ javaxt.express.finance.CategoryEditor = function(config) {
   //** setValue
   //**************************************************************************
     this.setValue = function(name, value){
-        if (name === "icon") {
-            var iconInput = iconComboBox.getInput();
-            iconInput.value = value || "";
-            iconInput.data = value || null;
+        if (name === "info") {
+            if (value && value.icon){
+                iconInput.value = value.icon;
+                iconInput.data = value.icon;
+                iconDiv.innerHTML = "";
+                createElement("i", iconDiv, value.icon);
+                iconDiv.show();
+            }
         }
         else {
             form.setValue(name, value);
+            if (name === "isExpense") updateIconStyle();
         }
     };
 
 
+  //**************************************************************************
+  //** Events
+  //**************************************************************************
     this.onCancel = function(){};
     this.onSubmit = function(){};
-
     this.onChange = function(name, value){};
 
+
+  //**************************************************************************
+  //** clear
+  //**************************************************************************
     this.clear = function(){
         form.clear();
+        iconInput.value = "";
+        iconInput.data = null;
+        iconDiv.innerHTML = "";
+        iconDiv.hide();
     };
 
 
+  //**************************************************************************
+  //** setTitle
+  //**************************************************************************
     this.setTitle = function(str){
         win.setTitle(str);
     };
@@ -245,9 +296,13 @@ javaxt.express.finance.CategoryEditor = function(config) {
     };
 
 
-
+  //**************************************************************************
+  //** Utils
+  //**************************************************************************
     var isNumber = javaxt.express.finance.utils.isNumber;
+
     var createElement = javaxt.dhtml.utils.createElement;
+    var addShowHide = javaxt.dhtml.utils.addShowHide;
     var merge = javaxt.dhtml.utils.merge;
 
 
